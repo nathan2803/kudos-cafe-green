@@ -36,92 +36,94 @@ export const Menu = () => {
   const categories = [
     { id: 'all', name: 'All Items', icon: Award },
     { id: 'appetizers', name: 'Appetizers', icon: Zap },
+    { id: 'pasta', name: 'Pasta', icon: Star },
     { id: 'mains', name: 'Main Courses', icon: Flame },
     { id: 'desserts', name: 'Desserts', icon: Heart },
     { id: 'beverages', name: 'Beverages', icon: Leaf }
   ]
 
-  // Sample menu data - in real app, this would come from Supabase
+  // Kudos Cafe Menu Items
   const sampleMenuItems: MenuItem[] = [
+    // Appetizers
     {
       id: '1',
-      name: 'Organic Garden Salad',
-      description: 'Fresh mixed greens, cherry tomatoes, cucumber, avocado with house-made green goddess dressing',
-      price: 12.50,
+      name: 'Mojos',
+      description: 'Crispy potato wedges with signature seasoning',
+      price: 125,
       category: 'appetizers',
-      image_url: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&h=300&fit=crop',
+      image_url: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400&h=300&fit=crop',
       is_available: true,
-      dietary_tags: ['vegetarian', 'vegan', 'gluten-free'],
-      is_popular: true,
+      dietary_tags: ['vegetarian'],
+      is_popular: false,
       is_new: false
     },
     {
       id: '2',
-      name: 'Sustainable Salmon',
-      description: 'Wild-caught salmon fillet with quinoa pilaf, roasted vegetables, and lemon herb butter',
-      price: 24.90,
-      category: 'mains',
-      image_url: 'https://images.unsplash.com/photo-1551782450-17144efb9c50?w=400&h=300&fit=crop',
+      name: 'Twister Fries',
+      description: 'Spiral-cut fries with spicy coating',
+      price: 145,
+      category: 'appetizers',
+      image_url: 'https://images.unsplash.com/photo-1576107232684-1279f390859f?w=400&h=300&fit=crop',
       is_available: true,
-      dietary_tags: ['gluten-free', 'high-protein'],
+      dietary_tags: ['vegetarian'],
       is_popular: false,
-      is_new: true
+      is_new: false
     },
     {
       id: '3',
-      name: 'Green Smoothie Bowl',
-      description: 'Spinach, mango, banana blend topped with granola, chia seeds, and fresh berries',
-      price: 9.75,
-      category: 'beverages',
-      image_url: 'https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=400&h=300&fit=crop',
+      name: 'Bistro Fries',
+      description: 'Thick-cut fries with garlic parmesan',
+      price: 125,
+      category: 'appetizers',
+      image_url: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400&h=300&fit=crop',
       is_available: true,
-      dietary_tags: ['vegan', 'raw', 'superfood'],
-      is_popular: true,
+      dietary_tags: ['vegetarian'],
+      is_popular: false,
       is_new: false
     },
     {
       id: '4',
-      name: 'Plant-Based Burger',
-      description: 'House-made patty with lettuce, tomato, avocado, and special green sauce on whole grain bun',
-      price: 16.50,
-      category: 'mains',
-      image_url: 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=400&h=300&fit=crop',
+      name: 'Buffalo Wings',
+      description: 'Crispy fried chicken wings with buffalo sauce',
+      price: 220,
+      category: 'appetizers',
+      image_url: 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=400&h=300&fit=crop',
       is_available: true,
-      dietary_tags: ['vegan', 'high-protein'],
+      dietary_tags: ['spicy'],
       is_popular: true,
       is_new: false
     },
     {
       id: '5',
-      name: 'Eco-Friendly Pasta',
-      description: 'Handmade pasta with seasonal vegetables, basil pesto, and organic parmesan',
-      price: 18.25,
-      category: 'mains',
-      image_url: 'https://images.unsplash.com/photo-1563379091339-03246963d29a?w=400&h=300&fit=crop',
+      name: 'Hickory Wings',
+      description: 'Smoky BBQ glazed chicken wings',
+      price: 220,
+      category: 'appetizers',
+      image_url: 'https://images.unsplash.com/photo-1527477396000-e27163b481c2?w=400&h=300&fit=crop',
       is_available: true,
-      dietary_tags: ['vegetarian'],
+      dietary_tags: ['bbq'],
       is_popular: false,
-      is_new: true
+      is_new: false
     },
     {
       id: '6',
-      name: 'Raw Chocolate Tart',
-      description: 'Decadent raw chocolate tart with cashew cream and fresh raspberries',
-      price: 8.90,
-      category: 'desserts',
-      image_url: 'https://images.unsplash.com/photo-1493770348161-369560ae357d?w=400&h=300&fit=crop',
+      name: 'Mozzarella Sticks',
+      description: 'Fried mozzarella sticks with marinara dip',
+      price: 165,
+      category: 'appetizers',
+      image_url: 'https://images.unsplash.com/photo-1541745537411-b8046dc6d66c?w=400&h=300&fit=crop',
       is_available: true,
-      dietary_tags: ['vegan', 'raw', 'no-sugar'],
-      is_popular: true,
+      dietary_tags: ['vegetarian'],
+      is_popular: false,
       is_new: false
     },
     {
       id: '7',
-      name: 'Artisan Bruschetta',
-      description: 'Toasted sourdough with heirloom tomatoes, fresh basil, and balsamic glaze',
-      price: 11.00,
+      name: 'Nachos',
+      description: 'Classic nachos with cheese dip',
+      price: 135,
       category: 'appetizers',
-      image_url: 'https://images.unsplash.com/photo-1572441713132-51c75654db73?w=400&h=300&fit=crop',
+      image_url: 'https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=400&h=300&fit=crop',
       is_available: true,
       dietary_tags: ['vegetarian'],
       is_popular: false,
@@ -129,13 +131,237 @@ export const Menu = () => {
     },
     {
       id: '8',
-      name: 'Herbal Tea Blend',
-      description: 'Organic chamomile, lavender, and mint tea - perfect for relaxation',
-      price: 4.50,
-      category: 'beverages',
-      image_url: 'https://images.unsplash.com/photo-1563822249369-e8259c2e4c56?w=400&h=300&fit=crop',
+      name: 'Nachos Overload',
+      description: 'Loaded nachos with ground beef and guacamole',
+      price: 165,
+      category: 'appetizers',
+      image_url: 'https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=400&h=300&fit=crop',
       is_available: true,
-      dietary_tags: ['vegan', 'caffeine-free'],
+      dietary_tags: ['hearty'],
+      is_popular: true,
+      is_new: false
+    },
+
+    // Pasta
+    {
+      id: '9',
+      name: 'Tuna Pesto',
+      description: 'Tuna flakes in basil pesto sauce with pasta',
+      price: 165,
+      category: 'pasta',
+      image_url: 'https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=400&h=300&fit=crop',
+      is_available: true,
+      dietary_tags: ['seafood'],
+      is_popular: false,
+      is_new: false
+    },
+    {
+      id: '10',
+      name: 'Seafood Marinara',
+      description: 'Mixed seafood in tomato marinara sauce',
+      price: 175,
+      category: 'pasta',
+      image_url: 'https://images.unsplash.com/photo-1572441713132-51c75654db73?w=400&h=300&fit=crop',
+      is_available: true,
+      dietary_tags: ['seafood'],
+      is_popular: false,
+      is_new: false
+    },
+    {
+      id: '11',
+      name: 'Truffle Carbonara',
+      description: 'Creamy carbonara with truffle oil',
+      price: 189,
+      category: 'pasta',
+      image_url: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop',
+      is_available: true,
+      dietary_tags: ['creamy', 'premium'],
+      is_popular: false,
+      is_new: true
+    },
+    {
+      id: '12',
+      name: 'Aglio Olio',
+      description: 'Garlic olive oil pasta with chili flakes',
+      price: 165,
+      category: 'pasta',
+      image_url: 'https://images.unsplash.com/photo-1563379091339-03246963d29a?w=400&h=300&fit=crop',
+      is_available: true,
+      dietary_tags: ['vegetarian', 'spicy'],
+      is_popular: false,
+      is_new: false
+    },
+
+    // Main Courses
+    {
+      id: '13',
+      name: 'Katsudon',
+      description: 'Japanese pork cutlet rice bowl',
+      price: 185,
+      category: 'mains',
+      image_url: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop',
+      is_available: true,
+      dietary_tags: ['japanese'],
+      is_popular: false,
+      is_new: false
+    },
+    {
+      id: '14',
+      name: 'Lechon Kawali',
+      description: 'Crispy fried pork belly',
+      price: 195,
+      category: 'mains',
+      image_url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=300&fit=crop',
+      is_available: true,
+      dietary_tags: ['filipino', 'crispy'],
+      is_popular: true,
+      is_new: false
+    },
+    {
+      id: '15',
+      name: 'Garlic Pepper Beef',
+      description: 'Stir-fried beef with garlic and black pepper',
+      price: 185,
+      category: 'mains',
+      image_url: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&h=300&fit=crop',
+      is_available: true,
+      dietary_tags: ['beef', 'stir-fried'],
+      is_popular: false,
+      is_new: false
+    },
+    {
+      id: '16',
+      name: 'Inalamangan Pork Rebusado',
+      description: 'Crispy fried pork with calamansi dip',
+      price: 175,
+      category: 'mains',
+      image_url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=300&fit=crop',
+      is_available: true,
+      dietary_tags: ['filipino', 'crispy'],
+      is_popular: false,
+      is_new: false
+    },
+    {
+      id: '17',
+      name: 'Kudos Original',
+      description: 'House special grilled chicken platter',
+      price: 185,
+      category: 'mains',
+      image_url: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=400&h=300&fit=crop',
+      is_available: true,
+      dietary_tags: ['signature', 'grilled'],
+      is_popular: false,
+      is_new: false
+    },
+    {
+      id: '18',
+      name: 'Crispy Chicken Kare-kare',
+      description: 'Crispy chicken with peanut kare-kare sauce',
+      price: 195,
+      category: 'mains',
+      image_url: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=400&h=300&fit=crop',
+      is_available: true,
+      dietary_tags: ['filipino', 'crispy'],
+      is_popular: false,
+      is_new: true
+    },
+
+    // Desserts
+    {
+      id: '19',
+      name: 'Smores',
+      description: 'Classic campfire treat with chocolate and marshmallow',
+      price: 155,
+      category: 'desserts',
+      image_url: 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400&h=300&fit=crop',
+      is_available: true,
+      dietary_tags: ['sweet'],
+      is_popular: false,
+      is_new: false
+    },
+    {
+      id: '20',
+      name: 'Golden Waffle',
+      description: 'Golden brown waffle with maple syrup',
+      price: 125,
+      category: 'desserts',
+      image_url: 'https://images.unsplash.com/photo-1562376552-0d160a2f238d?w=400&h=300&fit=crop',
+      is_available: true,
+      dietary_tags: ['sweet'],
+      is_popular: false,
+      is_new: false
+    },
+    {
+      id: '21',
+      name: 'Nutella Waffle',
+      description: 'Waffle loaded with Nutella spread',
+      price: 125,
+      category: 'desserts',
+      image_url: 'https://images.unsplash.com/photo-1562376552-0d160a2f238d?w=400&h=300&fit=crop',
+      is_available: true,
+      dietary_tags: ['sweet', 'nutella'],
+      is_popular: true,
+      is_new: false
+    },
+    {
+      id: '22',
+      name: 'Matcha Waffle',
+      description: 'Green tea flavored waffle with red bean',
+      price: 125,
+      category: 'desserts',
+      image_url: 'https://images.unsplash.com/photo-1562376552-0d160a2f238d?w=400&h=300&fit=crop',
+      is_available: true,
+      dietary_tags: ['matcha', 'japanese'],
+      is_popular: false,
+      is_new: false
+    },
+
+    // Drinks
+    {
+      id: '23',
+      name: 'Choco-Mint',
+      description: 'Chocolate mint milkshake',
+      price: 165,
+      category: 'beverages',
+      image_url: 'https://images.unsplash.com/photo-1579952363873-27d3bfad9c0d?w=400&h=300&fit=crop',
+      is_available: true,
+      dietary_tags: ['cold', 'chocolate'],
+      is_popular: false,
+      is_new: false
+    },
+    {
+      id: '24',
+      name: 'Matcha Caramel Overload',
+      description: 'Matcha latte with caramel drizzle',
+      price: 155,
+      category: 'beverages',
+      image_url: 'https://images.unsplash.com/photo-1515823662972-da6a2e4d3002?w=400&h=300&fit=crop',
+      is_available: true,
+      dietary_tags: ['matcha', 'caramel'],
+      is_popular: true,
+      is_new: false
+    },
+    {
+      id: '25',
+      name: 'Biscoff Caramel Latte',
+      description: 'Biscoff cookie flavored latte',
+      price: 145,
+      category: 'beverages',
+      image_url: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400&h=300&fit=crop',
+      is_available: true,
+      dietary_tags: ['coffee', 'biscoff'],
+      is_popular: false,
+      is_new: false
+    },
+    {
+      id: '26',
+      name: 'Dirty-Matcha Caramel',
+      description: 'Espresso layered over matcha latte',
+      price: 135,
+      category: 'beverages',
+      image_url: 'https://images.unsplash.com/photo-1515823662972-da6a2e4d3002?w=400&h=300&fit=crop',
+      is_available: true,
+      dietary_tags: ['matcha', 'espresso'],
       is_popular: false,
       is_new: false
     }
@@ -266,7 +492,7 @@ export const Menu = () => {
 
             {/* Category Tabs */}
             <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="flex-1">
-              <TabsList className="grid w-full grid-cols-5 bg-background border border-primary/20">
+              <TabsList className="grid w-full grid-cols-6 bg-background border border-primary/20">
                 {categories.map((category) => {
                   const IconComponent = category.icon
                   return (
@@ -340,7 +566,7 @@ export const Menu = () => {
                       >
                         {item.name}
                       </h3>
-                      <span className="text-xl font-bold text-primary">£{item.price.toFixed(2)}</span>
+                      <span className="text-xl font-bold text-primary">₱{item.price}</span>
                     </div>
                     
                     <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
@@ -456,7 +682,7 @@ export const Menu = () => {
                     )}
                   </div>
                   <span className="text-2xl font-bold text-primary">
-                    £{selectedItem.price.toFixed(2)}
+                    ₱{selectedItem.price}
                   </span>
                 </div>
                 
