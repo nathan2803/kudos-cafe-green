@@ -52,6 +52,12 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				// Custom Kudos Cafe Green Theme
+				forest: 'hsl(var(--forest-green))',
+				'medium-green': 'hsl(var(--medium-green))',
+				'fresh-green': 'hsl(var(--fresh-green))',
+				'light-green': 'hsl(var(--light-green))',
+				cream: 'hsl(var(--cream))',
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
