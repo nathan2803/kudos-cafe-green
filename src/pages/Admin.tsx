@@ -28,13 +28,60 @@ interface MenuItem {
 interface Order {
   id: string
   user_id: string
-  items: any[]
   total_amount: number
   status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled'
-  delivery_address?: string
-  order_type: 'dine-in' | 'takeaway' | 'delivery'
+  payment_status: 'pending' | 'partial' | 'paid' | 'refunded'
+  order_type: 'pickup' | 'takeout' | 'dine_in'
+  customer_name?: string
+  customer_phone?: string
+  customer_email?: string
+  notes?: string
+  deposit_paid?: number
+  remaining_amount?: number
+  reservation_id?: string
   created_at: string
   updated_at: string
+  order_items?: OrderItem[]
+  reservations?: Reservation
+}
+
+interface OrderItem {
+  id: string
+  order_id: string
+  menu_item_id: string
+  quantity: number
+  unit_price: number
+  total_price: number
+  special_instructions?: string
+  menu_items?: MenuItem
+}
+
+interface Table {
+  id: string
+  table_number: number
+  capacity: number
+  location: string
+  is_available: boolean
+  created_at: string
+  updated_at: string
+}
+
+interface Reservation {
+  id: string
+  user_id?: string
+  table_id: string
+  order_id?: string
+  party_size: number
+  reservation_date: string
+  reservation_time: string
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed'
+  special_requests?: string
+  deposit_amount?: number
+  created_at: string
+  updated_at: string
+  tables?: Table
+  orders?: Order
+  profiles?: User
 }
 
 interface User {
@@ -151,24 +198,31 @@ export const Admin = () => {
     }
   ]
 
+  const [tables, setTables] = useState<Table[]>([])
+  const [reservations, setReservations] = useState<Reservation[]>([])
+
   const sampleOrders: Order[] = [
     {
       id: '1',
       user_id: '123',
-      items: [{ menu_item_id: '1', quantity: 2, price: 12.50 }],
       total_amount: 25.00,
       status: 'preparing',
-      order_type: 'dine-in',
+      payment_status: 'paid',
+      order_type: 'dine_in',
+      customer_name: 'John Doe',
+      customer_phone: '+1234567890',
       created_at: '2024-01-20T14:30:00Z',
       updated_at: '2024-01-20T14:30:00Z'
     },
     {
       id: '2',
       user_id: '124',
-      items: [{ menu_item_id: '2', quantity: 1, price: 24.90 }],
       total_amount: 24.90,
       status: 'delivered',
-      order_type: 'delivery',
+      payment_status: 'paid',
+      order_type: 'takeout',
+      customer_name: 'Jane Smith',
+      customer_phone: '+1234567891',
       created_at: '2024-01-20T13:15:00Z',
       updated_at: '2024-01-20T14:45:00Z'
     }
@@ -214,6 +268,45 @@ export const Admin = () => {
           .order('name');
         
         if (suppliersData) setSuppliers(suppliersData);
+
+        // Fetch orders with related data
+        const { data: ordersData } = await supabase
+          .from('orders')
+          .select(`
+            *,
+            order_items (
+              *,
+              menu_items (name, price)
+            ),
+            reservations (
+              *,
+              tables (table_number, location)
+            )
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (ordersData) setOrders(ordersData as any);
+
+        // Fetch tables
+        const { data: tablesData } = await supabase
+          .from('tables')
+          .select('*')
+          .order('table_number');
+        
+        if (tablesData) setTables(tablesData as any);
+
+        // Fetch reservations with related data
+        const { data: reservationsData } = await supabase
+          .from('reservations')
+          .select(`
+            *,
+            tables (table_number, location),
+            orders (total_amount, status),
+            profiles (full_name, email, phone)
+          `)
+          .order('reservation_date', { ascending: false });
+        
+        if (reservationsData) setReservations(reservationsData as any);
 
         // Calculate analytics
         if (inventoryData) {
@@ -809,12 +902,18 @@ export const Admin = () => {
                           {formatDate(order.created_at)} • {order.order_type}
                         </p>
                         <div className="text-sm">
-                          {order.items.map((item, index) => (
-                            <span key={index}>
-                              {item.quantity}x Menu Item #{item.menu_item_id}
-                              {index < order.items.length - 1 && ', '}
-                            </span>
-                          ))}
+                          <p><strong>Customer:</strong> {order.customer_name}</p>
+                          <p><strong>Phone:</strong> {order.customer_phone}</p>
+                          {order.order_items && order.order_items.length > 0 ? (
+                            order.order_items.map((item, index) => (
+                              <span key={index}>
+                                {item.quantity}x {item.menu_items?.name || `Item #${item.menu_item_id}`}
+                                {index < order.order_items.length - 1 && ', '}
+                              </span>
+                            ))
+                          ) : (
+                            <span>No items found</span>
+                          )}
                         </div>
                       </div>
                       

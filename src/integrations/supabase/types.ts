@@ -289,9 +289,13 @@ export type Database = {
           customer_email: string | null
           customer_name: string | null
           customer_phone: string | null
+          deposit_paid: number | null
           id: string
           notes: string | null
+          order_type: string | null
           payment_status: string
+          remaining_amount: number | null
+          reservation_id: string | null
           status: string
           total_amount: number
           updated_at: string
@@ -302,9 +306,13 @@ export type Database = {
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          deposit_paid?: number | null
           id?: string
           notes?: string | null
+          order_type?: string | null
           payment_status?: string
+          remaining_amount?: number | null
+          reservation_id?: string | null
           status?: string
           total_amount?: number
           updated_at?: string
@@ -315,15 +323,27 @@ export type Database = {
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          deposit_paid?: number | null
           id?: string
           notes?: string | null
+          order_type?: string | null
           payment_status?: string
+          remaining_amount?: number | null
+          reservation_id?: string | null
           status?: string
           total_amount?: number
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       price_history: {
         Row: {
@@ -402,6 +422,66 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      reservations: {
+        Row: {
+          created_at: string
+          deposit_amount: number | null
+          id: string
+          order_id: string | null
+          party_size: number
+          reservation_date: string
+          reservation_time: string
+          special_requests: string | null
+          status: string
+          table_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          deposit_amount?: number | null
+          id?: string
+          order_id?: string | null
+          party_size: number
+          reservation_date: string
+          reservation_time: string
+          special_requests?: string | null
+          status?: string
+          table_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          deposit_amount?: number | null
+          id?: string
+          order_id?: string | null
+          party_size?: number
+          reservation_date?: string
+          reservation_time?: string
+          special_requests?: string | null
+          status?: string
+          table_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "tables"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stock_movements: {
         Row: {
@@ -499,12 +579,50 @@ export type Database = {
         }
         Relationships: []
       }
+      tables: {
+        Row: {
+          capacity: number
+          created_at: string
+          id: string
+          is_available: boolean
+          location: string | null
+          table_number: number
+          updated_at: string
+        }
+        Insert: {
+          capacity: number
+          created_at?: string
+          id?: string
+          is_available?: boolean
+          location?: string | null
+          table_number: number
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          id?: string
+          is_available?: boolean
+          location?: string | null
+          table_number?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_table_availability: {
+        Args: {
+          p_table_id: string
+          p_date: string
+          p_time: string
+          p_duration_hours?: number
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

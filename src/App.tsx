@@ -9,6 +9,7 @@ import Landing from "./pages/Landing";
 import Gallery from "./pages/Gallery";
 import Menu from "./pages/Menu";
 import Contact from "./pages/Contact";
+import Booking from "./pages/Booking";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/gallery" element={<Gallery />} />
               <Route path="/menu" element={<Menu />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/booking" element={<Booking />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/auth" element={<Auth />} />
