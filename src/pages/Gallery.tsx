@@ -179,91 +179,35 @@ export const Gallery = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <section className="relative py-20 bg-gradient-to-br from-forest via-primary to-medium-green text-cream">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="flex items-center justify-center mb-6">
-            <div className="w-16 h-16 bg-light-green/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-              <Camera className="w-8 h-8 text-light-green" />
-            </div>
-          </div>
-          
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-            Visual <span className="text-light-green">Journey</span>
+      {/* Compact Header */}
+      <section className="relative py-12 bg-gradient-to-r from-primary to-secondary">
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
+            Gallery
           </h1>
           
-          <p className="text-xl md:text-2xl mb-8 text-cream/90 max-w-2xl mx-auto">
-            "A picture is worth a thousand flavors. Experience the beauty of sustainable dining 
-            through our curated gallery of moments, meals, and memories."
-          </p>
+          <div className="flex flex-wrap justify-center gap-2 mb-6">
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  selectedCategory === category.id 
+                    ? 'bg-primary-foreground text-primary shadow-lg' 
+                    : 'bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30'
+                }`}
+              >
+                {category.name} ({getCategoryCount(category.id)})
+              </button>
+            ))}
+          </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            {isAdmin && (
-              <Button size="lg" className="bg-light-green text-forest hover:bg-light-green/90">
-                <Upload className="mr-2 w-5 h-5" />
-                Upload Photos
-              </Button>
-            )}
-            <Button 
-              variant="outline" 
-              size="lg"
-              className="border-light-green text-light-green hover:bg-light-green hover:text-forest"
-            >
-              <Share2 className="mr-2 w-5 h-5" />
-              Share Gallery
+          {isAdmin && (
+            <Button className="bg-primary-foreground text-primary hover:bg-primary-foreground/90">
+              <Upload className="mr-2 w-4 h-4" />
+              Upload Photos
             </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Filter Controls */}
-      <section className="py-8 bg-muted/30 border-b border-primary/20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
-            {/* Category Filters */}
-            <div className="flex flex-wrap gap-2">
-              {categories.map((category) => (
-                <Button
-                  key={category.id}
-                  variant={selectedCategory === category.id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`${
-                    selectedCategory === category.id 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'border-primary/20 text-muted-foreground hover:text-primary'
-                  }`}
-                >
-                  <Filter className="mr-2 w-4 h-4" />
-                  {category.name}
-                  <Badge variant="secondary" className="ml-2 text-xs">
-                    {getCategoryCount(category.id)}
-                  </Badge>
-                </Button>
-              ))}
-            </div>
-
-            {/* View Mode Toggle */}
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-muted-foreground">View:</span>
-              <Button
-                variant={viewMode === 'grid' ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode('grid')}
-                className="w-10 h-10 p-0"
-              >
-                <Grid3X3 className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'masonry' ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode('masonry')}
-                className="w-10 h-10 p-0"
-              >
-                <List className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
+          )}
         </div>
       </section>
 
@@ -271,84 +215,73 @@ export const Gallery = () => {
       <section className="py-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 2xl:columns-5 gap-4">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Card key={i} className="overflow-hidden">
-                  <div className="h-64 bg-muted animate-pulse" />
-                  <CardContent className="p-4">
-                    <div className="h-4 bg-muted rounded animate-pulse mb-2" />
-                    <div className="h-3 bg-muted rounded animate-pulse w-2/3" />
-                  </CardContent>
-                </Card>
+                <div key={i} className="break-inside-avoid mb-4">
+                  <div className="rounded-xl overflow-hidden bg-muted">
+                    <div className="h-64 bg-muted animate-pulse" />
+                    <div className="p-3">
+                      <div className="h-4 bg-muted-foreground/20 rounded animate-pulse mb-2" />
+                      <div className="h-3 bg-muted-foreground/20 rounded animate-pulse w-2/3" />
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           ) : (
-            <div className={`grid gap-6 ${
-              viewMode === 'grid' 
-                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
-                : 'columns-1 md:columns-2 lg:columns-3 space-y-6'
-            }`}>
+            <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 2xl:columns-5 gap-4">
               {filteredImages.map((image) => (
-                <Card 
+                <div 
                   key={image.id} 
-                  className={`overflow-hidden border-primary/20 hover:shadow-lg transition-all duration-300 cursor-pointer group ${
-                    viewMode === 'masonry' ? 'break-inside-avoid' : ''
-                  }`}
+                  className="break-inside-avoid mb-4 cursor-pointer group"
                   onClick={() => openImageModal(image)}
                 >
-                  <div className="relative">
+                  <div className="relative overflow-hidden rounded-xl bg-card shadow-sm hover:shadow-xl transition-all duration-300 border border-border/10">
                     <img 
                       src={image.url}
                       alt={image.title}
-                      className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     
-                    {/* Overlay Actions */}
-                    <div className="absolute bottom-4 right-4 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="bg-white/20 backdrop-blur-sm text-white hover:bg-white/30"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleLike(image.id)
-                        }}
-                      >
-                        <Heart className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="bg-white/20 backdrop-blur-sm text-white hover:bg-white/30"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Share2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    {/* Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     
-                    {/* Category Badge */}
-                    <Badge 
-                      className="absolute top-4 left-4 bg-primary/90 text-primary-foreground capitalize"
-                    >
-                      {image.category}
-                    </Badge>
-                  </div>
-                  
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold text-foreground mb-1 line-clamp-1">{image.title}</h3>
-                    {image.description && (
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{image.description}</p>
-                    )}
-                    <div className="flex justify-between items-center text-xs text-muted-foreground">
-                      <span>{new Date(image.uploadedAt).toLocaleDateString()}</span>
-                      <div className="flex items-center space-x-1">
-                        <Heart className="w-3 h-3" />
-                        <span>{image.likes}</span>
+                    {/* Content overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                      <h3 className="font-semibold text-lg mb-1 line-clamp-2">{image.title}</h3>
+                      {image.description && (
+                        <p className="text-sm text-white/80 mb-3 line-clamp-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">{image.description}</p>
+                      )}
+                      
+                      <div className="flex justify-between items-center">
+                        <Badge 
+                          className="bg-primary/80 text-primary-foreground capitalize text-xs"
+                        >
+                          {image.category}
+                        </Badge>
+                        
+                        <div className="flex items-center space-x-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <button
+                            className="flex items-center space-x-1 text-white/80 hover:text-white transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleLike(image.id)
+                            }}
+                          >
+                            <Heart className="w-4 h-4" />
+                            <span className="text-sm">{image.likes}</span>
+                          </button>
+                          <button
+                            className="text-white/80 hover:text-white transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Share2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
             </div>
           )}
