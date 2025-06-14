@@ -306,7 +306,7 @@ export const Landing = () => {
                     <h3 className="text-lg font-semibold text-foreground mb-2">{dish.name}</h3>
                     <p className="text-muted-foreground text-sm mb-4">{dish.description}</p>
                     <div className="flex justify-between items-center">
-                      <span className="text-xl font-bold text-primary">£{dish.price.toFixed(2)}</span>
+                      <span className="text-xl font-bold text-primary">₱{dish.price.toFixed(2)}</span>
                       <Button size="sm" className="bg-primary hover:bg-primary/90">
                         {user ? 'Add to Cart' : 'View Details'}
                       </Button>

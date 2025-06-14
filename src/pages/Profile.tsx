@@ -441,7 +441,7 @@ export const Profile = () => {
                             </Badge>
                           </div>
                           <div className="text-right mt-2 md:mt-0">
-                            <p className="font-semibold text-lg">£{order.total_amount.toFixed(2)}</p>
+                            <p className="font-semibold text-lg">₱{order.total_amount.toFixed(2)}</p>
                             <p className="text-sm text-muted-foreground capitalize">
                               {order.order_type}
                             </p>
@@ -452,7 +452,7 @@ export const Profile = () => {
                           {order.items.map((item, index) => (
                             <div key={index} className="flex justify-between text-sm">
                               <span>{item.quantity}x Item #{item.menu_item_id}</span>
-                              <span>£{(item.price * item.quantity).toFixed(2)}</span>
+                              <span>₱{(item.price * item.quantity).toFixed(2)}</span>
                             </div>
                           ))}
                         </div>

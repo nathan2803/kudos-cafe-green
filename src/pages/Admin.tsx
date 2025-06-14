@@ -267,7 +267,7 @@ export const Admin = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground">Total Revenue</p>
-                      <p className="text-2xl font-bold text-primary">£{analytics.totalRevenue.toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-primary">₱{analytics.totalRevenue.toLocaleString()}</p>
                     </div>
                     <DollarSign className="w-8 h-8 text-primary" />
                   </div>
@@ -349,7 +349,7 @@ export const Admin = () => {
                           <Badge className={getStatusColor(order.status)}>
                             {order.status}
                           </Badge>
-                          <p className="text-sm font-medium">£{order.total_amount.toFixed(2)}</p>
+                          <p className="text-sm font-medium">₱{order.total_amount.toFixed(2)}</p>
                         </div>
                       </div>
                     ))}
@@ -431,7 +431,7 @@ export const Admin = () => {
                       </div>
                       
                       <div className="flex flex-col md:items-end space-y-2 mt-4 md:mt-0">
-                        <p className="text-lg font-bold">£{order.total_amount.toFixed(2)}</p>
+                        <p className="text-lg font-bold">₱{order.total_amount.toFixed(2)}</p>
                         <div className="flex space-x-2">
                           <Select 
                             value={order.status} 
@@ -487,7 +487,7 @@ export const Admin = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="price">Price (£)</Label>
+                        <Label htmlFor="price">Price (₱)</Label>
                         <Input id="price" type="number" step="0.01" placeholder="0.00" />
                       </div>
                       <div className="space-y-2">
@@ -526,7 +526,7 @@ export const Admin = () => {
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-semibold">{item.name}</h3>
-                      <span className="font-bold text-primary">£{item.price.toFixed(2)}</span>
+                      <span className="font-bold text-primary">₱{item.price.toFixed(2)}</span>
                     </div>
                     <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                       {item.description}
