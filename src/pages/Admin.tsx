@@ -1063,11 +1063,72 @@ export const Admin = () => {
                       </form>
                     </DialogContent>
                   </Dialog>
-                  <Button variant="outline">
-                    <Archive className="w-4 h-4 mr-2" />
-                    Restock
-                  </Button>
-                  <Button variant="outline">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline">
+                        <Archive className="w-4 h-4 mr-2" />
+                        Restock
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Bulk Restock Items</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                          This will create restock requests for all items below minimum stock levels.
+                        </p>
+                        <Button 
+                          className="w-full" 
+                          onClick={() => {
+                            const lowStockItems = filteredInventoryItems.filter(item => 
+                              parseFloat(String(item.current_stock)) <= parseFloat(String(item.min_stock_level))
+                            );
+                            lowStockItems.forEach(item => handleReorderItem(item.id, false));
+                            toast({
+                              title: "Bulk Restock Initiated",
+                              description: `Created restock requests for ${lowStockItems.length} items`
+                            });
+                          }}
+                        >
+                          Create Restock Requests
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      const csvData = [
+                        ['Name', 'SKU', 'Category', 'Current Stock', 'Min Level', 'Price', 'Location', 'Status'].join(','),
+                        ...filteredInventoryItems.map(item => [
+                          item.name,
+                          item.sku || '',
+                          item.categories?.name || '',
+                          item.current_stock,
+                          item.min_stock_level,
+                          item.current_price || '0',
+                          item.storage_location || '',
+                          parseFloat(String(item.current_stock)) <= parseFloat(String(item.min_stock_level)) 
+                            ? (parseFloat(String(item.current_stock)) === 0 ? 'Out of Stock' : 'Low Stock')
+                            : 'In Stock'
+                        ].join(','))
+                      ].join('\n');
+                      
+                      const blob = new Blob([csvData], { type: 'text/csv' });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `inventory-export-${new Date().toISOString().split('T')[0]}.csv`;
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      
+                      toast({
+                        title: "Export Successful",
+                        description: "Inventory data exported to CSV file"
+                      });
+                    }}
+                  >
                     <Download className="w-4 h-4 mr-2" />
                     Export
                   </Button>
