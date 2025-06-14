@@ -283,8 +283,61 @@ export type Database = {
           },
         ]
       }
+      order_messages: {
+        Row: {
+          cancellation_reason: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          is_urgent: boolean
+          message: string
+          message_type: string
+          order_id: string
+          sender_id: string
+          subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          cancellation_reason?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          is_urgent?: boolean
+          message: string
+          message_type: string
+          order_id: string
+          sender_id: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cancellation_reason?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          is_urgent?: boolean
+          message?: string
+          message_type?: string
+          order_id?: string
+          sender_id?: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_messages_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           created_at: string
           customer_email: string | null
           customer_name: string | null
@@ -295,6 +348,7 @@ export type Database = {
           order_number: string | null
           order_type: string | null
           payment_status: string
+          refund_amount: number | null
           remaining_amount: number | null
           reservation_id: string | null
           status: string
@@ -303,6 +357,9 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name?: string | null
@@ -313,6 +370,7 @@ export type Database = {
           order_number?: string | null
           order_type?: string | null
           payment_status?: string
+          refund_amount?: number | null
           remaining_amount?: number | null
           reservation_id?: string | null
           status?: string
@@ -321,6 +379,9 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name?: string | null
@@ -331,6 +392,7 @@ export type Database = {
           order_number?: string | null
           order_type?: string | null
           payment_status?: string
+          refund_amount?: number | null
           remaining_amount?: number | null
           reservation_id?: string | null
           status?: string
@@ -609,6 +671,51 @@ export type Database = {
           location?: string | null
           table_number?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          city: string | null
+          created_at: string
+          dietary_restrictions: string[] | null
+          id: string
+          notification_email: boolean
+          notification_promotional: boolean
+          notification_sms: boolean
+          postal_code: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          created_at?: string
+          dietary_restrictions?: string[] | null
+          id?: string
+          notification_email?: boolean
+          notification_promotional?: boolean
+          notification_sms?: boolean
+          postal_code?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          created_at?: string
+          dietary_restrictions?: string[] | null
+          id?: string
+          notification_email?: boolean
+          notification_promotional?: boolean
+          notification_sms?: boolean
+          postal_code?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { AuthPage } from './Auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Checkbox } from '@/components/ui/checkbox'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/integrations/supabase/client'
 
@@ -74,6 +77,14 @@ interface UserProfile {
 export const Profile = () => {
   const { user, userProfile } = useAuth()
   const { toast } = useToast()
+  const location = useLocation()
+  const navigate = useNavigate()
+  
+  // Get the tab from URL params or default to 'overview'
+  const urlParams = new URLSearchParams(location.search)
+  const initialTab = urlParams.get('tab') || 'overview'
+  const [activeTab, setActiveTab] = useState(initialTab)
+  
   const [profile, setProfile] = useState<UserProfile>({
     full_name: '',
     email: '',
@@ -93,6 +104,10 @@ export const Profile = () => {
   const [reviews, setReviews] = useState<Review[]>([])
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [orderFilter, setOrderFilter] = useState<string>('all')
+  const [cancellingOrder, setCancellingOrder] = useState<string | null>(null)
+  const [cancellationReason, setCancellationReason] = useState('')
+  const [customReason, setCustomReason] = useState('')
 
 
   const sampleReviews: Review[] = [
