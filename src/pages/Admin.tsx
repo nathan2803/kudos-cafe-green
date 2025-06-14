@@ -104,6 +104,13 @@ export const Admin = () => {
   const [categories, setCategories] = useState<any[]>([])
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [lowStockAlerts, setLowStockAlerts] = useState<any[]>([])
+  
+  // Search and filter state
+  const [searchTerm, setSearchTerm] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [stockStatusFilter, setStockStatusFilter] = useState('all')
+  const [sortBy, setSortBy] = useState('name')
+  
   const [analytics, setAnalytics] = useState({
     totalRevenue: 12450.75,
     totalOrders: 342,
@@ -207,6 +214,23 @@ export const Admin = () => {
           .order('name');
         
         if (suppliersData) setSuppliers(suppliersData);
+
+        // Calculate analytics
+        if (inventoryData) {
+          const totalValue = inventoryData.reduce((sum, item) => 
+            sum + (parseFloat(String(item.current_stock)) * parseFloat(String(item.current_price || '0'))), 0);
+          const lowStockCount = inventoryData.filter(item => 
+            parseFloat(String(item.current_stock)) <= parseFloat(String(item.min_stock_level))).length;
+          const outOfStockCount = inventoryData.filter(item => 
+            parseFloat(String(item.current_stock)) === 0).length;
+          
+          setAnalytics(prev => ({
+            ...prev,
+            totalInventoryValue: totalValue,
+            lowStockItems: lowStockCount,
+            outOfStockItems: outOfStockCount
+          }));
+        }
 
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -436,6 +460,135 @@ export const Admin = () => {
       });
     }
   };
+
+  // Additional inventory handlers
+  const handleRemoveStock = async (itemId: string, removeData: any) => {
+    try {
+      const currentItem = inventoryItems.find(item => item.id === itemId);
+      if (!currentItem) return;
+
+      const currentStock = parseFloat(String(currentItem.current_stock));
+      const removeQuantity = parseFloat(removeData.quantity);
+      
+      if (removeQuantity > currentStock) {
+        toast({
+          title: "Error",
+          description: "Cannot remove more stock than available",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const newStock = currentStock - removeQuantity;
+      
+      const { error: updateError } = await supabase
+        .from('inventory_items')
+        .update({ current_stock: newStock })
+        .eq('id', itemId);
+
+      if (updateError) throw updateError;
+
+      // Add stock movement record
+      const { error: movementError } = await supabase
+        .from('stock_movements')
+        .insert([{
+          item_id: itemId,
+          movement_type: 'OUT',
+          quantity: removeQuantity,
+          reason: removeData.reason || 'Stock usage',
+          created_by: user?.id
+        }]);
+
+      if (movementError) throw movementError;
+
+      // Update local state
+      setInventoryItems(prev => prev.map(item => 
+        item.id === itemId 
+          ? { ...item, current_stock: newStock }
+          : item
+      ));
+
+      toast({
+        title: "Success",
+        description: "Stock removed successfully"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove stock",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleReorderItem = async (itemId: string, urgent: boolean = false) => {
+    try {
+      const currentItem = inventoryItems.find(item => item.id === itemId);
+      if (!currentItem) return;
+
+      const reorderQuantity = parseFloat(String(currentItem.max_stock_level || currentItem.min_stock_level)) * 2;
+      
+      // This would typically integrate with a procurement system
+      // For now, we'll just show a success message and create a stock movement record
+      const { error } = await supabase
+        .from('stock_movements')
+        .insert([{
+          item_id: itemId,
+          movement_type: 'IN',
+          quantity: reorderQuantity,
+          reason: urgent ? 'Urgent reorder request' : 'Automatic reorder request',
+          created_by: user?.id
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Reorder Initiated",
+        description: `${urgent ? 'Urgent reorder' : 'Reorder'} request created for ${currentItem.name}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create reorder request",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Filter and sort inventory items
+  const filteredInventoryItems = inventoryItems
+    .filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      const matchesCategory = categoryFilter === 'all' || item.category_id === categoryFilter;
+      
+      let matchesStatus = true;
+      if (stockStatusFilter === 'in-stock') {
+        matchesStatus = parseFloat(String(item.current_stock)) > parseFloat(String(item.min_stock_level));
+      } else if (stockStatusFilter === 'low-stock') {
+        matchesStatus = parseFloat(String(item.current_stock)) <= parseFloat(String(item.min_stock_level)) && 
+                      parseFloat(String(item.current_stock)) > 0;
+      } else if (stockStatusFilter === 'out-of-stock') {
+        matchesStatus = parseFloat(String(item.current_stock)) === 0;
+      }
+      
+      return matchesSearch && matchesCategory && matchesStatus;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'stock':
+          return parseFloat(String(b.current_stock)) - parseFloat(String(a.current_stock));
+        case 'price':
+          return parseFloat(String(b.current_price || '0')) - parseFloat(String(a.current_price || '0'));
+        case 'category':
+          return (a.categories?.name || '').localeCompare(b.categories?.name || '');
+        default:
+          return 0;
+      }
+    });
 
   return (
     <div className="min-h-screen bg-background">
@@ -995,23 +1148,28 @@ export const Admin = () => {
                 <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                    <Input placeholder="Search inventory items..." className="pl-10" />
+                    <Input 
+                      placeholder="Search inventory items..." 
+                      className="pl-10" 
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                   </div>
                   <div className="flex gap-2">
-                    <Select defaultValue="all">
+                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                       <SelectTrigger className="w-40">
                         <SelectValue placeholder="Category" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Categories</SelectItem>
-                        <SelectItem value="food-beverages">Food & Beverages</SelectItem>
-                        <SelectItem value="kitchen-equipment">Kitchen Equipment</SelectItem>
-                        <SelectItem value="dining-room">Dining Room</SelectItem>
-                        <SelectItem value="cleaning">Cleaning & Maintenance</SelectItem>
-                        <SelectItem value="office">Office & Administrative</SelectItem>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
-                    <Select defaultValue="all">
+                    <Select value={stockStatusFilter} onValueChange={setStockStatusFilter}>
                       <SelectTrigger className="w-40">
                         <SelectValue placeholder="Stock Status" />
                       </SelectTrigger>
@@ -1022,24 +1180,35 @@ export const Admin = () => {
                         <SelectItem value="out-of-stock">Out of Stock</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Button variant="outline" size="sm">
-                      <Filter className="w-4 h-4 mr-2" />
-                      Filters
-                    </Button>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Sort by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="name">Name</SelectItem>
+                        <SelectItem value="stock">Stock</SelectItem>
+                        <SelectItem value="price">Price</SelectItem>
+                        <SelectItem value="category">Category</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
                 {/* Real Inventory Items from Database */}
                 <div className="grid grid-cols-1 gap-4">
-                  {inventoryItems.length === 0 ? (
+                  {filteredInventoryItems.length === 0 ? (
                     <Card className="border-primary/20">
                       <CardContent className="p-6 text-center">
                         <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-muted-foreground">No inventory items found. Add some items to get started.</p>
+                        <p className="text-muted-foreground">
+                          {searchTerm || categoryFilter !== 'all' || stockStatusFilter !== 'all' 
+                            ? 'No inventory items match your search criteria.' 
+                            : 'No inventory items found. Add some items to get started.'}
+                        </p>
                       </CardContent>
                     </Card>
                   ) : (
-                    inventoryItems.map((item) => (
+                    filteredInventoryItems.map((item) => (
                       <Card key={item.id} className="border-primary/20">
                         <CardContent className="p-6">
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -1210,9 +1379,138 @@ export const Admin = () => {
                                   </form>
                                 </DialogContent>
                               </Dialog>
-                              <Button size="sm" variant="outline">
-                                <Eye className="w-4 h-4" />
-                              </Button>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
+                                    <Trash2 className="w-4 h-4 mr-1" />
+                                    Remove
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Remove Stock - {item.name}</DialogTitle>
+                                  </DialogHeader>
+                                  <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const formData = new FormData(e.target as HTMLFormElement);
+                                    const removeData = {
+                                      quantity: formData.get('quantity'),
+                                      reason: formData.get('reason')
+                                    };
+                                    handleRemoveStock(item.id, removeData);
+                                  }}>
+                                    <div className="space-y-4">
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                          <Label>Current Stock</Label>
+                                          <Input value={`${item.current_stock} ${item.unit_of_measurement}`} disabled />
+                                        </div>
+                                        <div className="space-y-2">
+                                          <Label>Remove Quantity</Label>
+                                          <Input 
+                                            name="quantity" 
+                                            type="number" 
+                                            step="0.01" 
+                                            max={item.current_stock}
+                                            placeholder="0.00" 
+                                            required 
+                                          />
+                                        </div>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label>Reason</Label>
+                                        <Select name="reason" required>
+                                          <SelectTrigger>
+                                            <SelectValue placeholder="Select reason" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="Used in kitchen">Used in kitchen</SelectItem>
+                                            <SelectItem value="Sold to customer">Sold to customer</SelectItem>
+                                            <SelectItem value="Damaged/Expired">Damaged/Expired</SelectItem>
+                                            <SelectItem value="Transferred">Transferred</SelectItem>
+                                            <SelectItem value="Other">Other</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      <Button type="submit" className="w-full" variant="destructive">
+                                        Remove Stock
+                                      </Button>
+                                    </div>
+                                  </form>
+                                </DialogContent>
+                              </Dialog>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button size="sm" variant="outline">
+                                    <Eye className="w-4 h-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl">
+                                  <DialogHeader>
+                                    <DialogTitle>Item Details - {item.name}</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="grid grid-cols-2 gap-6">
+                                    <div className="space-y-4">
+                                      <div>
+                                        <Label className="text-sm font-medium text-muted-foreground">Item Name</Label>
+                                        <p className="text-lg font-semibold">{item.name}</p>
+                                      </div>
+                                      <div>
+                                        <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                                        <p>{item.description || 'No description available'}</p>
+                                      </div>
+                                      <div>
+                                        <Label className="text-sm font-medium text-muted-foreground">SKU</Label>
+                                        <p className="font-mono">{item.sku}</p>
+                                      </div>
+                                      <div>
+                                        <Label className="text-sm font-medium text-muted-foreground">Category</Label>
+                                        <p>{item.categories?.name || 'Uncategorized'}</p>
+                                      </div>
+                                      <div>
+                                        <Label className="text-sm font-medium text-muted-foreground">Storage Location</Label>
+                                        <p>{item.storage_location || 'Not specified'}</p>
+                                      </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                      <div>
+                                        <Label className="text-sm font-medium text-muted-foreground">Current Stock</Label>
+                                        <p className="text-2xl font-bold text-primary">
+                                          {item.current_stock} {item.unit_of_measurement}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <Label className="text-sm font-medium text-muted-foreground">Min Stock Level</Label>
+                                        <p>{item.min_stock_level} {item.unit_of_measurement}</p>
+                                      </div>
+                                      <div>
+                                        <Label className="text-sm font-medium text-muted-foreground">Max Stock Level</Label>
+                                        <p>{item.max_stock_level || 'Not set'} {item.unit_of_measurement}</p>
+                                      </div>
+                                      <div>
+                                        <Label className="text-sm font-medium text-muted-foreground">Current Price</Label>
+                                        <p className="text-xl font-semibold">₱{parseFloat(item.current_price || '0').toFixed(2)}</p>
+                                      </div>
+                                      <div>
+                                        <Label className="text-sm font-medium text-muted-foreground">Total Value</Label>
+                                        <p className="text-lg font-semibold text-green-600">
+                                          ₱{(parseFloat(String(item.current_stock)) * parseFloat(String(item.current_price || '0'))).toFixed(2)}
+                                        </p>
+                                      </div>
+                                      <div className="flex items-center space-x-4">
+                                        <div>
+                                          <Label className="text-sm font-medium text-muted-foreground">Perishable</Label>
+                                          <p>{item.is_perishable ? 'Yes' : 'No'}</p>
+                                        </div>
+                                        <div>
+                                          <Label className="text-sm font-medium text-muted-foreground">Active</Label>
+                                          <p>{item.is_active ? 'Yes' : 'No'}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
                             </div>
                           </div>
                         </CardContent>
@@ -1231,30 +1529,46 @@ export const Admin = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
-                        <div className="flex items-center space-x-3">
-                          <AlertTriangle className="w-5 h-5 text-orange-500" />
-                          <div>
-                            <p className="font-medium">Chicken Breast is running low</p>
-                            <p className="text-sm text-muted-foreground">Current: 25.5 lbs • Min: 10.0 lbs</p>
+                      {filteredInventoryItems
+                        .filter(item => parseFloat(String(item.current_stock)) <= parseFloat(String(item.min_stock_level)))
+                        .map((item) => (
+                          <div 
+                            key={item.id}
+                            className={`flex items-center justify-between p-3 rounded-lg border ${
+                              parseFloat(String(item.current_stock)) === 0 
+                                ? 'bg-red-50 border-red-200' 
+                                : 'bg-orange-50 border-orange-200'
+                            }`}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <AlertTriangle className={`w-5 h-5 ${
+                                parseFloat(String(item.current_stock)) === 0 ? 'text-red-500' : 'text-orange-500'
+                              }`} />
+                              <div>
+                                <p className="font-medium">
+                                  {item.name} is {parseFloat(String(item.current_stock)) === 0 ? 'out of stock' : 'running low'}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  Current: {item.current_stock} {item.unit_of_measurement} • Min: {item.min_stock_level} {item.unit_of_measurement}
+                                </p>
+                              </div>
+                            </div>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleReorderItem(item.id, parseFloat(String(item.current_stock)) === 0)}
+                            >
+                              {parseFloat(String(item.current_stock)) === 0 ? 'Urgent Reorder' : 'Reorder'}
+                            </Button>
                           </div>
+                        ))}
+                      {filteredInventoryItems.filter(item => 
+                        parseFloat(String(item.current_stock)) <= parseFloat(String(item.min_stock_level))
+                      ).length === 0 && (
+                        <div className="text-center py-4">
+                          <p className="text-muted-foreground">No low stock alerts at the moment.</p>
                         </div>
-                        <Button size="sm" variant="outline">
-                          Reorder
-                        </Button>
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
-                        <div className="flex items-center space-x-3">
-                          <AlertTriangle className="w-5 h-5 text-red-500" />
-                          <div>
-                            <p className="font-medium">Professional Chef Knife is critically low</p>
-                            <p className="text-sm text-muted-foreground">Current: 3 pieces • Min: 2 pieces</p>
-                          </div>
-                        </div>
-                        <Button size="sm" variant="outline">
-                          Urgent Reorder
-                        </Button>
-                      </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
