@@ -56,6 +56,11 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
         return false
       }
       
+      if (!formData.phone) {
+        setError('Phone number is required')
+        return false
+      }
+      
       if (formData.password !== formData.confirmPassword) {
         setError('Passwords do not match')
         return false
@@ -204,7 +209,7 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
           {/* Phone Field (Sign Up Only) */}
           {mode === 'signup' && !resetMode && (
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number (Optional)</Label>
+              <Label htmlFor="phone">Phone Number</Label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
@@ -214,6 +219,7 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
                   value={formData.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   className="pl-10"
+                  required
                 />
               </div>
             </div>

@@ -123,11 +123,9 @@ export default function Booking() {
         if (reservationError) throw reservationError;
       }
 
-      // Here you would integrate with your payment system
-      // For now, we'll simulate payment success
       toast({
         title: "Order Created!",
-        description: `Your ${orderType} order has been created. Order ID: ${order.id}`,
+        description: `Your ${orderType} order has been created successfully! Order Number: ${order.order_number}`,
       });
 
       // Clear cart

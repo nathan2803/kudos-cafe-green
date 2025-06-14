@@ -36,6 +36,11 @@ export const ReservationForm = ({ onReservationComplete, orderTotal }: Reservati
   const [paymentMethod, setPaymentMethod] = useState<"pay_now" | "pay_deposit">("pay_deposit");
   const [loading, setLoading] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  
+  // Customer information
+  const [customerName, setCustomerName] = useState<string>("");
+  const [customerPhone, setCustomerPhone] = useState<string>("");
+  const [customerEmail, setCustomerEmail] = useState<string>("");
 
   const getAvailableTimeSlots = () => {
     if (!selectedDate) return [];
@@ -138,19 +143,29 @@ export const ReservationForm = ({ onReservationComplete, orderTotal }: Reservati
       return;
     }
 
+    if (!customerName || !customerPhone) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in your name and phone number",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const depositAmount = paymentMethod === "pay_deposit" ? orderTotal * 0.35 : orderTotal;
     const remainingAmount = paymentMethod === "pay_deposit" ? orderTotal * 0.65 : 0;
 
     const reservationData = {
-      date: selectedDate,
-      time: selectedTime,
-      partySize,
-      tableId: selectedTable,
-      specialRequests,
-      paymentMethod,
-      depositAmount,
-      remainingAmount,
-      totalAmount: orderTotal
+      reservation_date: selectedDate,
+      reservation_time: selectedTime,
+      party_size: partySize,
+      table_id: selectedTable,
+      special_requests: specialRequests,
+      customer_name: customerName,
+      customer_phone: customerPhone,
+      customer_email: customerEmail,
+      deposit_amount: depositAmount,
+      remaining_amount: remainingAmount
     };
 
     onReservationComplete(reservationData);
@@ -297,6 +312,46 @@ export const ReservationForm = ({ onReservationComplete, orderTotal }: Reservati
           </div>
         )}
 
+        {/* Customer Information */}
+        <div className="space-y-4">
+          <h4 className="font-medium">Customer Information</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="customerName">Full Name *</Label>
+              <Input
+                id="customerName"
+                placeholder="Your full name"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="customerPhone">Phone Number *</Label>
+              <Input
+                id="customerPhone"
+                type="tel"
+                placeholder="Your phone number"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="customerEmail">Email (Optional)</Label>
+            <Input
+              id="customerEmail"
+              type="email"
+              placeholder="your.email@example.com"
+              value={customerEmail}
+              onChange={(e) => setCustomerEmail(e.target.value)}
+            />
+          </div>
+        </div>
+
         {/* Special Requests */}
         <div className="space-y-2">
           <Label htmlFor="specialRequests">Special Requests (Optional)</Label>
@@ -362,7 +417,7 @@ export const ReservationForm = ({ onReservationComplete, orderTotal }: Reservati
         <Button 
           onClick={handleSubmit} 
           className="w-full" 
-          disabled={!selectedDate || !selectedTime || !selectedTable || loading}
+          disabled={!selectedDate || !selectedTime || !selectedTable || !customerName || !customerPhone || loading}
         >
           Proceed to Payment
         </Button>
