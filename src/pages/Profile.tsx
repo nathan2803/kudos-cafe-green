@@ -229,6 +229,8 @@ export const Profile = () => {
     
     setLoading(true)
     try {
+      console.log('Fetching orders for user:', user.id)
+      
       const { data: orders, error } = await supabase
         .from('orders')
         .select(`
@@ -241,7 +243,12 @@ export const Profile = () => {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
+      
+      console.log('Raw orders data:', orders)
       
       // Transform the data to match our Order interface
       const transformedOrders: Order[] = orders?.map(order => ({
@@ -262,6 +269,7 @@ export const Profile = () => {
         order_number: order.order_number
       })) || []
 
+      console.log('Transformed orders:', transformedOrders)
       setOrders(transformedOrders)
     } catch (error) {
       console.error('Error fetching orders:', error)
