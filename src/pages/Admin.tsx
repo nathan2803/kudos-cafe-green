@@ -135,7 +135,7 @@ import {
   Bell,
   Activity,
   Download,
-  Wallet
+  WalletCards
 } from 'lucide-react'
 
 export const Admin = () => {
@@ -524,6 +524,88 @@ export const Admin = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to complete payment",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const cancelOrder = async (orderId: string, reason: string) => {
+    try {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      // Update order status to cancelled
+      const { error: orderError } = await supabase
+        .from('orders')
+        .update({ 
+          status: 'cancelled',
+          notes: `Cancelled by admin. Reason: ${reason}`
+        })
+        .eq('id', orderId);
+
+      if (orderError) throw orderError;
+
+      // If it's a dine-in order with assigned table, free up the table
+      if (order.order_type === 'dine_in' && order.assigned_table) {
+        await supabase
+          .from('tables')
+          .update({ is_available: true })
+          .eq('id', order.assigned_table.id);
+
+        // Update reservations status
+        await supabase
+          .from('reservations')
+          .update({ status: 'cancelled' })
+          .eq('order_id', orderId);
+      }
+
+      // Send cancellation email for dine-in orders
+      if (order.order_type === 'dine_in' && order.customer_email) {
+        const { error: emailError } = await supabase.functions.invoke('send-cancellation-email', {
+          body: {
+            to: order.customer_email,
+            customerName: order.customer_name,
+            orderId: orderId,
+            reason: reason,
+            totalAmount: order.total_amount,
+            tableNumber: order.assigned_table?.table_number
+          }
+        });
+
+        if (emailError) {
+          console.error('Error sending cancellation email:', emailError);
+          // Don't fail the cancellation if email fails
+        }
+      }
+
+      // Update local state
+      setOrders(prev => prev.map(o => 
+        o.id === orderId 
+          ? { 
+              ...o, 
+              status: 'cancelled' as any,
+              notes: `Cancelled by admin. Reason: ${reason}`
+            }
+          : o
+      ));
+
+      // Free up table in local state if applicable
+      if (order.assigned_table) {
+        setTables(prev => prev.map(t => 
+          t.id === order.assigned_table?.id 
+            ? { ...t, is_available: true }
+            : t
+        ));
+      }
+
+      toast({
+        title: "Order Cancelled",
+        description: `Order #${orderId} has been cancelled. ${order.order_type === 'dine_in' && order.customer_email ? 'Cancellation email sent.' : ''}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to cancel order",
         variant: "destructive"
       });
     }
@@ -1139,6 +1221,70 @@ export const Admin = () => {
                               <Button size="sm" variant="outline">
                                 <Eye className="w-4 h-4" />
                               </Button>
+                              
+                              {/* Cancel Order Button for Dine-in */}
+                              {order.order_type === 'dine_in' && order.status !== 'cancelled' && order.status !== 'delivered' && (
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
+                                      Cancel Order
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>Cancel Dine-in Order #{order.id}</DialogTitle>
+                                    </DialogHeader>
+                                    <form onSubmit={(e) => {
+                                      e.preventDefault();
+                                      const formData = new FormData(e.target as HTMLFormElement);
+                                      const reason = formData.get('reason') as string;
+                                      cancelOrder(order.id, reason);
+                                    }}>
+                                      <div className="space-y-4">
+                                        <div>
+                                          <p className="text-sm text-muted-foreground mb-2">
+                                            Customer: {order.customer_name} ({order.customer_email})
+                                          </p>
+                                          <p className="text-sm text-muted-foreground mb-2">
+                                            Table: {order.assigned_table?.table_number || 'Not assigned'}
+                                          </p>
+                                          <p className="text-sm text-muted-foreground">
+                                            Total Amount: ₱{order.total_amount.toFixed(2)}
+                                          </p>
+                                        </div>
+                                        
+                                        <div className="space-y-2">
+                                          <Label>Cancellation Reason</Label>
+                                          <Select name="reason" required>
+                                            <SelectTrigger>
+                                              <SelectValue placeholder="Select reason for cancellation" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="early_closure">Early closure for the day</SelectItem>
+                                              <SelectItem value="fully_booked">Fully booked for that time</SelectItem>
+                                              <SelectItem value="kitchen_issue">Kitchen equipment issue</SelectItem>
+                                              <SelectItem value="staff_shortage">Insufficient staff</SelectItem>
+                                              <SelectItem value="emergency">Emergency situation</SelectItem>
+                                              <SelectItem value="other">Other reason</SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                        
+                                        <div className="bg-yellow-50 p-3 rounded-md">
+                                          <p className="text-sm text-yellow-800">
+                                            <strong>Note:</strong> This will cancel the order and automatically send a cancellation 
+                                            email to {order.customer_email} with the reason and next steps.
+                                          </p>
+                                        </div>
+                                        
+                                        <Button type="submit" variant="destructive" className="w-full">
+                                          Confirm Cancellation
+                                        </Button>
+                                      </div>
+                                    </form>
+                                  </DialogContent>
+                                </Dialog>
+                              )}
                             </div>
                             
                             {/* Payment Status Update */}
@@ -1161,7 +1307,7 @@ export const Admin = () => {
                                   <Dialog>
                                     <DialogTrigger asChild>
                                       <Button size="sm" variant="outline">
-                                        <Wallet className="w-4 h-4" />
+                                        <WalletCards className="w-4 h-4" />
                                       </Button>
                                     </DialogTrigger>
                                     <DialogContent>
