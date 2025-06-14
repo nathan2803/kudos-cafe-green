@@ -831,13 +831,83 @@ export const Admin = () => {
                           </div>
                         </div>
                         <div className="flex space-x-2 mt-4 md:mt-0">
-                          <Button size="sm" variant="outline">
-                            <ShoppingCart className="w-4 h-4 mr-1" />
-                            Restock
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <Edit className="w-4 h-4" />
-                          </Button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button size="sm" variant="outline">
+                                <ShoppingCart className="w-4 h-4 mr-1" />
+                                Restock
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Restock Chicken Breast</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label>Current Stock</Label>
+                                    <Input value="25.5 lbs" disabled />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label>Add Quantity</Label>
+                                    <Input type="number" placeholder="0.00" />
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label>Unit Price (₱)</Label>
+                                    <Input type="number" defaultValue="9.20" />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label>Supplier</Label>
+                                    <Select>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select supplier" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="fresh-foods">Fresh Foods Co.</SelectItem>
+                                        <SelectItem value="kitchen-pro">Kitchen Pro Supplies</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                                <Button className="w-full">Update Stock</Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button size="sm" variant="outline">
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Edit Chicken Breast</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div className="space-y-2">
+                                  <Label>Item Name</Label>
+                                  <Input defaultValue="Chicken Breast" />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Description</Label>
+                                  <Textarea defaultValue="Fresh boneless chicken breast" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label>Min Stock Level</Label>
+                                    <Input defaultValue="10.0" />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label>Storage Location</Label>
+                                    <Input defaultValue="Freezer A" />
+                                  </div>
+                                </div>
+                                <Button className="w-full">Save Changes</Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                           <Button size="sm" variant="outline">
                             <Eye className="w-4 h-4" />
                           </Button>
