@@ -108,21 +108,19 @@ export default function Booking() {
       
       const totalAmount = getTotalAmount();
       
-      // Create order with pending status (no immediate payment)
+      // Create order
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
           user_id: user.user?.id,
           total_amount: totalAmount,
-          status: 'pending',  // Always start as pending
-          payment_status: 'pending',  // No payment until admin confirms
           order_type: orderType,
           customer_name: orderData.customer_name,
           customer_phone: orderData.customer_phone,
           customer_email: orderData.customer_email,
           notes: orderData.notes,
-          deposit_paid: 0,  // No deposit until payment
-          remaining_amount: totalAmount,  // Full amount remaining
+          deposit_paid: orderData.deposit_amount || 0,
+          remaining_amount: orderData.remaining_amount || 0,
         })
         .select()
         .single();
@@ -163,31 +161,12 @@ export default function Booking() {
         if (reservationError) throw reservationError;
       }
 
-      // Booking placed successfully - no immediate payment required
+      // Here you would integrate with your payment system
+      // For now, we'll simulate payment success
       toast({
-        title: "Booking Placed Successfully!",
-        description: "Your booking has been placed. Please wait for email confirmation with payment details.",
+        title: "Order Created!",
+        description: `Your ${orderType} order has been created. Order ID: ${order.id}`,
       });
-
-      // Send initial booking confirmation email (without payment)
-      if (orderData.customer_email) {
-        await supabase.functions.invoke('send-booking-confirmation', {
-          body: {
-            to: orderData.customer_email,
-            customerName: orderData.customer_name,
-            orderId: order.id,
-            totalAmount: totalAmount,
-            paymentStatus: 'pending',
-            reservationDate: orderData.reservation_date || new Date().toISOString().split('T')[0],
-            reservationTime: orderData.reservation_time || '18:00',
-            orderItems: cart.map(item => ({
-              name: item.name,
-              quantity: item.quantity,
-              price: item.price
-            }))
-          }
-        });
-      }
 
       // Clear cart
       setCart([]);
