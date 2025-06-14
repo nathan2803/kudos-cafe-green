@@ -292,6 +292,7 @@ export type Database = {
           deposit_paid: number | null
           id: string
           notes: string | null
+          order_number: string | null
           order_type: string | null
           payment_status: string
           remaining_amount: number | null
@@ -309,6 +310,7 @@ export type Database = {
           deposit_paid?: number | null
           id?: string
           notes?: string | null
+          order_number?: string | null
           order_type?: string | null
           payment_status?: string
           remaining_amount?: number | null
@@ -326,6 +328,7 @@ export type Database = {
           deposit_paid?: number | null
           id?: string
           notes?: string | null
+          order_number?: string | null
           order_type?: string | null
           payment_status?: string
           remaining_amount?: number | null
@@ -622,6 +625,10 @@ export type Database = {
           p_duration_hours?: number
         }
         Returns: boolean
+      }
+      generate_order_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
     }
     Enums: {

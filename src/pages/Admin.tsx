@@ -27,6 +27,7 @@ interface MenuItem {
 
 interface Order {
   id: string
+  order_number?: string
   user_id: string
   total_amount: number
   status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled'
@@ -1079,7 +1080,7 @@ export const Admin = () => {
                     {orders.slice(0, 5).map((order) => (
                       <div key={order.id} className="flex items-center justify-between">
                         <div>
-                          <p className="font-medium">Order #{order.id}</p>
+                          <p className="font-medium">{order.order_number || `Order #${order.id.slice(0, 8)}...`}</p>
                           <p className="text-sm text-muted-foreground">{formatDate(order.created_at)}</p>
                         </div>
                         <div className="text-right">
@@ -1157,7 +1158,7 @@ export const Admin = () => {
                         <div className="flex-1">
                           <div className="flex items-center space-x-4 mb-2">
                             <div className="flex items-center space-x-2">
-                              <h3 className="font-semibold">Order #{order.id.slice(0, 8)}...</h3>
+                              <h3 className="font-semibold">{order.order_number || `Order #${order.id.slice(0, 8)}...`}</h3>
                               {order.profiles?.is_admin && (
                                 <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border-blue-300">
                                   <Shield className="w-3 h-3 mr-1" />
