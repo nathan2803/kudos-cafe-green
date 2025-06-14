@@ -46,6 +46,7 @@ export const EnhancedOrderHistory = ({ orders, loading, onRefresh }: EnhancedOrd
   const [cancellingOrder, setCancellingOrder] = useState<string | null>(null)
   const [cancellationReason, setCancellationReason] = useState('')
   const [customReason, setCustomReason] = useState('')
+  const [refundDetails, setRefundDetails] = useState('')
 
   const cancellationReasons = [
     'Change of plans',
@@ -124,6 +125,15 @@ export const EnhancedOrderHistory = ({ orders, loading, onRefresh }: EnhancedOrd
       return
     }
 
+    if (!refundDetails.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide your refund details",
+        variant: "destructive"
+      })
+      return
+    }
+
     try {
       const finalReason = cancellationReason === 'Other (please specify)' ? customReason : cancellationReason
       const refundAmount = calculateRefundAmount(order)
@@ -136,7 +146,14 @@ export const EnhancedOrderHistory = ({ orders, loading, onRefresh }: EnhancedOrd
           sender_id: order.user_id,
           message_type: 'cancellation_request',
           subject: `Cancellation Request - ${order.order_number}`,
-          message: `Customer has requested to cancel this order.\\\n\\\nReason: ${finalReason}\\\n\\\nRefund Amount: ₱${refundAmount.toFixed(2)}`,
+          message: `Customer has requested to cancel this order.
+
+Reason: ${finalReason}
+
+Refund Amount: ₱${refundAmount.toFixed(2)}
+
+Refund Details:
+${refundDetails}`,
           cancellation_reason: finalReason,
           is_urgent: true
         })
@@ -370,8 +387,19 @@ export const EnhancedOrderHistory = ({ orders, loading, onRefresh }: EnhancedOrd
                                       className="min-h-[80px]"
                                     />
                                   </div>
-                                )}
-                              </AlertDialogDescription>
+                                 )}
+                                 
+                                 <div className="space-y-2">
+                                   <Label htmlFor="refundDetails">Refund Details *</Label>
+                                   <Textarea
+                                     id="refundDetails"
+                                     value={refundDetails}
+                                     onChange={(e) => setRefundDetails(e.target.value)}
+                                     placeholder="Please provide your refund details (e.g., GCash number, bank account, or preferred refund method)..."
+                                     className="min-h-[80px]"
+                                   />
+                                 </div>
+                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel onClick={() => {
