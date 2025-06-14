@@ -1,15 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/integrations/supabase/client'
 import { 
   Camera, 
-  Plus, 
-  Filter, 
-  Grid3X3, 
-  List,
   Heart,
   Share2,
   Download,
@@ -21,13 +17,15 @@ import {
 
 interface GalleryImage {
   id: string
-  url: string
   title: string
-  category: 'food' | 'interior' | 'customers' | 'events'
   description?: string
-  uploadedBy?: string
-  uploadedAt: string
-  likes: number
+  image_url: string
+  category: 'food' | 'interior' | 'customers' | 'events'
+  uploaded_by?: string
+  is_featured: boolean
+  likes_count: number
+  created_at: string
+  updated_at: string
 }
 
 export const Gallery = () => {
@@ -35,7 +33,6 @@ export const Gallery = () => {
   const [images, setImages] = useState<GalleryImage[]>([])
   const [filteredImages, setFilteredImages] = useState<GalleryImage[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  const [viewMode, setViewMode] = useState<'grid' | 'masonry'>('masonry')
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -48,125 +45,32 @@ export const Gallery = () => {
     { id: 'events', name: 'Events', count: 0 }
   ]
 
-  // Sample gallery data with varying aspect ratios for masonry layout
-  const sampleImages: GalleryImage[] = [
-    {
-      id: '1',
-      url: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&h=600',
-      title: 'Signature Green Salad',
-      category: 'food',
-      description: 'Fresh organic greens with our house-made vinaigrette',
-      uploadedAt: '2024-01-15',
-      likes: 42
-    },
-    {
-      id: '2',
-      url: 'https://images.unsplash.com/photo-1551782450-17144efb9c50?w=400&h=300',
-      title: 'Artisanal Pasta',
-      category: 'food',
-      description: 'Handmade pasta with seasonal vegetables',
-      uploadedAt: '2024-01-14',
-      likes: 38
-    },
-    {
-      id: '3',
-      url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=500',
-      title: 'Restaurant Interior',
-      category: 'interior',
-      description: 'Our warm and inviting dining space',
-      uploadedAt: '2024-01-13',
-      likes: 29
-    },
-    {
-      id: '4',
-      url: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=700',
-      title: 'Farm Fresh Ingredients',
-      category: 'food',
-      description: 'Locally sourced organic produce',
-      uploadedAt: '2024-01-12',
-      likes: 55
-    },
-    {
-      id: '5',
-      url: 'https://images.unsplash.com/photo-1571197200840-ca4a3e07e1f8?w=400&h=350',
-      title: 'Kitchen in Action',
-      category: 'interior',
-      description: 'Our chefs preparing fresh meals',
-      uploadedAt: '2024-01-11',
-      likes: 33
-    },
-    {
-      id: '6',
-      url: 'https://images.unsplash.com/photo-1529417305485-480f579e3fdd?w=400&h=600',
-      title: 'Happy Customers',
-      category: 'customers',
-      description: 'Guests enjoying their sustainable dining experience',
-      uploadedAt: '2024-01-10',
-      likes: 47
-    },
-    {
-      id: '7',
-      url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=400',
-      title: 'Eco-Friendly Setup',
-      category: 'events',
-      description: 'Special sustainability event setup',
-      uploadedAt: '2024-01-09',
-      likes: 31
-    },
-    {
-      id: '8',
-      url: 'https://images.unsplash.com/photo-1493770348161-369560ae357d?w=400&h=550',
-      title: 'Gourmet Dessert',
-      category: 'food',
-      description: 'House-made dessert with organic ingredients',
-      uploadedAt: '2024-01-08',
-      likes: 41
-    },
-    {
-      id: '9',
-      url: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=320',
-      title: 'Green Dining Area',
-      category: 'interior',
-      description: 'Our signature green-themed dining space',
-      uploadedAt: '2024-01-07',
-      likes: 36
-    },
-    {
-      id: '10',
-      url: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=650',
-      title: 'Chef Special',
-      category: 'food',
-      description: 'Today\'s special creation by our head chef',
-      uploadedAt: '2024-01-06',
-      likes: 28
-    },
-    {
-      id: '11',
-      url: 'https://images.unsplash.com/photo-1559329007-40df8a9345d8?w=400&h=250',
-      title: 'Cozy Corner',
-      category: 'interior',
-      description: 'Perfect spot for intimate dining',
-      uploadedAt: '2024-01-05',
-      likes: 35
-    },
-    {
-      id: '12',
-      url: 'https://images.unsplash.com/photo-1528712306091-ed0763094c98?w=400&h=580',
-      title: 'Organic Harvest',
-      category: 'food',
-      description: 'Fresh seasonal vegetables from local farms',
-      uploadedAt: '2024-01-04',
-      likes: 52
-    }
-  ]
-
+  // Fetch images from Supabase
   useEffect(() => {
-    // Simulate loading
-    setTimeout(() => {
-      setImages(sampleImages)
-      setFilteredImages(sampleImages)
-      setLoading(false)
-    }, 1000)
+    const fetchImages = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('gallery_images')
+          .select('*')
+          .order('created_at', { ascending: false })
+
+        if (error) {
+          console.error('Error fetching images:', error)
+          return
+        }
+
+        // Type-cast the data to ensure proper typing
+        const typedData = (data || []) as GalleryImage[]
+        setImages(typedData)
+        setFilteredImages(typedData)
+      } catch (error) {
+        console.error('Error:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchImages()
   }, [])
 
   useEffect(() => {
@@ -198,10 +102,32 @@ export const Gallery = () => {
     setSelectedImage(filteredImages[newIndex])
   }
 
-  const handleLike = (imageId: string) => {
-    setImages(prev => prev.map(img => 
-      img.id === imageId ? { ...img, likes: img.likes + 1 } : img
-    ))
+  const handleLike = async (imageId: string) => {
+    try {
+      // Optimistically update UI
+      setImages(prev => prev.map(img => 
+        img.id === imageId ? { ...img, likes_count: img.likes_count + 1 } : img
+      ))
+
+      // Update in database
+      const image = images.find(img => img.id === imageId)
+      if (image) {
+        const { error } = await supabase
+          .from('gallery_images')
+          .update({ likes_count: image.likes_count + 1 })
+          .eq('id', imageId)
+
+        if (error) {
+          console.error('Error updating likes:', error)
+          // Revert optimistic update
+          setImages(prev => prev.map(img => 
+            img.id === imageId ? { ...img, likes_count: img.likes_count - 1 } : img
+          ))
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error)
+    }
   }
 
   return (
@@ -265,7 +191,7 @@ export const Gallery = () => {
                 >
                   <div className="relative overflow-hidden rounded-xl bg-card shadow-sm hover:shadow-xl transition-all duration-300 border border-border/10">
                     <img 
-                      src={image.url}
+                      src={image.image_url}
                       alt={image.title}
                       className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
                     />
@@ -296,7 +222,7 @@ export const Gallery = () => {
                             }}
                           >
                             <Heart className="w-4 h-4" />
-                            <span className="text-sm">{image.likes}</span>
+                            <span className="text-sm">{image.likes_count}</span>
                           </button>
                           <button
                             className="text-white/80 hover:text-white transition-colors"
@@ -360,7 +286,7 @@ export const Gallery = () => {
 
               {/* Image */}
               <img 
-                src={selectedImage.url}
+                src={selectedImage.image_url}
                 alt={selectedImage.title}
                 className="w-full h-auto max-h-[80vh] object-contain"
               />
@@ -374,10 +300,10 @@ export const Gallery = () => {
                       <p className="text-white/80 mb-2">{selectedImage.description}</p>
                     )}
                     <div className="flex items-center space-x-4 text-sm text-white/60">
-                      <span>{new Date(selectedImage.uploadedAt).toLocaleDateString()}</span>
+                      <span>{new Date(selectedImage.created_at).toLocaleDateString()}</span>
                       <div className="flex items-center space-x-1">
                         <Heart className="w-4 h-4" />
-                        <span>{selectedImage.likes} likes</span>
+                        <span>{selectedImage.likes_count} likes</span>
                       </div>
                     </div>
                   </div>
