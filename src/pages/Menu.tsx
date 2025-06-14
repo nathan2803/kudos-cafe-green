@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useAuth } from '@/hooks/useAuth'
+import { useCart } from '@/contexts/CartContext'
 import { supabase } from '@/integrations/supabase/client'
 
 interface MenuItem {
@@ -38,6 +39,7 @@ import {
 
 export const Menu = () => {
   const { user } = useAuth()
+  const { cart, addToCart: addToCartContext, updateQuantity, removeFromCart } = useCart()
   const { toast } = useToast()
   const navigate = useNavigate()
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
@@ -45,7 +47,6 @@ export const Menu = () => {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null)
-  const [cart, setCart] = useState<{[key: string]: number}>({})
   const [loading, setLoading] = useState(true)
 
   const categories = [
@@ -420,31 +421,27 @@ export const Menu = () => {
       return
     }
 
-    setCart(prev => ({
-      ...prev,
-      [itemId]: (prev[itemId] || 0) + 1
-    }))
-
-    toast({
-      title: "Added to cart",
-      description: "Item has been added to your cart.",
-    })
+    const item = menuItems.find(item => item.id === itemId)
+    if (item) {
+      addToCartContext(item)
+      toast({
+        title: "Added to cart",
+        description: "Item has been added to your cart.",
+      })
+    }
   }
 
-  const removeFromCart = (itemId: string) => {
-    setCart(prev => {
-      const newCart = { ...prev }
-      if (newCart[itemId] > 1) {
-        newCart[itemId]--
-      } else {
-        delete newCart[itemId]
-      }
-      return newCart
-    })
+  const removeFromCartLocal = (itemId: string) => {
+    const cartItem = cart.find(item => item.id === itemId)
+    if (cartItem && cartItem.quantity > 1) {
+      updateQuantity(itemId, cartItem.quantity - 1)
+    } else {
+      removeFromCart(itemId)
+    }
   }
 
-  const getCartItemCount = (itemId: string) => cart[itemId] || 0
-  const getTotalCartItems = () => Object.values(cart).reduce((sum, count) => sum + count, 0)
+  const getCartItemCount = (itemId: string) => cart.find(item => item.id === itemId)?.quantity || 0
+  const getTotalCartItems = () => cart.reduce((sum, item) => sum + item.quantity, 0)
 
   const getDietaryBadgeColor = (tag: string) => {
     switch (tag) {
@@ -635,7 +632,7 @@ export const Menu = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => removeFromCart(item.id)}
+                            onClick={() => removeFromCartLocal(item.id)}
                             className="w-8 h-8 p-0"
                           >
                             <Minus className="w-4 h-4" />
@@ -749,7 +746,7 @@ export const Menu = () => {
                     <div className="flex items-center space-x-3">
                       <Button
                         variant="outline"
-                        onClick={() => removeFromCart(selectedItem.id)}
+                        onClick={() => removeFromCartLocal(selectedItem.id)}
                         className="w-10 h-10 p-0"
                       >
                         <Minus className="w-5 h-5" />
