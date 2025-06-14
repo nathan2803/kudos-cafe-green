@@ -205,7 +205,7 @@ export default function Booking() {
           {!orderType ? (
             <div>
               <h2 className="text-2xl font-semibold mb-4">Choose Order Type</h2>
-              <OrderTypeSelector onSelectType={setOrderType} selectedType={orderType} />
+              <OrderTypeSelector onTypeChange={setOrderType} selectedType={orderType} />
             </div>
           ) : (
             <div>
@@ -319,8 +319,8 @@ export default function Booking() {
           {orderType && cart.length > 0 && (
             orderType === 'dine_in' ? (
               <ReservationForm
-                onReservationCreate={handleOrderCreate}
-                totalAmount={getTotalAmount()}
+                onReservationComplete={handleOrderCreate}
+                orderTotal={getTotalAmount()}
               />
             ) : (
               <OrderForm
