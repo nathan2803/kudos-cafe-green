@@ -110,13 +110,13 @@ export const Header = () => {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/orders" className="flex items-center">
+                      <Link to="/profile?tab=orders" className="flex items-center">
                         <History className="mr-2 h-4 w-4" />
                         Order History
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/settings" className="flex items-center">
+                      <Link to="/profile?tab=settings" className="flex items-center">
                         <Settings className="mr-2 h-4 w-4" />
                         Settings
                       </Link>
