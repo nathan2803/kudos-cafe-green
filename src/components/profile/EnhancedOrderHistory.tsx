@@ -160,35 +160,22 @@ ${refundDetails}`,
 
       if (messageError) throw messageError
 
-      // Update order status
-      const { error: orderError } = await supabase
-        .from('orders')
-        .update({
-          status: 'cancelled',
-          cancellation_reason: finalReason,
-          refund_amount: refundAmount,
-          cancelled_at: new Date().toISOString(),
-          cancelled_by: order.user_id
-        })
-        .eq('id', order.id)
-
-      if (orderError) throw orderError
-
       toast({
         title: "Cancellation Request Sent",
-        description: "Your cancellation request has been sent to the restaurant. You will be contacted regarding the refund process.",
+        description: "Your cancellation request has been sent to the restaurant. They will review and process your request.",
       })
 
       setCancellingOrder(null)
       setCancellationReason('')
       setCustomReason('')
+      setRefundDetails('')
       onRefresh()
 
     } catch (error) {
-      console.error('Error cancelling order:', error)
+      console.error('Error sending cancellation request:', error)
       toast({
         title: "Error",
-        description: "Failed to cancel order. Please try again or contact support.",
+        description: "Failed to send cancellation request. Please try again or contact support.",
         variant: "destructive"
       })
     }
@@ -196,16 +183,39 @@ ${refundDetails}`,
 
   const handleReorder = async (order: Order) => {
     try {
-      // For now, we'll just show a success message
-      // In a real app, this would add items to cart and navigate to checkout
+      // Send reorder confirmation message to admin
+      const { error: messageError } = await supabase
+        .from('order_messages')
+        .insert({
+          order_id: order.id,
+          sender_id: order.user_id,
+          message_type: 'reorder_request',
+          subject: `Reorder Request - ${order.order_number}`,
+          message: `Customer has requested to reorder this order.
+
+Original Order: ${order.order_number}
+Order Date: ${formatDate(order.created_at)}
+Total Amount: ₱${order.total_amount.toFixed(2)}
+Order Type: ${order.order_type.replace('_', ' ')}
+
+Items:
+${order.items.map(item => `${item.quantity}x ${item.name} - ₱${(item.price * item.quantity).toFixed(2)}`).join('\n')}
+
+Please confirm if this order can be processed again.`,
+          is_urgent: false
+        })
+
+      if (messageError) throw messageError
+
       toast({
-        title: "Items Added to Cart",
-        description: "The items from this order have been added to your cart.",
+        title: "Reorder Request Sent",
+        description: "Your reorder request has been sent to the restaurant for confirmation.",
       })
     } catch (error) {
+      console.error('Error sending reorder request:', error)
       toast({
         title: "Error",
-        description: "Failed to reorder items. Please try again.",
+        description: "Failed to send reorder request. Please try again.",
         variant: "destructive"
       })
     }
