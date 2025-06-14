@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -38,6 +39,7 @@ import {
 export const Menu = () => {
   const { user } = useAuth()
   const { toast } = useToast()
+  const navigate = useNavigate()
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [filteredItems, setFilteredItems] = useState<MenuItem[]>([])
   const [selectedCategory, setSelectedCategory] = useState('all')
@@ -481,7 +483,7 @@ export const Menu = () => {
             <Button 
               size="lg" 
               className="bg-light-green text-forest hover:bg-light-green/90"
-              onClick={() => window.location.href = '/booking'}
+              onClick={() => navigate('/booking')}
             >
               Book Table & Order Now
             </Button>
@@ -499,7 +501,7 @@ export const Menu = () => {
               <Button 
                 size="sm" 
                 className="bg-light-green text-forest hover:bg-light-green/90"
-                onClick={() => window.location.href = '/booking'}
+                onClick={() => navigate('/booking')}
               >
                 Proceed to Booking
               </Button>
