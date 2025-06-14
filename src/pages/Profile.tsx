@@ -74,6 +74,19 @@ interface UserProfile {
   }
 }
 
+interface UserPreferences {
+  id?: string
+  user_id: string
+  notification_email: boolean
+  notification_sms: boolean
+  notification_promotional: boolean
+  address_line1?: string
+  address_line2?: string
+  city?: string
+  postal_code?: string
+  dietary_restrictions: string[]
+}
+
 export const Profile = () => {
   const { user, userProfile } = useAuth()
   const { toast } = useToast()
@@ -102,8 +115,10 @@ export const Profile = () => {
   })
   const [orders, setOrders] = useState<Order[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
+  const [preferences, setPreferences] = useState<UserPreferences | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [updating, setUpdating] = useState(false)
   const [orderFilter, setOrderFilter] = useState<string>('all')
   const [cancellingOrder, setCancellingOrder] = useState<string | null>(null)
   const [cancellationReason, setCancellationReason] = useState('')
@@ -134,27 +149,80 @@ export const Profile = () => {
   ]
 
   useEffect(() => {
+    const urlParams = new URLSearchParams(location.search)
+    const tab = urlParams.get('tab')
+    if (tab) {
+      setActiveTab(tab)
+    }
+  }, [location.search])
+
+  useEffect(() => {
     if (userProfile) {
-      setProfile({
-        full_name: userProfile.full_name || '',
-        email: userProfile.email || '',
-        phone: userProfile.phone || '',
-        address_line1: '',
-        address_line2: '',
-        city: '',
-        postal_code: '',
-        dietary_restrictions: [],
-        notification_settings: {
-          email: true,
-          sms: false,
-          promotional: true
-        }
-      })
-      
+      fetchUserData()
       fetchUserOrders()
       setReviews(sampleReviews)
     }
   }, [userProfile])
+
+  const fetchUserData = async () => {
+    if (!user) return
+    
+    try {
+      // Fetch user preferences
+      const { data: userPrefs, error: prefsError } = await supabase
+        .from('user_preferences')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      if (prefsError && prefsError.code !== 'PGRST116') {
+        throw prefsError
+      }
+
+      if (userPrefs) {
+        setPreferences(userPrefs)
+        setProfile({
+          full_name: userProfile?.full_name || '',
+          email: userProfile?.email || '',
+          phone: userProfile?.phone || '',
+          address_line1: userPrefs.address_line1 || '',
+          address_line2: userPrefs.address_line2 || '',
+          city: userPrefs.city || '',
+          postal_code: userPrefs.postal_code || '',
+          dietary_restrictions: userPrefs.dietary_restrictions || [],
+          notification_settings: {
+            email: userPrefs.notification_email,
+            sms: userPrefs.notification_sms,
+            promotional: userPrefs.notification_promotional
+          }
+        })
+      } else {
+        // Set default profile values
+        setProfile({
+          full_name: userProfile?.full_name || '',
+          email: userProfile?.email || '',
+          phone: userProfile?.phone || '',
+          address_line1: '',
+          address_line2: '',
+          city: '',
+          postal_code: '',
+          dietary_restrictions: [],
+          notification_settings: {
+            email: true,
+            sms: false,
+            promotional: true
+          }
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error)
+      toast({
+        title: "Error",
+        description: "Failed to load user preferences",
+        variant: "destructive"
+      })
+    }
+  }
 
   const fetchUserOrders = async () => {
     if (!user) return
@@ -208,20 +276,62 @@ export const Profile = () => {
   }
 
   const handleSaveProfile = async () => {
+    if (!user) return
+    
+    setUpdating(true)
     try {
-      // In a real app, this would update the Supabase database
+      // Update profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: profile.full_name,
+          email: profile.email,
+          phone: profile.phone
+        })
+        .eq('user_id', user.id)
+
+      if (profileError) throw profileError
+
+      // Upsert user preferences
+      const preferencesData = {
+        user_id: user.id,
+        notification_email: profile.notification_settings.email,
+        notification_sms: profile.notification_settings.sms,
+        notification_promotional: profile.notification_settings.promotional,
+        address_line1: profile.address_line1,
+        address_line2: profile.address_line2,
+        city: profile.city,
+        postal_code: profile.postal_code,
+        dietary_restrictions: profile.dietary_restrictions
+      }
+
+      const { error: prefsError } = await supabase
+        .from('user_preferences')
+        .upsert(preferencesData, { onConflict: 'user_id' })
+
+      if (prefsError) throw prefsError
+
       toast({
         title: "Profile updated",
         description: "Your profile has been successfully updated.",
       })
       setIsEditing(false)
+      fetchUserData() // Refresh data
     } catch (error) {
+      console.error('Profile update error:', error)
       toast({
         title: "Error",
         description: "Failed to update profile. Please try again.",
         variant: "destructive"
       })
+    } finally {
+      setUpdating(false)
     }
+  }
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab)
+    navigate(`/profile?tab=${tab}`)
   }
 
   const getStatusColor = (status: string) => {
@@ -305,7 +415,7 @@ export const Profile = () => {
         </div>
 
         {/* Profile Content */}
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList className="grid w-full grid-cols-5 bg-muted/30">
             <TabsTrigger value="overview" className="flex items-center space-x-2">
               <User className="w-4 h-4" />
@@ -434,9 +544,13 @@ export const Profile = () => {
 
             {isEditing && (
               <div className="flex justify-end">
-                <Button onClick={handleSaveProfile} className="bg-primary hover:bg-primary/90">
+                <Button 
+                  onClick={handleSaveProfile} 
+                  disabled={updating}
+                  className="bg-primary hover:bg-primary/90"
+                >
                   <Save className="w-4 h-4 mr-2" />
-                  Save Changes
+                  {updating ? 'Saving...' : 'Save Changes'}
                 </Button>
               </div>
             )}
