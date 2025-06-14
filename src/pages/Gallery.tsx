@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/integrations/supabase/client'
+import { useToast } from '@/hooks/use-toast'
 import { 
   Camera, 
   Heart,
@@ -21,15 +22,14 @@ interface GalleryImage {
   description?: string
   image_url: string
   category: 'food' | 'interior' | 'customers' | 'events'
-  uploaded_by?: string
   is_featured: boolean
   likes_count: number
   created_at: string
-  updated_at: string
 }
 
 export const Gallery = () => {
   const { user, isAdmin } = useAuth()
+  const { toast } = useToast()
   const [images, setImages] = useState<GalleryImage[]>([])
   const [filteredImages, setFilteredImages] = useState<GalleryImage[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
@@ -45,32 +45,55 @@ export const Gallery = () => {
     { id: 'events', name: 'Events', count: 0 }
   ]
 
-  // Fetch images from Supabase
-  useEffect(() => {
-    const fetchImages = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('gallery_images')
-          .select('*')
-          .order('created_at', { ascending: false })
+  // Fetch gallery images from Supabase
+  const fetchImages = async () => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('gallery_images')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-        if (error) {
-          console.error('Error fetching images:', error)
-          return
-        }
+      if (error) throw error
 
-        // Type-cast the data to ensure proper typing
-        const typedData = (data || []) as GalleryImage[]
-        setImages(typedData)
-        setFilteredImages(typedData)
-      } catch (error) {
-        console.error('Error:', error)
-      } finally {
-        setLoading(false)
-      }
+      // Type assertion to ensure data matches our interface
+      const typedData = (data || []) as GalleryImage[]
+      setImages(typedData)
+      setFilteredImages(typedData)
+    } catch (error) {
+      console.error('Error fetching gallery images:', error)
+      toast({
+        title: "Error",
+        description: "Failed to load gallery images",
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchImages()
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('gallery-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'gallery_images'
+        },
+        () => {
+          fetchImages()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   useEffect(() => {
@@ -104,29 +127,32 @@ export const Gallery = () => {
 
   const handleLike = async (imageId: string) => {
     try {
-      // Optimistically update UI
+      const image = images.find(img => img.id === imageId)
+      if (!image) return
+
+      const { error } = await supabase
+        .from('gallery_images')
+        .update({ likes_count: image.likes_count + 1 })
+        .eq('id', imageId)
+
+      if (error) throw error
+
+      // Update local state immediately for better UX
       setImages(prev => prev.map(img => 
         img.id === imageId ? { ...img, likes_count: img.likes_count + 1 } : img
       ))
 
-      // Update in database
-      const image = images.find(img => img.id === imageId)
-      if (image) {
-        const { error } = await supabase
-          .from('gallery_images')
-          .update({ likes_count: image.likes_count + 1 })
-          .eq('id', imageId)
-
-        if (error) {
-          console.error('Error updating likes:', error)
-          // Revert optimistic update
-          setImages(prev => prev.map(img => 
-            img.id === imageId ? { ...img, likes_count: img.likes_count - 1 } : img
-          ))
-        }
-      }
+      toast({
+        title: "Liked!",
+        description: "Thanks for liking this photo"
+      })
     } catch (error) {
-      console.error('Error:', error)
+      console.error('Error liking image:', error)
+      toast({
+        title: "Error",
+        description: "Failed to like image",
+        variant: "destructive"
+      })
     }
   }
 
@@ -207,11 +233,20 @@ export const Gallery = () => {
                       )}
                       
                       <div className="flex justify-between items-center">
-                        <Badge 
-                          className="bg-primary/80 text-primary-foreground capitalize text-xs"
-                        >
-                          {image.category}
-                        </Badge>
+                        <div className="flex gap-2">
+                          <Badge 
+                            className="bg-primary/80 text-primary-foreground capitalize text-xs"
+                          >
+                            {image.category}
+                          </Badge>
+                          {image.is_featured && (
+                            <Badge 
+                              className="bg-accent/80 text-accent-foreground text-xs"
+                            >
+                              Featured
+                            </Badge>
+                          )}
+                        </div>
                         
                         <div className="flex items-center space-x-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                           <button
