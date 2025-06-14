@@ -29,21 +29,19 @@ export const useAuth = () => {
   })
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        fetchUserProfile(session.user.id)
-      } else {
-        setState(prev => ({ ...prev, loading: false }))
-      }
-    })
-
-    // Listen for auth changes
+    console.log('Setting up auth listeners...')
+    
+    // Listen for auth changes FIRST
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, 'Session exists:', !!session)
+      
       if (session?.user) {
-        await fetchUserProfile(session.user.id)
+        // Use setTimeout to defer the profile fetch and avoid blocking the auth callback
+        setTimeout(() => {
+          fetchUserProfile(session.user.id)
+        }, 0)
       } else {
         setState({
           user: null,
@@ -51,6 +49,16 @@ export const useAuth = () => {
           loading: false,
           isAdmin: false
         })
+      }
+    })
+
+    // Get initial session AFTER setting up the listener
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', !!session)
+      if (session?.user) {
+        fetchUserProfile(session.user.id)
+      } else {
+        setState(prev => ({ ...prev, loading: false }))
       }
     })
 
