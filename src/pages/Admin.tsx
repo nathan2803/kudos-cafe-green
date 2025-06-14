@@ -281,7 +281,17 @@ export const Admin = () => {
         console.log('Fetching orders...');
         const { data: ordersData, error: ordersError } = await supabase
           .from('orders')
-          .select('*')
+          .select(`
+            *,
+            order_items (
+              *,
+              menu_items (name, price)
+            ),
+            reservations (
+              *,
+              tables (table_number, location)
+            )
+          `)
           .order('created_at', { ascending: false });
         
         console.log('Orders fetch result:', { ordersData, ordersError, ordersLength: ordersData?.length });
@@ -302,7 +312,8 @@ export const Admin = () => {
         if (tablesData) setTables(tablesData as any);
 
         // Fetch reservations with related data
-        const { data: reservationsData } = await supabase
+        console.log('Fetching reservations...');
+        const { data: reservationsData, error: reservationsError } = await supabase
           .from('reservations')
           .select(`
             *,
@@ -312,7 +323,14 @@ export const Admin = () => {
           `)
           .order('reservation_date', { ascending: false });
         
-        if (reservationsData) setReservations(reservationsData as any);
+        console.log('Reservations fetch result:', { reservationsData, reservationsError, reservationsLength: reservationsData?.length });
+        
+        if (reservationsData) {
+          console.log('Setting reservations state with:', reservationsData);
+          setReservations(reservationsData as any);
+        } else {
+          console.log('No reservations data received, error:', reservationsError);
+        }
 
         // Calculate analytics
         if (inventoryData) {
