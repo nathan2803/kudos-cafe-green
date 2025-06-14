@@ -1014,6 +1014,7 @@ export const Admin = () => {
           return 0;
       }
     });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -1505,6 +1506,18 @@ export const Admin = () => {
                             )}
                           )}
                         </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  )
+}
                         </div>
                       </div>
                     </CardContent>
