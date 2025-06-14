@@ -5,7 +5,32 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useAuth } from '@/hooks/useAuth'
-import { supabase, MenuItem, Review } from '@/lib/supabase'
+import { supabase } from '@/integrations/supabase/client'
+
+interface MenuItem {
+  id: string
+  name: string
+  description: string
+  price: number
+  category: string
+  image_url?: string
+  is_available: boolean
+  dietary_tags?: string[]
+  is_popular: boolean
+  is_new: boolean
+}
+
+interface Review {
+  id: string
+  user_id: string
+  menu_item_id?: string
+  rating: number
+  comment: string
+  created_at: string
+  user?: {
+    full_name: string
+  }
+}
 import { 
   Star, 
   Leaf, 
@@ -41,18 +66,9 @@ export const Landing = () => {
         .or('is_popular.eq.true,is_new.eq.true')
         .limit(6)
 
-      // Fetch recent reviews
-      const { data: reviewsData } = await supabase
-        .from('reviews')
-        .select(`
-          *,
-          users(full_name)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(6)
-
       setFeaturedDishes(dishes || [])
-      setReviews(reviewsData || [])
+      // Skip reviews since the table doesn't exist yet
+      setReviews([])
     } catch (error) {
       console.error('Error fetching featured content:', error)
     } finally {

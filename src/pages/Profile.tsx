@@ -9,7 +9,31 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useAuth } from '@/hooks/useAuth'
-import { supabase, Order, Review } from '@/lib/supabase'
+import { supabase } from '@/integrations/supabase/client'
+
+interface Order {
+  id: string
+  user_id: string
+  items: any[]
+  total_amount: number
+  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled'
+  delivery_address?: string
+  order_type: 'dine-in' | 'takeaway' | 'delivery'
+  created_at: string
+  updated_at: string
+}
+
+interface Review {
+  id: string
+  user_id: string
+  menu_item_id?: string
+  rating: number
+  comment: string
+  created_at: string
+  user?: {
+    full_name: string
+  }
+}
 import { useToast } from '@/hooks/use-toast'
 import { 
   User, 

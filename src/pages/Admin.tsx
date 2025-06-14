@@ -10,7 +10,55 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { useAuth } from '@/hooks/useAuth'
-import { MenuItem, Order, User, Review } from '@/lib/supabase'
+import { supabase } from '@/integrations/supabase/client'
+
+interface MenuItem {
+  id: string
+  name: string
+  description: string
+  price: number
+  category: string
+  image_url?: string
+  is_available: boolean
+  dietary_tags?: string[]
+  is_popular: boolean
+  is_new: boolean
+}
+
+interface Order {
+  id: string
+  user_id: string
+  items: any[]
+  total_amount: number
+  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled'
+  delivery_address?: string
+  order_type: 'dine-in' | 'takeaway' | 'delivery'
+  created_at: string
+  updated_at: string
+}
+
+interface User {
+  id: string
+  email: string
+  full_name: string
+  phone?: string
+  is_admin: boolean
+  is_verified: boolean
+  created_at: string
+  updated_at: string
+}
+
+interface Review {
+  id: string
+  user_id: string
+  menu_item_id?: string
+  rating: number
+  comment: string
+  created_at: string
+  user?: {
+    full_name: string
+  }
+}
 import { useToast } from '@/hooks/use-toast'
 import { 
   Shield, 

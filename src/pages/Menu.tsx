@@ -6,7 +6,20 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useAuth } from '@/hooks/useAuth'
-import { supabase, MenuItem } from '@/lib/supabase'
+import { supabase } from '@/integrations/supabase/client'
+
+interface MenuItem {
+  id: string
+  name: string
+  description: string
+  price: number
+  category: string
+  image_url?: string
+  is_available: boolean
+  dietary_tags?: string[]
+  is_popular: boolean
+  is_new: boolean
+}
 import { useToast } from '@/hooks/use-toast'
 import { 
   Search, 
