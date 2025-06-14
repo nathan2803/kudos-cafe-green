@@ -403,16 +403,43 @@ export const Admin = () => {
     })
   }
 
-  const updateOrderStatus = (orderId: string, newStatus: string) => {
-    setOrders(prev => prev.map(order => 
-      order.id === orderId 
-        ? { ...order, status: newStatus as any, updated_at: new Date().toISOString() }
-        : order
-    ))
-    toast({
-      title: "Order updated",
-      description: `Order #${orderId} status changed to ${newStatus}`,
-    })
+  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    try {
+      console.log('Updating order status:', { orderId, newStatus })
+      
+      // Update the database first
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId)
+
+      if (error) {
+        console.error('Database update error:', error)
+        throw error
+      }
+
+      // Only update local state after successful database update
+      setOrders(prev => prev.map(order => 
+        order.id === orderId 
+          ? { ...order, status: newStatus as any, updated_at: new Date().toISOString() }
+          : order
+      ))
+
+      toast({
+        title: "Order updated",
+        description: `Order status changed to ${newStatus}`,
+      })
+    } catch (error: any) {
+      console.error('Error updating order status:', error)
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update order status",
+        variant: "destructive"
+      })
+    }
   }
 
   const assignTable = async (orderId: string, tableId: string) => {

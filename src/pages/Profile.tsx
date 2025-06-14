@@ -568,9 +568,19 @@ export const Profile = () => {
           <TabsContent value="orders" className="space-y-6">
             <Card className="border-primary/20">
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Package className="w-5 h-5 text-primary" />
-                  <span>Order History</span>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Package className="w-5 h-5 text-primary" />
+                    <span>Order History</span>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={fetchUserOrders}
+                    disabled={loading}
+                  >
+                    {loading ? 'Loading...' : 'Refresh'}
+                  </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent>
