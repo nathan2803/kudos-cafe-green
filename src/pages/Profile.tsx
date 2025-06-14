@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { AuthPage } from './Auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -188,14 +189,7 @@ export const Profile = () => {
   }
 
   if (!user || !userProfile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Please sign in</h1>
-          <p className="text-muted-foreground">You need to be signed in to view your profile.</p>
-        </div>
-      </div>
-    )
+    return <AuthPage />
   }
 
   return (

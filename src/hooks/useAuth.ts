@@ -50,9 +50,9 @@ export const useAuth = () => {
     try {
       const { data: user } = await supabase.auth.getUser()
       const { data: profile } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*')
-        .eq('id', userId)
+        .eq('user_id', userId)
         .single()
 
       setState({
@@ -74,6 +74,7 @@ export const useAuth = () => {
       email,
       password,
       options: {
+        emailRedirectTo: `${window.location.origin}/`,
         data: {
           full_name: fullName,
           phone: phone || null
