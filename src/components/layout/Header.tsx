@@ -25,6 +25,7 @@ export const Header = () => {
     { name: 'Home', href: '/' },
     { name: 'Gallery', href: '/gallery' },
     { name: 'Menu', href: '/menu' },
+    { name: 'Booking', href: '/booking' },
     { name: 'Contact', href: '/contact' }
   ]
 

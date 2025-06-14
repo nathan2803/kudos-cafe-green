@@ -476,13 +476,33 @@ export const Menu = () => {
             that nourish both you and the planet.
           </p>
 
+          {/* Book Table Button */}
+          <div className="mb-6">
+            <Button 
+              size="lg" 
+              className="bg-light-green text-forest hover:bg-light-green/90"
+              onClick={() => window.location.href = '/booking'}
+            >
+              Book Table & Order Now
+            </Button>
+          </div>
+
           {/* Cart Summary */}
           {getTotalCartItems() > 0 && (
-            <div className="inline-flex items-center space-x-2 bg-light-green/20 backdrop-blur-sm rounded-full px-6 py-3">
-              <ShoppingCart className="w-5 h-5 text-light-green" />
-              <span className="text-light-green font-semibold">
-                {getTotalCartItems()} item{getTotalCartItems() !== 1 ? 's' : ''} in cart
-              </span>
+            <div className="inline-flex items-center space-x-4 bg-light-green/20 backdrop-blur-sm rounded-full px-6 py-3">
+              <div className="flex items-center space-x-2">
+                <ShoppingCart className="w-5 h-5 text-light-green" />
+                <span className="text-light-green font-semibold">
+                  {getTotalCartItems()} item{getTotalCartItems() !== 1 ? 's' : ''} in cart
+                </span>
+              </div>
+              <Button 
+                size="sm" 
+                className="bg-light-green text-forest hover:bg-light-green/90"
+                onClick={() => window.location.href = '/booking'}
+              >
+                Proceed to Booking
+              </Button>
             </div>
           )}
         </div>
