@@ -7,10 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CalendarIcon, Users, Clock, CreditCard, Banknote } from "lucide-react";
-import { format, addDays, isBefore, startOfDay } from "date-fns";
+import { CalendarIcon, Users, CreditCard, Banknote } from "lucide-react";
+import { format, isBefore, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -36,6 +35,7 @@ export const ReservationForm = ({ onReservationComplete, orderTotal }: Reservati
   const [specialRequests, setSpecialRequests] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<"pay_now" | "pay_deposit">("pay_deposit");
   const [loading, setLoading] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const timeSlots = [
     "11:00", "11:30", "12:00", "12:30", "13:00", "13:30",
@@ -59,7 +59,6 @@ export const ReservationForm = ({ onReservationComplete, orderTotal }: Reservati
 
       if (error) throw error;
 
-      // Check availability using the database function
       const availableTablesPromises = tables.map(async (table) => {
         const { data: isAvailable, error } = await supabase
           .rpc('check_table_availability', {
@@ -81,7 +80,7 @@ export const ReservationForm = ({ onReservationComplete, orderTotal }: Reservati
       const available = results.filter(Boolean) as Table[];
       
       setAvailableTables(available);
-      setSelectedTable(""); // Reset selection when tables change
+      setSelectedTable("");
     } catch (error) {
       console.error('Error fetching tables:', error);
       toast({
@@ -130,11 +129,16 @@ export const ReservationForm = ({ onReservationComplete, orderTotal }: Reservati
     return isBefore(date, startOfDay(new Date()));
   };
 
+  const handleDateSelect = (date: Date | undefined) => {
+    setSelectedDate(date);
+    setIsCalendarOpen(false);
+  };
+
   return (
     <Card className="max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Calendar className="w-5 h-5" />
+          <Users className="w-5 h-5" />
           Table Reservation
         </CardTitle>
       </CardHeader>
@@ -142,7 +146,7 @@ export const ReservationForm = ({ onReservationComplete, orderTotal }: Reservati
         {/* Date Selection */}
         <div className="space-y-2">
           <Label>Reservation Date</Label>
-          <Popover>
+          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -150,16 +154,17 @@ export const ReservationForm = ({ onReservationComplete, orderTotal }: Reservati
                   "w-full justify-start text-left font-normal",
                   !selectedDate && "text-muted-foreground"
                 )}
+                onClick={() => setIsCalendarOpen(true)}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0 z-50" align="start">
               <Calendar
                 mode="single"
                 selected={selectedDate}
-                onSelect={setSelectedDate}
+                onSelect={handleDateSelect}
                 disabled={isDateDisabled}
                 initialFocus={false}
               />
