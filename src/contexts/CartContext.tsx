@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface MenuItem {
   id: string;
@@ -40,6 +40,11 @@ interface CartProviderProps {
 
 export const CartProvider = ({ children }: CartProviderProps) => {
   const [cart, setCart] = useState<CartItem[]>([]);
+
+  // Clear cart on mount to ensure fresh start with proper UUIDs
+  useEffect(() => {
+    setCart([]);
+  }, []);
 
   const addToCart = (item: MenuItem) => {
     setCart(prev => {
