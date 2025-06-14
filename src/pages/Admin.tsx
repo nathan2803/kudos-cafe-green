@@ -529,6 +529,112 @@ export const Admin = () => {
     }
   };
 
+  const sendPaymentLink = async (orderId: string) => {
+    try {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      // Send payment link email
+      const { error } = await supabase.functions.invoke('send-payment-link', {
+        body: {
+          to: order.customer_email,
+          customerName: order.customer_name,
+          orderId: orderId,
+          totalAmount: order.total_amount,
+          orderItems: order.order_items?.map(item => ({
+            name: item.menu_items?.name || 'Menu Item',
+            quantity: item.quantity,
+            price: item.unit_price
+          })) || []
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Payment Link Sent",
+        description: `Payment link has been sent to ${order.customer_email}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send payment link",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const confirmPaymentReceived = async (orderId: string, paymentType: 'full' | 'deposit') => {
+    try {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      let updateData: any = {};
+      
+      if (paymentType === 'full') {
+        updateData = {
+          payment_status: 'paid',
+          status: 'confirmed',
+          deposit_paid: order.total_amount,
+          remaining_amount: 0
+        };
+      } else {
+        const depositAmount = order.total_amount * 0.5; // 50% deposit
+        updateData = {
+          payment_status: 'partial',
+          status: 'confirmed',
+          deposit_paid: depositAmount,
+          remaining_amount: order.total_amount - depositAmount
+        };
+      }
+
+      const { error } = await supabase
+        .from('orders')
+        .update(updateData)
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      // Update local state
+      setOrders(prev => prev.map(o => 
+        o.id === orderId ? { ...o, ...updateData } : o
+      ));
+
+      // Send confirmation email
+      if (order.customer_email) {
+        await supabase.functions.invoke('send-booking-confirmation', {
+          body: {
+            to: order.customer_email,
+            customerName: order.customer_name,
+            orderId: orderId,
+            totalAmount: order.total_amount,
+            depositPaid: updateData.deposit_paid,
+            remainingAmount: updateData.remaining_amount,
+            paymentStatus: updateData.payment_status,
+            reservationDate: new Date().toISOString().split('T')[0],
+            reservationTime: '18:00',
+            orderItems: order.order_items?.map(item => ({
+              name: item.menu_items?.name || 'Menu Item',
+              quantity: item.quantity,
+              price: item.unit_price
+            })) || []
+          }
+        });
+      }
+
+      toast({
+        title: "Payment Confirmed",
+        description: `Order #${orderId} payment confirmed and customer notified`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to confirm payment",
+        variant: "destructive"
+      });
+    }
+  };
+
   const cancelOrder = async (orderId: string, reason: string) => {
     try {
       const order = orders.find(o => o.id === orderId);
@@ -1221,9 +1327,74 @@ export const Admin = () => {
                               <Button size="sm" variant="outline">
                                 <Eye className="w-4 h-4" />
                               </Button>
-                              
-                              {/* Cancel Order Button for Dine-in */}
-                              {order.order_type === 'dine_in' && order.status !== 'cancelled' && order.status !== 'delivered' && (
+                            </div>
+                            
+                            {/* Payment Management */}
+                            {order.status === 'pending' && order.customer_email && (
+                              <div className="flex space-x-2 mt-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => sendPaymentLink(order.id)}
+                                  className="flex-1 bg-blue-50 text-blue-700"
+                                >
+                                  Send Payment Link
+                                </Button>
+                              </div>
+                            )}
+                            
+                            {order.payment_status === 'pending' && order.status === 'pending' && (
+                              <div className="flex space-x-2 mt-2">
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button size="sm" variant="outline" className="bg-green-50 text-green-700 flex-1">
+                                      Confirm Payment
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>Confirm Payment Received</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="space-y-4">
+                                      <div>
+                                        <p className="text-sm text-muted-foreground mb-2">
+                                          Customer: {order.customer_name} ({order.customer_email})
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                          Total Amount: ₱{order.total_amount.toFixed(2)}
+                                        </p>
+                                      </div>
+                                      
+                                      <div className="bg-blue-50 p-3 rounded-md">
+                                        <p className="text-sm text-blue-800">
+                                          <strong>Note:</strong> This will confirm the payment and send a confirmation email to the customer.
+                                        </p>
+                                      </div>
+                                      
+                                      <div className="flex space-x-2">
+                                        <Button 
+                                          onClick={() => confirmPaymentReceived(order.id, 'full')}
+                                          className="flex-1"
+                                        >
+                                          Full Payment Received
+                                        </Button>
+                                        <Button 
+                                          onClick={() => confirmPaymentReceived(order.id, 'deposit')}
+                                          variant="outline"
+                                          className="flex-1"
+                                        >
+                                          Deposit Only (50%)
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </DialogContent>
+                                </Dialog>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Cancellation section moved here */}
+                          {order.order_type === 'dine_in' && order.status !== 'cancelled' && order.status !== 'delivered' && (
                                 <Dialog>
                                   <DialogTrigger asChild>
                                     <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
@@ -1332,7 +1503,8 @@ export const Admin = () => {
                                 )}
                               </div>
                             )}
-                          </div>
+                          )}
+                        </div>
                         </div>
                       </div>
                     </CardContent>
