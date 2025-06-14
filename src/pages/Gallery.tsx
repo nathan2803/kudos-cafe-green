@@ -48,11 +48,11 @@ export const Gallery = () => {
     { id: 'events', name: 'Events', count: 0 }
   ]
 
-  // Sample gallery data - in real app, this would come from Supabase
+  // Sample gallery data with varying aspect ratios for masonry layout
   const sampleImages: GalleryImage[] = [
     {
       id: '1',
-      url: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=800&h=600&fit=crop',
+      url: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&h=600',
       title: 'Signature Green Salad',
       category: 'food',
       description: 'Fresh organic greens with our house-made vinaigrette',
@@ -61,7 +61,7 @@ export const Gallery = () => {
     },
     {
       id: '2',
-      url: 'https://images.unsplash.com/photo-1551782450-17144efb9c50?w=800&h=600&fit=crop',
+      url: 'https://images.unsplash.com/photo-1551782450-17144efb9c50?w=400&h=300',
       title: 'Artisanal Pasta',
       category: 'food',
       description: 'Handmade pasta with seasonal vegetables',
@@ -70,7 +70,7 @@ export const Gallery = () => {
     },
     {
       id: '3',
-      url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=600&fit=crop',
+      url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=500',
       title: 'Restaurant Interior',
       category: 'interior',
       description: 'Our warm and inviting dining space',
@@ -79,7 +79,7 @@ export const Gallery = () => {
     },
     {
       id: '4',
-      url: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=600&fit=crop',
+      url: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=700',
       title: 'Farm Fresh Ingredients',
       category: 'food',
       description: 'Locally sourced organic produce',
@@ -88,7 +88,7 @@ export const Gallery = () => {
     },
     {
       id: '5',
-      url: 'https://images.unsplash.com/photo-1571197200840-ca4a3e07e1f8?w=800&h=600&fit=crop',
+      url: 'https://images.unsplash.com/photo-1571197200840-ca4a3e07e1f8?w=400&h=350',
       title: 'Kitchen in Action',
       category: 'interior',
       description: 'Our chefs preparing fresh meals',
@@ -97,7 +97,7 @@ export const Gallery = () => {
     },
     {
       id: '6',
-      url: 'https://images.unsplash.com/photo-1529417305485-480f579e3fdd?w=800&h=600&fit=crop',
+      url: 'https://images.unsplash.com/photo-1529417305485-480f579e3fdd?w=400&h=600',
       title: 'Happy Customers',
       category: 'customers',
       description: 'Guests enjoying their sustainable dining experience',
@@ -106,7 +106,7 @@ export const Gallery = () => {
     },
     {
       id: '7',
-      url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&h=600&fit=crop',
+      url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=400',
       title: 'Eco-Friendly Setup',
       category: 'events',
       description: 'Special sustainability event setup',
@@ -115,7 +115,7 @@ export const Gallery = () => {
     },
     {
       id: '8',
-      url: 'https://images.unsplash.com/photo-1493770348161-369560ae357d?w=800&h=600&fit=crop',
+      url: 'https://images.unsplash.com/photo-1493770348161-369560ae357d?w=400&h=550',
       title: 'Gourmet Dessert',
       category: 'food',
       description: 'House-made dessert with organic ingredients',
@@ -124,12 +124,39 @@ export const Gallery = () => {
     },
     {
       id: '9',
-      url: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=600&fit=crop',
+      url: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=320',
       title: 'Green Dining Area',
       category: 'interior',
       description: 'Our signature green-themed dining space',
       uploadedAt: '2024-01-07',
       likes: 36
+    },
+    {
+      id: '10',
+      url: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=650',
+      title: 'Chef Special',
+      category: 'food',
+      description: 'Today\'s special creation by our head chef',
+      uploadedAt: '2024-01-06',
+      likes: 28
+    },
+    {
+      id: '11',
+      url: 'https://images.unsplash.com/photo-1559329007-40df8a9345d8?w=400&h=250',
+      title: 'Cozy Corner',
+      category: 'interior',
+      description: 'Perfect spot for intimate dining',
+      uploadedAt: '2024-01-05',
+      likes: 35
+    },
+    {
+      id: '12',
+      url: 'https://images.unsplash.com/photo-1528712306091-ed0763094c98?w=400&h=580',
+      title: 'Organic Harvest',
+      category: 'food',
+      description: 'Fresh seasonal vegetables from local farms',
+      uploadedAt: '2024-01-04',
+      likes: 52
     }
   ]
 
