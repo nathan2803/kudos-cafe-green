@@ -142,7 +142,7 @@ export const ReservationForm = ({ onReservationComplete, orderTotal }: Reservati
         {/* Date Selection */}
         <div className="space-y-2">
           <Label>Reservation Date</Label>
-          <Popover>
+          <Popover modal={true}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -155,11 +155,13 @@ export const ReservationForm = ({ onReservationComplete, orderTotal }: Reservati
                 {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0" align="start" side="bottom">
               <Calendar
                 mode="single"
                 selected={selectedDate}
-                onSelect={setSelectedDate}
+                onSelect={(date) => {
+                  setSelectedDate(date);
+                }}
                 disabled={isDateDisabled}
                 initialFocus={false}
               />
