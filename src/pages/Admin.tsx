@@ -1014,7 +1014,6 @@ export const Admin = () => {
           return 0;
       }
     });
-  };
 
   return (
     <div className="min-h-screen bg-background">
