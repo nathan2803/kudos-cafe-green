@@ -1,6 +1,17 @@
 import { useState, useEffect } from 'react'
 import { User as SupabaseUser } from '@supabase/supabase-js'
-import { supabase, User } from '@/lib/supabase'
+import { supabase } from '@/integrations/supabase/client'
+
+interface User {
+  id: string
+  email: string
+  full_name: string
+  phone?: string
+  is_admin: boolean
+  is_verified: boolean
+  created_at: string
+  updated_at: string
+}
 
 export interface AuthState {
   user: SupabaseUser | null
