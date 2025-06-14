@@ -78,7 +78,15 @@ import {
   PieChart,
   Calendar,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  Package2,
+  Warehouse,
+  ShoppingCart,
+  TrendingDown,
+  Archive,
+  Bell,
+  Activity,
+  Download
 } from 'lucide-react'
 
 export const Admin = () => {
@@ -92,13 +100,20 @@ export const Admin = () => {
   const [orders, setOrders] = useState<Order[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
+  const [inventoryItems, setInventoryItems] = useState<any[]>([])
+  const [categories, setCategories] = useState<any[]>([])
+  const [suppliers, setSuppliers] = useState<any[]>([])
+  const [lowStockAlerts, setLowStockAlerts] = useState<any[]>([])
   const [analytics, setAnalytics] = useState({
     totalRevenue: 12450.75,
     totalOrders: 342,
     totalCustomers: 156,
     averageRating: 4.7,
     weeklyGrowth: 12.5,
-    monthlyGrowth: 23.8
+    monthlyGrowth: 23.8,
+    totalInventoryValue: 8750.25,
+    lowStockItems: 12,
+    outOfStockItems: 3
   })
 
   // Sample data
@@ -231,7 +246,7 @@ export const Admin = () => {
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 bg-muted/30">
+          <TabsList className="grid w-full grid-cols-7 bg-muted/30">
             <TabsTrigger value="dashboard" className="flex items-center space-x-2">
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Dashboard</span>
@@ -243,6 +258,10 @@ export const Admin = () => {
             <TabsTrigger value="menu" className="flex items-center space-x-2">
               <ChefHat className="w-4 h-4" />
               <span className="hidden sm:inline">Menu</span>
+            </TabsTrigger>
+            <TabsTrigger value="inventory" className="flex items-center space-x-2">
+              <Warehouse className="w-4 h-4" />
+              <span className="hidden sm:inline">Inventory</span>
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center space-x-2">
               <Users className="w-4 h-4" />
@@ -555,6 +574,470 @@ export const Admin = () => {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          </TabsContent>
+
+          {/* Inventory Management Tab */}
+          <TabsContent value="inventory" className="space-y-6">
+            {/* Inventory Header with Overview Cards */}
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold">Inventory Management</h2>
+                  <p className="text-muted-foreground">Track and manage restaurant inventory, stock levels, and supplies</p>
+                </div>
+                <div className="flex gap-2">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="bg-primary hover:bg-primary/90">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Item
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Add New Inventory Item</DialogTitle>
+                      </DialogHeader>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="itemName">Item Name</Label>
+                            <Input id="itemName" placeholder="Enter item name" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="description">Description</Label>
+                            <Textarea id="description" placeholder="Enter description" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="sku">SKU</Label>
+                            <Input id="sku" placeholder="Enter SKU" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="category">Category</Label>
+                            <Select>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select category" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="food-beverages">Food & Beverages</SelectItem>
+                                <SelectItem value="kitchen-equipment">Kitchen Equipment</SelectItem>
+                                <SelectItem value="dining-room">Dining Room</SelectItem>
+                                <SelectItem value="cleaning">Cleaning & Maintenance</SelectItem>
+                                <SelectItem value="office">Office & Administrative</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="currentStock">Current Stock</Label>
+                              <Input id="currentStock" type="number" step="0.01" placeholder="0.00" />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="unit">Unit</Label>
+                              <Input id="unit" placeholder="e.g., pieces, lbs, bottles" />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="minStock">Min Stock Level</Label>
+                              <Input id="minStock" type="number" step="0.01" placeholder="0.00" />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="maxStock">Max Stock Level</Label>
+                              <Input id="maxStock" type="number" step="0.01" placeholder="0.00" />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="currentPrice">Current Price (₱)</Label>
+                              <Input id="currentPrice" type="number" step="0.01" placeholder="0.00" />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="location">Storage Location</Label>
+                              <Input id="location" placeholder="e.g., Freezer A, Pantry B" />
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-2">
+                              <Switch id="perishable" />
+                              <Label htmlFor="perishable">Perishable</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Switch id="active" defaultChecked />
+                              <Label htmlFor="active">Active</Label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <Button className="w-full bg-primary hover:bg-primary/90 mt-4">Add Item</Button>
+                    </DialogContent>
+                  </Dialog>
+                  <Button variant="outline">
+                    <Archive className="w-4 h-4 mr-2" />
+                    Restock
+                  </Button>
+                  <Button variant="outline">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
+                </div>
+              </div>
+
+              {/* Inventory Overview Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <Card className="border-primary/20">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Total Inventory Value</p>
+                        <p className="text-2xl font-bold text-primary">₱{analytics.totalInventoryValue.toLocaleString()}</p>
+                      </div>
+                      <DollarSign className="w-8 h-8 text-primary" />
+                    </div>
+                    <div className="mt-2 flex items-center text-sm">
+                      <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
+                      <span className="text-green-500">+5.2%</span>
+                      <span className="text-muted-foreground ml-1">from last month</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-primary/20">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Low Stock Items</p>
+                        <p className="text-2xl font-bold text-orange-600">{analytics.lowStockItems}</p>
+                      </div>
+                      <AlertTriangle className="w-8 h-8 text-orange-600" />
+                    </div>
+                    <div className="mt-2 flex items-center text-sm">
+                      <TrendingDown className="w-4 h-4 text-orange-500 mr-1" />
+                      <span className="text-orange-500">Needs attention</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-primary/20">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Out of Stock</p>
+                        <p className="text-2xl font-bold text-red-600">{analytics.outOfStockItems}</p>
+                      </div>
+                      <Package2 className="w-8 h-8 text-red-600" />
+                    </div>
+                    <div className="mt-2 flex items-center text-sm">
+                      <AlertTriangle className="w-4 h-4 text-red-500 mr-1" />
+                      <span className="text-red-500">Critical</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-primary/20">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Total Items</p>
+                        <p className="text-2xl font-bold text-primary">247</p>
+                      </div>
+                      <Warehouse className="w-8 h-8 text-primary" />
+                    </div>
+                    <div className="mt-2 flex items-center text-sm">
+                      <Activity className="w-4 h-4 text-blue-500 mr-1" />
+                      <span className="text-blue-500">Active</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Inventory Management Interface */}
+              <div className="space-y-4">
+                {/* Search and Filters */}
+                <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input placeholder="Search inventory items..." className="pl-10" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Select defaultValue="all">
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="Category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        <SelectItem value="food-beverages">Food & Beverages</SelectItem>
+                        <SelectItem value="kitchen-equipment">Kitchen Equipment</SelectItem>
+                        <SelectItem value="dining-room">Dining Room</SelectItem>
+                        <SelectItem value="cleaning">Cleaning & Maintenance</SelectItem>
+                        <SelectItem value="office">Office & Administrative</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select defaultValue="all">
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="Stock Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="in-stock">In Stock</SelectItem>
+                        <SelectItem value="low-stock">Low Stock</SelectItem>
+                        <SelectItem value="out-of-stock">Out of Stock</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button variant="outline" size="sm">
+                      <Filter className="w-4 h-4 mr-2" />
+                      Filters
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Sample Inventory Items */}
+                <div className="grid grid-cols-1 gap-4">
+                  {/* Sample Item 1 - Chicken Breast */}
+                  <Card className="border-primary/20">
+                    <CardContent className="p-6">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-4 mb-2">
+                            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                              <Package className="w-6 h-6 text-blue-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Chicken Breast</h3>
+                              <p className="text-sm text-muted-foreground">SKU: CHK-BRST-001</p>
+                            </div>
+                            <Badge className="bg-blue-100 text-blue-800 border-blue-200">Food & Beverages</Badge>
+                            <Badge className="bg-orange-100 text-orange-800 border-orange-200">Low Stock</Badge>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                              <p className="text-muted-foreground">Current Stock</p>
+                              <p className="font-medium">25.5 lbs</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Min Level</p>
+                              <p className="font-medium">10.0 lbs</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Price</p>
+                              <p className="font-medium">₱9.20/lb</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Location</p>
+                              <p className="font-medium">Freezer A</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2 mt-4 md:mt-0">
+                          <Button size="sm" variant="outline">
+                            <ShoppingCart className="w-4 h-4 mr-1" />
+                            Restock
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Sample Item 2 - Olive Oil */}
+                  <Card className="border-primary/20">
+                    <CardContent className="p-6">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-4 mb-2">
+                            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                              <Package className="w-6 h-6 text-green-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Extra Virgin Olive Oil</h3>
+                              <p className="text-sm text-muted-foreground">SKU: OIL-OLV-001</p>
+                            </div>
+                            <Badge className="bg-blue-100 text-blue-800 border-blue-200">Food & Beverages</Badge>
+                            <Badge className="bg-green-100 text-green-800 border-green-200">In Stock</Badge>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                              <p className="text-muted-foreground">Current Stock</p>
+                              <p className="font-medium">15 bottles</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Min Level</p>
+                              <p className="font-medium">5 bottles</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Price</p>
+                              <p className="font-medium">₱13.50/bottle</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Location</p>
+                              <p className="font-medium">Pantry B</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2 mt-4 md:mt-0">
+                          <Button size="sm" variant="outline">
+                            <ShoppingCart className="w-4 h-4 mr-1" />
+                            Restock
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Sample Item 3 - Chef Knife */}
+                  <Card className="border-primary/20">
+                    <CardContent className="p-6">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-4 mb-2">
+                            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                              <ChefHat className="w-6 h-6 text-purple-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Professional Chef Knife</h3>
+                              <p className="text-sm text-muted-foreground">SKU: KNF-CHF-001</p>
+                            </div>
+                            <Badge className="bg-purple-100 text-purple-800 border-purple-200">Kitchen Equipment</Badge>
+                            <Badge className="bg-orange-100 text-orange-800 border-orange-200">Low Stock</Badge>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                              <p className="text-muted-foreground">Current Stock</p>
+                              <p className="font-medium">3 pieces</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Min Level</p>
+                              <p className="font-medium">2 pieces</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Price</p>
+                              <p className="font-medium">₱45.00/piece</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Location</p>
+                              <p className="font-medium">Kitchen Storage</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2 mt-4 md:mt-0">
+                          <Button size="sm" variant="outline">
+                            <ShoppingCart className="w-4 h-4 mr-1" />
+                            Restock
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Sample Item 4 - Dining Chairs */}
+                  <Card className="border-primary/20">
+                    <CardContent className="p-6">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-4 mb-2">
+                            <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                              <Package className="w-6 h-6 text-yellow-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Dining Chair</h3>
+                              <p className="text-sm text-muted-foreground">SKU: CHR-DIN-001</p>
+                            </div>
+                            <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Dining Room</Badge>
+                            <Badge className="bg-green-100 text-green-800 border-green-200">In Stock</Badge>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                              <p className="text-muted-foreground">Current Stock</p>
+                              <p className="font-medium">8 pieces</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Min Level</p>
+                              <p className="font-medium">4 pieces</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Price</p>
+                              <p className="font-medium">₱90.00/piece</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Location</p>
+                              <p className="font-medium">Dining Storage</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2 mt-4 md:mt-0">
+                          <Button size="sm" variant="outline">
+                            <ShoppingCart className="w-4 h-4 mr-1" />
+                            Restock
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Low Stock Alerts Section */}
+                <Card className="border-primary/20 mt-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Bell className="w-5 h-5 mr-2 text-orange-500" />
+                      Low Stock Alerts
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
+                        <div className="flex items-center space-x-3">
+                          <AlertTriangle className="w-5 h-5 text-orange-500" />
+                          <div>
+                            <p className="font-medium">Chicken Breast is running low</p>
+                            <p className="text-sm text-muted-foreground">Current: 25.5 lbs • Min: 10.0 lbs</p>
+                          </div>
+                        </div>
+                        <Button size="sm" variant="outline">
+                          Reorder
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
+                        <div className="flex items-center space-x-3">
+                          <AlertTriangle className="w-5 h-5 text-red-500" />
+                          <div>
+                            <p className="font-medium">Professional Chef Knife is critically low</p>
+                            <p className="text-sm text-muted-foreground">Current: 3 pieces • Min: 2 pieces</p>
+                          </div>
+                        </div>
+                        <Button size="sm" variant="outline">
+                          Urgent Reorder
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </TabsContent>
 
