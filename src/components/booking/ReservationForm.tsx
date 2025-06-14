@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CalendarIcon, Users, CreditCard, Banknote } from "lucide-react";
+import { CalendarIcon, Users, Clock, CreditCard, Banknote } from "lucide-react";
 import { format, isBefore, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -218,6 +218,30 @@ export const ReservationForm = ({ onReservationComplete, orderTotal }: Reservati
               ))}
             </SelectContent>
           </Select>
+          {selectedTime && (
+            <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded-md">
+              <Clock className="w-4 h-4 inline mr-1" />
+              Your table will be reserved from <strong>{selectedTime}</strong> to{' '}
+              <strong>
+                {(() => {
+                  const [time, period] = selectedTime.split(' ');
+                  const [hours, minutes] = time.split(':');
+                  let endHour = parseInt(hours) + 2;
+                  let endPeriod = period;
+                  
+                  if (endHour > 12) {
+                    endHour = endHour - 12;
+                    endPeriod = period === 'AM' ? 'PM' : 'AM';
+                  }
+                  if (endHour === 12 && period === 'AM') {
+                    endPeriod = 'PM';
+                  }
+                  
+                  return `${endHour}:${minutes} ${endPeriod}`;
+                })()}
+              </strong> (2 hours maximum)
+            </div>
+          )}
         </div>
 
         {/* Party Size */}
@@ -241,7 +265,7 @@ export const ReservationForm = ({ onReservationComplete, orderTotal }: Reservati
         {/* Available Tables */}
         {selectedDate && selectedTime && (
           <div className="space-y-2">
-            <Label>Available Tables</Label>
+            <Label>Available Tables (for 2-hour dining)</Label>
             {loading ? (
               <div className="text-center py-4">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
