@@ -43,6 +43,7 @@ interface Order {
   updated_at: string
   order_items?: OrderItem[]
   reservations?: Reservation
+  assigned_table?: Table
 }
 
 interface OrderItem {
@@ -133,7 +134,8 @@ import {
   Archive,
   Bell,
   Activity,
-  Download
+  Download,
+  Wallet
 } from 'lucide-react'
 
 export const Admin = () => {
@@ -388,6 +390,144 @@ export const Admin = () => {
       description: `Order #${orderId} status changed to ${newStatus}`,
     })
   }
+
+  const assignTable = async (orderId: string, tableId: string) => {
+    try {
+      // First check if this is a dine-in order
+      const order = orders.find(o => o.id === orderId);
+      if (!order || order.order_type !== 'dine_in') {
+        toast({
+          title: "Error",
+          description: "Table assignment is only available for dine-in orders",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Update the order with the table assignment via reservation
+      const { error } = await supabase
+        .from('reservations')
+        .upsert({
+          order_id: orderId,
+          table_id: tableId,
+          party_size: 2, // Default party size, can be updated
+          reservation_date: new Date().toISOString().split('T')[0],
+          reservation_time: new Date().toTimeString().split(' ')[0],
+          status: 'confirmed'
+        });
+
+      if (error) throw error;
+
+      // Mark table as unavailable
+      await supabase
+        .from('tables')
+        .update({ is_available: false })
+        .eq('id', tableId);
+
+      // Update local state
+      const assignedTable = tables.find(t => t.id === tableId);
+      setOrders(prev => prev.map(o => 
+        o.id === orderId 
+          ? { ...o, assigned_table: assignedTable }
+          : o
+      ));
+
+      setTables(prev => prev.map(t => 
+        t.id === tableId 
+          ? { ...t, is_available: false }
+          : t
+      ));
+
+      toast({
+        title: "Table Assigned",
+        description: `Table ${assignedTable?.table_number} assigned to order #${orderId}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to assign table",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const updatePaymentStatus = async (orderId: string, paymentStatus: string) => {
+    try {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      let updateData: any = { payment_status: paymentStatus };
+
+      if (paymentStatus === 'partial') {
+        // Set default deposit as 30% of total
+        const deposit = order.total_amount * 0.3;
+        updateData.deposit_paid = deposit;
+        updateData.remaining_amount = order.total_amount - deposit;
+      } else if (paymentStatus === 'paid') {
+        updateData.deposit_paid = order.total_amount;
+        updateData.remaining_amount = 0;
+      }
+
+      const { error } = await supabase
+        .from('orders')
+        .update(updateData)
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      setOrders(prev => prev.map(o => 
+        o.id === orderId ? { ...o, ...updateData } : o
+      ));
+
+      toast({
+        title: "Payment Status Updated",
+        description: `Order #${orderId} payment status changed to ${paymentStatus}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update payment status",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const completePayment = async (orderId: string) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({
+          payment_status: 'paid',
+          deposit_paid: orders.find(o => o.id === orderId)?.total_amount || 0,
+          remaining_amount: 0
+        })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      setOrders(prev => prev.map(o => 
+        o.id === orderId 
+          ? { 
+              ...o, 
+              payment_status: 'paid' as any, 
+              deposit_paid: o.total_amount,
+              remaining_amount: 0 
+            }
+          : o
+      ));
+
+      toast({
+        title: "Payment Completed",
+        description: `Order #${orderId} has been marked as paid in full`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to complete payment",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Inventory item handlers
   const handleAddInventoryItem = async (formData: any) => {
@@ -913,16 +1053,63 @@ export const Admin = () => {
                             <Clock className="w-3 h-3 inline mr-1" />
                             {formatDate(order.created_at)} • {order.order_type}
                           </p>
-                          <div className="text-sm">
+                          <div className="text-sm space-y-1">
                             <p><strong>Customer:</strong> {order.customer_name}</p>
                             <p><strong>Phone:</strong> {order.customer_phone}</p>
-                            {order.order_items && order.order_items.length > 0 ? (
-                              order.order_items.map((item, index) => (
-                                <span key={index}>
-                                  {item.quantity}x {item.menu_items?.name || `Item #${item.menu_item_id}`}
-                                  {index < order.order_items.length - 1 && ', '}
+                            
+                            {/* Table Assignment for Dine-in */}
+                            {order.order_type === 'dine_in' && (
+                              <div className="flex items-center gap-2">
+                                <strong>Table:</strong>
+                                {order.assigned_table ? (
+                                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                                    Table {order.assigned_table.table_number}
+                                  </Badge>
+                                ) : (
+                                  <Select onValueChange={(tableId) => assignTable(order.id, tableId)}>
+                                    <SelectTrigger className="w-32 h-6 text-xs">
+                                      <SelectValue placeholder="Assign table" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {tables.filter(t => t.is_available).map((table) => (
+                                        <SelectItem key={table.id} value={table.id}>
+                                          Table {table.table_number}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Payment Status */}
+                            <div className="flex items-center gap-2">
+                              <strong>Payment:</strong>
+                              <Badge className={
+                                order.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
+                                order.payment_status === 'partial' ? 'bg-orange-100 text-orange-800' :
+                                'bg-red-100 text-red-800'
+                              }>
+                                {order.payment_status === 'paid' ? 'Paid in Full' :
+                                 order.payment_status === 'partial' ? 'Deposit Paid' : 'Pending'}
+                              </Badge>
+                              {order.payment_status === 'partial' && (
+                                <span className="text-xs text-muted-foreground">
+                                  (₱{order.deposit_paid?.toFixed(2)} paid, ₱{order.remaining_amount?.toFixed(2)} remaining)
                                 </span>
-                              ))
+                              )}
+                            </div>
+
+                            {order.order_items && order.order_items.length > 0 ? (
+                              <div>
+                                <strong>Items:</strong>{' '}
+                                {order.order_items.map((item, index) => (
+                                  <span key={index}>
+                                    {item.quantity}x {item.menu_items?.name || `Item #${item.menu_item_id}`}
+                                    {index < order.order_items.length - 1 && ', '}
+                                  </span>
+                                ))}
+                              </div>
                             ) : (
                               <span>No items found</span>
                             )}
@@ -931,26 +1118,74 @@ export const Admin = () => {
                         
                         <div className="flex flex-col md:items-end space-y-2 mt-4 md:mt-0">
                           <p className="text-lg font-bold">₱{order.total_amount.toFixed(2)}</p>
-                          <div className="flex space-x-2">
-                            <Select 
-                              value={order.status} 
-                              onValueChange={(value) => updateOrderStatus(order.id, value)}
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="confirmed">Confirmed</SelectItem>
-                                <SelectItem value="preparing">Preparing</SelectItem>
-                                <SelectItem value="ready">Ready</SelectItem>
-                                <SelectItem value="delivered">Delivered</SelectItem>
-                                <SelectItem value="cancelled">Cancelled</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Button size="sm" variant="outline">
-                              <Eye className="w-4 h-4" />
-                            </Button>
+                          <div className="flex flex-col space-y-2">
+                            <div className="flex space-x-2">
+                              <Select 
+                                value={order.status} 
+                                onValueChange={(value) => updateOrderStatus(order.id, value)}
+                              >
+                                <SelectTrigger className="w-32">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                                  <SelectItem value="preparing">Preparing</SelectItem>
+                                  <SelectItem value="ready">Ready</SelectItem>
+                                  <SelectItem value="delivered">Delivered</SelectItem>
+                                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Button size="sm" variant="outline">
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            
+                            {/* Payment Status Update */}
+                            {order.payment_status !== 'paid' && (
+                              <div className="flex space-x-2">
+                                <Select 
+                                  value={order.payment_status} 
+                                  onValueChange={(value) => updatePaymentStatus(order.id, value)}
+                                >
+                                  <SelectTrigger className="w-32">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="partial">Deposit</SelectItem>
+                                    <SelectItem value="paid">Paid Full</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                {order.payment_status === 'partial' && (
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button size="sm" variant="outline">
+                                        <Wallet className="w-4 h-4" />
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                      <DialogHeader>
+                                        <DialogTitle>Complete Payment</DialogTitle>
+                                      </DialogHeader>
+                                      <div className="space-y-4">
+                                        <div>
+                                          <p>Total Amount: ₱{order.total_amount.toFixed(2)}</p>
+                                          <p>Deposit Paid: ₱{order.deposit_paid?.toFixed(2) || '0.00'}</p>
+                                          <p>Remaining: ₱{order.remaining_amount?.toFixed(2) || order.total_amount.toFixed(2)}</p>
+                                        </div>
+                                        <Button 
+                                          onClick={() => completePayment(order.id)}
+                                          className="w-full"
+                                        >
+                                          Mark as Paid in Full
+                                        </Button>
+                                      </div>
+                                    </DialogContent>
+                                  </Dialog>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
