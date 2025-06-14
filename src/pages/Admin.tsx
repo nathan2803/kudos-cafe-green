@@ -231,6 +231,12 @@ export const Admin = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        console.log('User auth state:', { user, userProfile, isAdmin });
+        
+        // Check if we have a valid session
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Current session:', session);
+        
         // Fetch menu items
         const { data: menuData } = await supabase
           .from('menu_items')
@@ -270,22 +276,20 @@ export const Admin = () => {
         if (suppliersData) setSuppliers(suppliersData);
 
         // Fetch orders with related data
-        const { data: ordersData } = await supabase
+        console.log('Fetching orders...');
+        const { data: ordersData, error: ordersError } = await supabase
           .from('orders')
-          .select(`
-            *,
-            order_items (
-              *,
-              menu_items (name, price)
-            ),
-            reservations (
-              *,
-              tables (table_number, location)
-            )
-          `)
+          .select('*')
           .order('created_at', { ascending: false });
         
-        if (ordersData) setOrders(ordersData as any);
+        console.log('Orders fetch result:', { ordersData, ordersError, ordersLength: ordersData?.length });
+        
+        if (ordersData) {
+          console.log('Setting orders state with:', ordersData);
+          setOrders(ordersData as any);
+        } else {
+          console.log('No orders data received, error:', ordersError);
+        }
 
         // Fetch tables
         const { data: tablesData } = await supabase
@@ -886,65 +890,74 @@ export const Admin = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-              {orders.map((order) => (
-                <Card key={order.id} className="border-primary/20">
-                  <CardContent className="p-6">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-4 mb-2">
-                          <h3 className="font-semibold">Order #{order.id}</h3>
-                          <Badge className={getStatusColor(order.status)}>
-                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          <Clock className="w-3 h-3 inline mr-1" />
-                          {formatDate(order.created_at)} • {order.order_type}
-                        </p>
-                        <div className="text-sm">
-                          <p><strong>Customer:</strong> {order.customer_name}</p>
-                          <p><strong>Phone:</strong> {order.customer_phone}</p>
-                          {order.order_items && order.order_items.length > 0 ? (
-                            order.order_items.map((item, index) => (
-                              <span key={index}>
-                                {item.quantity}x {item.menu_items?.name || `Item #${item.menu_item_id}`}
-                                {index < order.order_items.length - 1 && ', '}
-                              </span>
-                            ))
-                          ) : (
-                            <span>No items found</span>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-col md:items-end space-y-2 mt-4 md:mt-0">
-                        <p className="text-lg font-bold">₱{order.total_amount.toFixed(2)}</p>
-                        <div className="flex space-x-2">
-                          <Select 
-                            value={order.status} 
-                            onValueChange={(value) => updateOrderStatus(order.id, value)}
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="confirmed">Confirmed</SelectItem>
-                              <SelectItem value="preparing">Preparing</SelectItem>
-                              <SelectItem value="ready">Ready</SelectItem>
-                              <SelectItem value="delivered">Delivered</SelectItem>
-                              <SelectItem value="cancelled">Cancelled</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Button size="sm" variant="outline">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
+              {orders.length === 0 ? (
+                <Card className="border-primary/20">
+                  <CardContent className="p-6 text-center">
+                    <p className="text-muted-foreground">No orders found. {loading ? 'Loading...' : 'Database query completed.'}</p>
+                    <p className="text-sm text-muted-foreground mt-2">Orders in state: {orders.length}</p>
                   </CardContent>
                 </Card>
-              ))}
+              ) : (
+                orders.map((order) => (
+                  <Card key={order.id} className="border-primary/20">
+                    <CardContent className="p-6">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-4 mb-2">
+                            <h3 className="font-semibold">Order #{order.id}</h3>
+                            <Badge className={getStatusColor(order.status)}>
+                              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            <Clock className="w-3 h-3 inline mr-1" />
+                            {formatDate(order.created_at)} • {order.order_type}
+                          </p>
+                          <div className="text-sm">
+                            <p><strong>Customer:</strong> {order.customer_name}</p>
+                            <p><strong>Phone:</strong> {order.customer_phone}</p>
+                            {order.order_items && order.order_items.length > 0 ? (
+                              order.order_items.map((item, index) => (
+                                <span key={index}>
+                                  {item.quantity}x {item.menu_items?.name || `Item #${item.menu_item_id}`}
+                                  {index < order.order_items.length - 1 && ', '}
+                                </span>
+                              ))
+                            ) : (
+                              <span>No items found</span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col md:items-end space-y-2 mt-4 md:mt-0">
+                          <p className="text-lg font-bold">₱{order.total_amount.toFixed(2)}</p>
+                          <div className="flex space-x-2">
+                            <Select 
+                              value={order.status} 
+                              onValueChange={(value) => updateOrderStatus(order.id, value)}
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="confirmed">Confirmed</SelectItem>
+                                <SelectItem value="preparing">Preparing</SelectItem>
+                                <SelectItem value="ready">Ready</SelectItem>
+                                <SelectItem value="delivered">Delivered</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button size="sm" variant="outline">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </TabsContent>
 
