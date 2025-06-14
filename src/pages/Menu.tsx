@@ -384,12 +384,29 @@ export const Menu = () => {
   ]
 
   useEffect(() => {
-    // Simulate loading
-    setTimeout(() => {
-      setMenuItems(sampleMenuItems)
-      setFilteredItems(sampleMenuItems)
-      setLoading(false)
-    }, 1000)
+    const fetchMenuItems = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('menu_items')
+          .select('*')
+          .order('category', { ascending: true });
+
+        if (error) throw error;
+        if (data) {
+          setMenuItems(data);
+          setFilteredItems(data);
+        }
+      } catch (error) {
+        console.error('Error fetching menu items:', error);
+        // Fallback to sample data if database fetch fails
+        setMenuItems(sampleMenuItems);
+        setFilteredItems(sampleMenuItems);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMenuItems();
   }, [])
 
   useEffect(() => {
