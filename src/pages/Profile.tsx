@@ -18,9 +18,10 @@ interface Order {
   total_amount: number
   status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled'
   delivery_address?: string
-  order_type: 'dine-in' | 'takeaway' | 'delivery'
+  order_type: 'dine_in' | 'pickup' | 'takeout'
   created_at: string
   updated_at: string
+  order_number?: string
 }
 
 interface Review {
@@ -93,35 +94,6 @@ export const Profile = () => {
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  // Sample data
-  const sampleOrders: Order[] = [
-    {
-      id: '1',
-      user_id: user?.id || '',
-      items: [
-        { menu_item_id: '1', quantity: 2, price: 12.50, special_instructions: 'Extra dressing' },
-        { menu_item_id: '3', quantity: 1, price: 9.75 }
-      ],
-      total_amount: 34.75,
-      status: 'delivered',
-      delivery_address: '123 Green Street, London',
-      order_type: 'delivery',
-      created_at: '2024-01-15T10:30:00Z',
-      updated_at: '2024-01-15T11:45:00Z'
-    },
-    {
-      id: '2',
-      user_id: user?.id || '',
-      items: [
-        { menu_item_id: '2', quantity: 1, price: 24.90 }
-      ],
-      total_amount: 24.90,
-      status: 'preparing',
-      order_type: 'takeaway',
-      created_at: '2024-01-20T14:15:00Z',
-      updated_at: '2024-01-20T14:15:00Z'
-    }
-  ]
 
   const sampleReviews: Review[] = [
     {
@@ -164,14 +136,61 @@ export const Profile = () => {
         }
       })
       
-      // Simulate loading orders and reviews
-      setTimeout(() => {
-        setOrders(sampleOrders)
-        setReviews(sampleReviews)
-        setLoading(false)
-      }, 1000)
+      fetchUserOrders()
+      setReviews(sampleReviews)
     }
   }, [userProfile])
+
+  const fetchUserOrders = async () => {
+    if (!user) return
+    
+    setLoading(true)
+    try {
+      const { data: orders, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (
+            *,
+            menu_items (name, price)
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      
+      // Transform the data to match our Order interface
+      const transformedOrders: Order[] = orders?.map(order => ({
+        id: order.id,
+        user_id: order.user_id,
+        items: order.order_items?.map((item: any) => ({
+          menu_item_id: item.menu_item_id,
+          quantity: item.quantity,
+          price: item.unit_price,
+          name: item.menu_items?.name || 'Unknown Item',
+          special_instructions: item.special_instructions
+        })) || [],
+        total_amount: order.total_amount,
+        status: order.status as 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled',
+        order_type: order.order_type as 'dine_in' | 'pickup' | 'takeout',
+        created_at: order.created_at,
+        updated_at: order.updated_at,
+        order_number: order.order_number
+      })) || []
+
+      setOrders(transformedOrders)
+    } catch (error) {
+      console.error('Error fetching orders:', error)
+      toast({
+        title: "Error",
+        description: "Failed to load order history",
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleSaveProfile = async () => {
     try {
@@ -429,13 +448,15 @@ export const Profile = () => {
                     {orders.map((order) => (
                       <div key={order.id} className="border border-primary/20 rounded-lg p-4">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3">
-                          <div className="flex items-center space-x-4">
-                            <div>
-                              <p className="font-semibold">Order #{order.id}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {formatDate(order.created_at)}
-                              </p>
-                            </div>
+                           <div className="flex items-center space-x-4">
+                             <div>
+                               <p className="font-semibold">
+                                 {order.order_number || `Order #${order.id.slice(0, 8)}`}
+                               </p>
+                               <p className="text-sm text-muted-foreground">
+                                 {formatDate(order.created_at)}
+                               </p>
+                             </div>
                             <Badge className={getStatusColor(order.status)}>
                               {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                             </Badge>
@@ -448,14 +469,14 @@ export const Profile = () => {
                           </div>
                         </div>
                         
-                        <div className="space-y-2">
-                          {order.items.map((item, index) => (
-                            <div key={index} className="flex justify-between text-sm">
-                              <span>{item.quantity}x Item #{item.menu_item_id}</span>
-                              <span>₱{(item.price * item.quantity).toFixed(2)}</span>
-                            </div>
-                          ))}
-                        </div>
+                         <div className="space-y-2">
+                           {order.items.map((item, index) => (
+                             <div key={index} className="flex justify-between text-sm">
+                               <span>{item.quantity}x {item.name}</span>
+                               <span>₱{(item.price * item.quantity).toFixed(2)}</span>
+                             </div>
+                           ))}
+                         </div>
                         
                         {order.delivery_address && (
                           <p className="text-sm text-muted-foreground mt-2">
