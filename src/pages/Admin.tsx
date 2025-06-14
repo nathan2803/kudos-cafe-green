@@ -1214,7 +1214,11 @@ export const Admin = () => {
                             {order.order_type === 'dine_in' && (
                               <div className="flex items-center gap-2">
                                 <strong>Table:</strong>
-                                {order.assigned_table ? (
+                                {order.reservations?.tables ? (
+                                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                                    Table {order.reservations.tables.table_number} ({order.reservations.tables.location})
+                                  </Badge>
+                                ) : order.assigned_table ? (
                                   <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                                     Table {order.assigned_table.table_number}
                                   </Badge>
@@ -1317,7 +1321,7 @@ export const Admin = () => {
                                             Customer: {order.customer_name} ({order.customer_email})
                                           </p>
                                           <p className="text-sm text-muted-foreground mb-2">
-                                            Table: {order.assigned_table?.table_number || 'Not assigned'}
+                                            Table: {order.reservations?.tables?.table_number || order.assigned_table?.table_number || 'Not assigned'}
                                           </p>
                                           <p className="text-sm text-muted-foreground">
                                             Total Amount: ₱{order.total_amount.toFixed(2)}
