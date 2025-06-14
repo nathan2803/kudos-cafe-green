@@ -44,6 +44,12 @@ interface Order {
   order_items?: OrderItem[]
   reservations?: Reservation
   assigned_table?: Table
+  profiles?: {
+    full_name: string
+    email: string
+    phone?: string
+    is_admin: boolean
+  }
 }
 
 interface OrderItem {
@@ -283,6 +289,12 @@ export const Admin = () => {
           .from('orders')
           .select(`
             *,
+            profiles (
+              full_name,
+              email,
+              phone,
+              is_admin
+            ),
             order_items (
               *,
               menu_items (name, price)
@@ -1139,12 +1151,20 @@ export const Admin = () => {
                 </Card>
               ) : (
                 orders.map((order) => (
-                  <Card key={order.id} className="border-primary/20">
+                  <Card key={order.id} className={`border-primary/20 ${order.profiles?.is_admin ? 'bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800' : ''}`}>
                     <CardContent className="p-6">
                       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-4 mb-2">
-                            <h3 className="font-semibold">Order #{order.id}</h3>
+                            <div className="flex items-center space-x-2">
+                              <h3 className="font-semibold">Order #{order.id.slice(0, 8)}...</h3>
+                              {order.profiles?.is_admin && (
+                                <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border-blue-300">
+                                  <Shield className="w-3 h-3 mr-1" />
+                                  Admin Order
+                                </Badge>
+                              )}
+                            </div>
                             <Badge className={getStatusColor(order.status)}>
                               {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                             </Badge>
@@ -1154,8 +1174,29 @@ export const Admin = () => {
                             {formatDate(order.created_at)} • {order.order_type}
                           </p>
                           <div className="text-sm space-y-1">
-                            <p><strong>Customer:</strong> {order.customer_name}</p>
-                            <p><strong>Phone:</strong> {order.customer_phone}</p>
+                            <div className="flex flex-col">
+                              <p>
+                                <strong>Customer:</strong>{' '}
+                                <span className={order.customer_name ? "text-foreground" : "text-muted-foreground italic"}>
+                                  {order.customer_name || (order.profiles?.is_admin ? order.profiles.full_name + ' (Admin)' : 'Guest Order')}
+                                </span>
+                              </p>
+                              {!order.customer_name && order.profiles?.is_admin && (
+                                <span className="text-xs text-blue-600 dark:text-blue-400 ml-16">Using admin account details</span>
+                              )}
+                            </div>
+                            <p>
+                              <strong>Phone:</strong>{' '}
+                              <span className={order.customer_phone ? "text-foreground" : "text-muted-foreground italic"}>
+                                {order.customer_phone || (order.profiles?.is_admin ? order.profiles.phone || 'Not provided' : 'Not provided')}
+                              </span>
+                            </p>
+                            <p>
+                              <strong>Email:</strong>{' '}
+                              <span className={order.customer_email ? "text-foreground" : "text-muted-foreground italic"}>
+                                {order.customer_email || (order.profiles?.is_admin ? order.profiles.email : 'Not provided')}
+                              </span>
+                            </p>
                             
                             {/* Table Assignment for Dine-in */}
                             {order.order_type === 'dine_in' && (
