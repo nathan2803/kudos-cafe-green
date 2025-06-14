@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/integrations/supabase/client'
+import { MessagesPanel } from '@/components/admin/MessagesPanel'
 
 interface MenuItem {
   id: string
@@ -142,7 +143,8 @@ import {
   Bell,
   Activity,
   Download,
-  WalletCards
+  WalletCards,
+  MessageSquare
 } from 'lucide-react'
 
 export const Admin = () => {
@@ -985,7 +987,7 @@ export const Admin = () => {
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 bg-muted/30">
+          <TabsList className="grid w-full grid-cols-8 bg-muted/30">
             <TabsTrigger value="dashboard" className="flex items-center space-x-2">
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Dashboard</span>
@@ -1005,6 +1007,10 @@ export const Admin = () => {
             <TabsTrigger value="users" className="flex items-center space-x-2">
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Users</span>
+            </TabsTrigger>
+            <TabsTrigger value="messages" className="flex items-center space-x-2">
+              <MessageSquare className="w-4 h-4" />
+              <span className="hidden sm:inline">Messages</span>
             </TabsTrigger>
             <TabsTrigger value="reviews" className="flex items-center space-x-2">
               <Star className="w-4 h-4" />
@@ -2212,6 +2218,11 @@ export const Admin = () => {
               <h3 className="text-lg font-semibold mb-2">User Management</h3>
               <p className="text-muted-foreground">User management features will be available soon.</p>
             </div>
+          </TabsContent>
+
+          {/* Messages Tab */}
+          <TabsContent value="messages" className="space-y-6">
+            <MessagesPanel />
           </TabsContent>
 
           {/* Reviews Management Tab */}

@@ -25,6 +25,7 @@ interface Order {
   created_at: string
   updated_at: string
   order_number?: string
+  deposit_paid?: number
 }
 
 interface Review {
@@ -39,6 +40,7 @@ interface Review {
   }
 }
 import { useToast } from '@/hooks/use-toast'
+import { EnhancedOrderHistory } from '@/components/profile/EnhancedOrderHistory'
 import { 
   User, 
   Mail, 
@@ -266,7 +268,8 @@ export const Profile = () => {
         order_type: order.order_type as 'dine_in' | 'pickup' | 'takeout',
         created_at: order.created_at,
         updated_at: order.updated_at,
-        order_number: order.order_number
+        order_number: order.order_number,
+        deposit_paid: order.deposit_paid
       })) || []
 
       console.log('Transformed orders:', transformedOrders)
@@ -566,82 +569,11 @@ export const Profile = () => {
 
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-6">
-            <Card className="border-primary/20">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Package className="w-5 h-5 text-primary" />
-                    <span>Order History</span>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={fetchUserOrders}
-                    disabled={loading}
-                  >
-                    {loading ? 'Loading...' : 'Refresh'}
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="h-20 bg-muted animate-pulse rounded-lg" />
-                    ))}
-                  </div>
-                ) : orders.length > 0 ? (
-                  <div className="space-y-4">
-                    {orders.map((order) => (
-                      <div key={order.id} className="border border-primary/20 rounded-lg p-4">
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3">
-                           <div className="flex items-center space-x-4">
-                             <div>
-                               <p className="font-semibold">
-                                 {order.order_number || `Order #${order.id.slice(0, 8)}`}
-                               </p>
-                               <p className="text-sm text-muted-foreground">
-                                 {formatDate(order.created_at)}
-                               </p>
-                             </div>
-                            <Badge className={getStatusColor(order.status)}>
-                              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                            </Badge>
-                          </div>
-                          <div className="text-right mt-2 md:mt-0">
-                            <p className="font-semibold text-lg">₱{order.total_amount.toFixed(2)}</p>
-                            <p className="text-sm text-muted-foreground capitalize">
-                              {order.order_type}
-                            </p>
-                          </div>
-                        </div>
-                        
-                         <div className="space-y-2">
-                           {order.items.map((item, index) => (
-                             <div key={index} className="flex justify-between text-sm">
-                               <span>{item.quantity}x {item.name}</span>
-                               <span>₱{(item.price * item.quantity).toFixed(2)}</span>
-                             </div>
-                           ))}
-                         </div>
-                        
-                        {order.delivery_address && (
-                          <p className="text-sm text-muted-foreground mt-2">
-                            <MapPin className="w-3 h-3 inline mr-1" />
-                            {order.delivery_address}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No orders yet. Start exploring our menu!</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <EnhancedOrderHistory 
+              orders={orders}
+              loading={loading}
+              onRefresh={fetchUserOrders}
+            />
           </TabsContent>
 
           {/* Reviews Tab */}
