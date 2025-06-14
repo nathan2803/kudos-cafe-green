@@ -59,21 +59,84 @@ export const useAuth = () => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      const { data: user } = await supabase.auth.getUser()
-      const { data: profile } = await supabase
+      console.log('Fetching profile for user ID:', userId)
+      
+      // Get the current user from the session
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      console.log('Current user:', user, 'User error:', userError)
+      
+      if (userError) {
+        console.error('Error getting current user:', userError)
+        setState(prev => ({ ...prev, loading: false }))
+        return
+      }
+
+      // Fetch the user profile
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
-        .single()
+        .maybeSingle()
 
+      console.log('Profile data:', profile, 'Profile error:', profileError)
+
+      if (profileError) {
+        console.error('Error fetching user profile:', profileError)
+        // Even if profile fetch fails, we still have the authenticated user
+        setState({
+          user: user,
+          userProfile: null,
+          loading: false,
+          isAdmin: false
+        })
+        return
+      }
+
+      // If no profile exists, create one
+      if (!profile && user) {
+        console.log('No profile found, creating one...')
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: user.id,
+            full_name: user.user_metadata?.full_name || 'User',
+            email: user.email || '',
+            phone: user.user_metadata?.phone || null
+          })
+          .select()
+          .single()
+
+        if (createError) {
+          console.error('Error creating profile:', createError)
+          setState({
+            user: user,
+            userProfile: null,
+            loading: false,
+            isAdmin: false
+          })
+        } else {
+          console.log('Profile created successfully:', newProfile)
+          setState({
+            user: user,
+            userProfile: newProfile,
+            loading: false,
+            isAdmin: newProfile?.is_admin || false
+          })
+        }
+        return
+      }
+
+      // Profile exists, set state
       setState({
-        user: user.user,
+        user: user,
         userProfile: profile,
         loading: false,
         isAdmin: profile?.is_admin || false
       })
+      
+      console.log('Auth state updated successfully')
     } catch (error) {
-      console.error('Error fetching user profile:', error)
+      console.error('Unexpected error in fetchUserProfile:', error)
       setState(prev => ({ ...prev, loading: false }))
     }
   }
