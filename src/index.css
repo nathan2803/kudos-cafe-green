@@ -2,309 +2,108 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Enhanced Kudos Cafe Design System */
+/* Kudos Cafe Green Theme Design System */
 
 @layer base {
   :root {
-    --background: 45 15% 97%;
-    --foreground: 20 14% 8%;
+    --background: 43 58% 95%;
+    --foreground: 0 0% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 20 14% 8%;
+    --card-foreground: 0 0% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 20 14% 8%;
+    --popover-foreground: 0 0% 11%;
 
-    --primary: 142 71% 25%;
-    --primary-foreground: 45 15% 97%;
+    --primary: 82 65% 17%;
+    --primary-foreground: 43 58% 95%;
 
-    --secondary: 142 30% 45%;
-    --secondary-foreground: 45 15% 97%;
+    --secondary: 82 39% 35%;
+    --secondary-foreground: 43 58% 95%;
 
-    --muted: 142 20% 92%;
-    --muted-foreground: 142 10% 45%;
+    --muted: 82 20% 85%;
+    --muted-foreground: 82 10% 45%;
 
-    --accent: 142 60% 35%;
+    --accent: 82 50% 50%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 142 20% 88%;
-    --input: 142 20% 88%;
-    --ring: 142 71% 25%;
+    --border: 82 20% 85%;
+    --input: 82 20% 85%;
+    --ring: 82 65% 17%;
 
     --radius: 0.75rem;
 
-    /* Enhanced Color Palette */
-    --forest-green: 142 71% 25%;
-    --sage-green: 142 30% 45%;
-    --olive-green: 142 40% 35%;
-    --mint-green: 142 60% 60%;
-    --light-green: 142 45% 75%;
-    --cream: 45 15% 97%;
-    --warm-white: 44 20% 98%;
-    --charcoal: 20 14% 8%;
-    --slate: 20 8% 20%;
-
-    /* Shadows & Effects */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    /* Custom Green Theme Variables */
+    --forest-green: 82 65% 17%;
+    --medium-green: 82 39% 35%;
+    --fresh-green: 82 50% 50%;
+    --light-green: 82 45% 65%;
+    --cream: 43 58% 95%;
 
     --sidebar-background: 0 0% 98%;
+
     --sidebar-foreground: 240 5.3% 26.1%;
+
     --sidebar-primary: 240 5.9% 10%;
+
     --sidebar-primary-foreground: 0 0% 98%;
+
     --sidebar-accent: 240 4.8% 95.9%;
+
     --sidebar-accent-foreground: 240 5.9% 10%;
+
     --sidebar-border: 220 13% 91%;
+
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    --background: 142 20% 8%;
-    --foreground: 45 15% 97%;
+    --background: 82 65% 8%;
+    --foreground: 43 58% 95%;
 
-    --card: 142 25% 12%;
-    --card-foreground: 45 15% 97%;
+    --card: 82 65% 12%;
+    --card-foreground: 43 58% 95%;
 
-    --popover: 142 25% 12%;
-    --popover-foreground: 45 15% 97%;
+    --popover: 82 65% 12%;
+    --popover-foreground: 43 58% 95%;
 
-    --primary: 142 60% 60%;
-    --primary-foreground: 142 20% 8%;
+    --primary: 82 45% 65%;
+    --primary-foreground: 82 65% 8%;
 
-    --secondary: 142 30% 25%;
-    --secondary-foreground: 45 15% 97%;
+    --secondary: 82 30% 25%;
+    --secondary-foreground: 43 58% 95%;
 
-    --muted: 142 30% 18%;
-    --muted-foreground: 142 20% 65%;
+    --muted: 82 30% 20%;
+    --muted-foreground: 82 20% 65%;
 
-    --accent: 142 50% 40%;
-    --accent-foreground: 45 15% 97%;
+    --accent: 82 50% 40%;
+    --accent-foreground: 43 58% 95%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 45 15% 97%;
+    --destructive-foreground: 43 58% 95%;
 
-    --border: 142 30% 25%;
-    --input: 142 30% 25%;
-    --ring: 142 60% 60%;
+    --border: 82 30% 25%;
+    --input: 82 30% 25%;
+    --ring: 82 45% 65%;
     
-    --sidebar-background: 142 20% 8%;
-    --sidebar-foreground: 45 15% 97%;
-    --sidebar-primary: 142 60% 60%;
-    --sidebar-primary-foreground: 142 20% 8%;
-    --sidebar-accent: 142 30% 18%;
-    --sidebar-accent-foreground: 45 15% 97%;
-    --sidebar-border: 142 30% 25%;
-    --sidebar-ring: 142 60% 60%;
+    --sidebar-background: 82 65% 8%;
+    --sidebar-foreground: 43 58% 95%;
+    --sidebar-primary: 82 45% 65%;
+    --sidebar-primary-foreground: 82 65% 8%;
+    --sidebar-accent: 82 30% 20%;
+    --sidebar-accent-foreground: 43 58% 95%;
+    --sidebar-border: 82 30% 25%;
+    --sidebar-ring: 82 45% 65%;
 
     /* Dark mode custom variables */
-    --forest-green: 142 60% 60%;
-    --sage-green: 142 50% 40%;
-    --olive-green: 142 55% 35%;
-    --mint-green: 142 35% 30%;
-    --light-green: 142 25% 25%;
-    --cream: 142 20% 8%;
-    --warm-white: 142 25% 12%;
-    --charcoal: 45 15% 97%;
-    --slate: 45 10% 85%;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-feature-settings: "rlig" 1, "calt" 1;
-  }
-
-  /* Enhanced Typography */
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-bold tracking-tight;
-  }
-
-  h1 {
-    @apply text-4xl md:text-5xl lg:text-6xl;
-  }
-
-  h2 {
-    @apply text-3xl md:text-4xl lg:text-5xl;
-  }
-
-  h3 {
-    @apply text-2xl md:text-3xl;
-  }
-
-  /* Smooth scrolling */
-  html {
-    scroll-behavior: smooth;
-  }
-
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    @apply bg-muted;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    @apply bg-muted-foreground/30 rounded-full;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/50;
-  }
-}
-
-@layer components {
-  /* Glass morphism effect */
-  .glass {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-  }
-
-  .dark .glass {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  /* Gradient text */
-  .gradient-text {
-    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
-  }
-
-  /* Enhanced card styles */
-  .card-elevated {
-    @apply bg-card/80 backdrop-blur-sm border border-border/50 shadow-lg;
-  }
-
-  /* Interactive animations */
-  .animate-float {
-    animation: float 3s ease-in-out infinite;
-  }
-
-  .animate-pulse-slow {
-    animation: pulse 3s ease-in-out infinite;
-  }
-
-  /* Hover effects */
-  .hover-lift {
-    @apply transition-all duration-300 hover:scale-105 hover:shadow-xl;
-  }
-
-  .hover-glow {
-    @apply transition-all duration-300 hover:shadow-lg hover:shadow-primary/25;
-  }
-
-  /* Button enhancements */
-  .btn-primary {
-    @apply bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105;
-  }
-
-  .btn-secondary {
-    @apply bg-gradient-to-r from-secondary to-sage-green text-secondary-foreground shadow-md hover:shadow-lg transition-all duration-300;
-  }
-
-  /* Text effects */
-  .text-shadow {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  .text-shadow-lg {
-    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-}
-
-@layer utilities {
-  /* Animation keyframes */
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-  }
-
-  @keyframes slideInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes slideInLeft {
-    from {
-      opacity: 0;
-      transform: translateX(-20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes slideInRight {
-    from {
-      opacity: 0;
-      transform: translateX(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes fadeInScale {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  /* Animation utilities */
-  .animate-slide-up {
-    animation: slideInUp 0.6s ease-out;
-  }
-
-  .animate-slide-left {
-    animation: slideInLeft 0.6s ease-out;
-  }
-
-  .animate-slide-right {
-    animation: slideInRight 0.6s ease-out;
-  }
-
-  .animate-fade-scale {
-    animation: fadeInScale 0.6s ease-out;
-  }
-
-  /* Spacing utilities */
-  .space-y-section > * + * {
-    margin-top: 6rem;
-  }
-
-  /* Responsive padding */
-  .section-padding {
-    @apply px-4 sm:px-6 lg:px-8;
-  }
-
-  .section-margin {
-    @apply py-16 lg:py-24;
+    --forest-green: 82 45% 65%;
+    --medium-green: 82 50% 40%;
+    --fresh-green: 82 55% 35%;
+    --light-green: 82 35% 30%;
+    --cream: 82 65% 8%;
   }
 }
 
