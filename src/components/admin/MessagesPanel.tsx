@@ -64,7 +64,6 @@ export const MessagesPanel = () => {
         .from('order_messages')
         .select(`
           *,
-          sender:profiles!order_messages_sender_id_fkey(full_name, email),
           order:orders(
             order_number,
             total_amount,
@@ -80,7 +79,23 @@ export const MessagesPanel = () => {
 
       if (error) throw error
 
-      setMessages(data || [])
+      // Fetch sender profiles separately to avoid foreign key issues
+      const messagesWithSenders = await Promise.all(
+        (data || []).map(async (message: any) => {
+          const { data: senderData } = await supabase
+            .from('profiles')
+            .select('full_name, email')
+            .eq('user_id', message.sender_id)
+            .maybeSingle()
+
+          return {
+            ...message,
+            sender: senderData
+          } as OrderMessage
+        })
+      )
+
+      setMessages(messagesWithSenders)
     } catch (error) {
       console.error('Error fetching messages:', error)
       toast({
