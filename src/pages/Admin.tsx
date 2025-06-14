@@ -287,7 +287,7 @@ export const Admin = () => {
               *,
               menu_items (name, price)
             ),
-            reservations (
+            reservations!orders_reservation_id_fkey (
               *,
               tables (table_number, location)
             )
@@ -318,7 +318,7 @@ export const Admin = () => {
           .select(`
             *,
             tables (table_number, location),
-            orders (total_amount, status),
+            orders!reservations_order_id_fkey (total_amount, status),
             profiles (full_name, email, phone)
           `)
           .order('reservation_date', { ascending: false });
