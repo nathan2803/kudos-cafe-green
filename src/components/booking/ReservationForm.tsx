@@ -37,12 +37,43 @@ export const ReservationForm = ({ onReservationComplete, orderTotal }: Reservati
   const [loading, setLoading] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  const timeSlots = [
-    "11:00", "11:30", "12:00", "12:30", "13:00", "13:30",
-    "14:00", "14:30", "15:00", "15:30", "16:00", "16:30",
-    "17:00", "17:30", "18:00", "18:30", "19:00", "19:30",
-    "20:00", "20:30", "21:00", "21:30"
-  ];
+  const getAvailableTimeSlots = () => {
+    if (!selectedDate) return [];
+    
+    const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 6 = Saturday
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    
+    // Weekdays: 10 AM to 9:30 PM (last booking 30 min before 10 PM close)
+    // Weekends: 10 AM to 11:30 PM (last booking 30 min before 12 AM close)
+    const weekdaySlots = [
+      "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "12:00 PM", "12:30 PM",
+      "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM",
+      "4:00 PM", "4:30 PM", "5:00 PM", "5:30 PM", "6:00 PM", "6:30 PM",
+      "7:00 PM", "7:30 PM", "8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM"
+    ];
+    
+    const weekendSlots = [
+      "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "12:00 PM", "12:30 PM",
+      "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM",
+      "4:00 PM", "4:30 PM", "5:00 PM", "5:30 PM", "6:00 PM", "6:30 PM",
+      "7:00 PM", "7:30 PM", "8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM",
+      "10:00 PM", "10:30 PM", "11:00 PM", "11:30 PM"
+    ];
+    
+    return isWeekend ? weekendSlots : weekdaySlots;
+  };
+
+  const convertTo24Hour = (time12h: string) => {
+    const [time, modifier] = time12h.split(' ');
+    let [hours, minutes] = time.split(':');
+    if (hours === '12') {
+      hours = '00';
+    }
+    if (modifier === 'PM') {
+      hours = (parseInt(hours, 10) + 12).toString();
+    }
+    return `${hours}:${minutes}`;
+  };
 
   const checkAvailableTables = async () => {
     if (!selectedDate || !selectedTime) return;
@@ -64,7 +95,7 @@ export const ReservationForm = ({ onReservationComplete, orderTotal }: Reservati
           .rpc('check_table_availability', {
             p_table_id: table.id,
             p_date: format(selectedDate, 'yyyy-MM-dd'),
-            p_time: selectedTime + ':00',
+            p_time: convertTo24Hour(selectedTime) + ':00',
             p_duration_hours: 2
           });
 
@@ -180,7 +211,7 @@ export const ReservationForm = ({ onReservationComplete, orderTotal }: Reservati
               <SelectValue placeholder="Select time" />
             </SelectTrigger>
             <SelectContent>
-              {timeSlots.map((time) => (
+              {getAvailableTimeSlots().map((time) => (
                 <SelectItem key={time} value={time}>
                   {time}
                 </SelectItem>

@@ -8,6 +8,7 @@ import { ReservationForm } from '@/components/booking/ReservationForm';
 import { OrderForm } from '@/components/booking/OrderForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCart } from '@/contexts/CartContext';
 import { ShoppingCart, Plus, Minus, Trash2 } from 'lucide-react';
 
 interface MenuItem {
@@ -20,18 +21,12 @@ interface MenuItem {
   is_available: boolean;
 }
 
-interface CartItem extends MenuItem {
-  quantity: number;
-  special_instructions?: string;
-}
-
 export default function Booking() {
   const [orderType, setOrderType] = useState<'pickup' | 'takeout' | 'dine_in'>();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showCart, setShowCart] = useState(false);
   const { toast } = useToast();
+  const { cart, addToCart, updateQuantity, removeFromCart, clearCart, getTotalAmount } = useCart();
 
   useEffect(() => {
     fetchMenuItems();
@@ -57,39 +52,6 @@ export default function Booking() {
     }
   };
 
-  const addToCart = (item: MenuItem) => {
-    setCart(prev => {
-      const existingItem = prev.find(cartItem => cartItem.id === item.id);
-      if (existingItem) {
-        return prev.map(cartItem =>
-          cartItem.id === item.id
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem
-        );
-      }
-      return [...prev, { ...item, quantity: 1 }];
-    });
-  };
-
-  const updateQuantity = (itemId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(itemId);
-      return;
-    }
-    setCart(prev =>
-      prev.map(item =>
-        item.id === itemId ? { ...item, quantity } : item
-      )
-    );
-  };
-
-  const removeFromCart = (itemId: string) => {
-    setCart(prev => prev.filter(item => item.id !== itemId));
-  };
-
-  const getTotalAmount = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-  };
 
   const handleOrderCreate = async (orderData: any) => {
     if (cart.length === 0) {
@@ -169,7 +131,7 @@ export default function Booking() {
       });
 
       // Clear cart
-      setCart([]);
+      clearCart();
       setOrderType(undefined);
 
     } catch (error) {
