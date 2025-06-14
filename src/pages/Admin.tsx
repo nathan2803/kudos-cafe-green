@@ -168,12 +168,59 @@ export const Admin = () => {
   ]
 
   useEffect(() => {
-    // Simulate loading data
-    setTimeout(() => {
-      setMenuItems(sampleMenuItems)
-      setOrders(sampleOrders)
-      setLoading(false)
-    }, 1000)
+    const fetchData = async () => {
+      try {
+        // Fetch menu items
+        const { data: menuData } = await supabase
+          .from('menu_items')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (menuData) setMenuItems(menuData);
+
+        // Fetch inventory items with categories
+        const { data: inventoryData } = await supabase
+          .from('inventory_items')
+          .select(`
+            *,
+            categories (
+              name,
+              color
+            )
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (inventoryData) setInventoryItems(inventoryData);
+
+        // Fetch categories
+        const { data: categoriesData } = await supabase
+          .from('categories')
+          .select('*')
+          .order('name');
+        
+        if (categoriesData) setCategories(categoriesData);
+
+        // Fetch suppliers
+        const { data: suppliersData } = await supabase
+          .from('suppliers')
+          .select('*')
+          .order('name');
+        
+        if (suppliersData) setSuppliers(suppliersData);
+
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load data",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, [])
 
   if (!user || !isAdmin) {
@@ -220,6 +267,175 @@ export const Admin = () => {
       description: `Order #${orderId} status changed to ${newStatus}`,
     })
   }
+
+  // Inventory item handlers
+  const handleAddInventoryItem = async (formData: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .insert([formData])
+        .select(`
+          *,
+          categories (
+            name,
+            color
+          )
+        `);
+
+      if (error) throw error;
+
+      if (data) {
+        setInventoryItems(prev => [data[0], ...prev]);
+        toast({
+          title: "Success",
+          description: "Inventory item added successfully"
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add inventory item",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateInventoryItem = async (itemId: string, formData: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .update(formData)
+        .eq('id', itemId)
+        .select(`
+          *,
+          categories (
+            name,
+            color
+          )
+        `);
+
+      if (error) throw error;
+
+      if (data) {
+        setInventoryItems(prev => prev.map(item => 
+          item.id === itemId ? data[0] : item
+        ));
+        toast({
+          title: "Success",
+          description: "Inventory item updated successfully"
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update inventory item",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleRestockItem = async (itemId: string, restockData: any) => {
+    try {
+      // Update inventory item stock
+      const currentItem = inventoryItems.find(item => item.id === itemId);
+      if (!currentItem) return;
+
+      const newStock = parseFloat(currentItem.current_stock) + parseFloat(restockData.quantity);
+      
+      const { error: updateError } = await supabase
+        .from('inventory_items')
+        .update({ 
+          current_stock: newStock,
+          current_price: restockData.unit_price 
+        })
+        .eq('id', itemId);
+
+      if (updateError) throw updateError;
+
+      // Add stock movement record
+      const { error: movementError } = await supabase
+        .from('stock_movements')
+        .insert([{
+          item_id: itemId,
+          movement_type: 'IN',
+          quantity: parseFloat(restockData.quantity),
+          unit_price: parseFloat(restockData.unit_price),
+          total_cost: parseFloat(restockData.quantity) * parseFloat(restockData.unit_price),
+          supplier_id: restockData.supplier_id,
+          reason: 'Restock',
+          created_by: user?.id
+        }]);
+
+      if (movementError) throw movementError;
+
+      // Update local state
+      setInventoryItems(prev => prev.map(item => 
+        item.id === itemId 
+          ? { ...item, current_stock: newStock, current_price: restockData.unit_price }
+          : item
+      ));
+
+      toast({
+        title: "Success",
+        description: "Item restocked successfully"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to restock item",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Menu item handlers
+  const handleAddMenuItem = async (formData: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('menu_items')
+        .insert([formData])
+        .select();
+
+      if (error) throw error;
+
+      if (data) {
+        setMenuItems(prev => [data[0], ...prev]);
+        toast({
+          title: "Success",
+          description: "Menu item added successfully"
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add menu item",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteMenuItem = async (itemId: string) => {
+    try {
+      const { error } = await supabase
+        .from('menu_items')
+        .delete()
+        .eq('id', itemId);
+
+      if (error) throw error;
+
+      setMenuItems(prev => prev.filter(item => item.id !== itemId));
+      toast({
+        title: "Success",
+        description: "Menu item deleted successfully"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete menu item",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -598,80 +814,100 @@ export const Admin = () => {
                       <DialogHeader>
                         <DialogTitle>Add New Inventory Item</DialogTitle>
                       </DialogHeader>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="itemName">Item Name</Label>
-                            <Input id="itemName" placeholder="Enter item name" />
+                      <form onSubmit={(e) => {
+                        e.preventDefault();
+                        const formData = new FormData(e.target as HTMLFormElement);
+                        const newItem = {
+                          name: formData.get('name'),
+                          description: formData.get('description'),
+                          sku: formData.get('sku'),
+                          category_id: formData.get('category_id'),
+                          current_stock: parseFloat(formData.get('current_stock') as string),
+                          unit_of_measurement: formData.get('unit'),
+                          min_stock_level: parseFloat(formData.get('min_stock') as string),
+                          max_stock_level: parseFloat(formData.get('max_stock') as string) || null,
+                          current_price: parseFloat(formData.get('current_price') as string),
+                          storage_location: formData.get('location'),
+                          is_perishable: formData.get('perishable') === 'on',
+                          is_active: formData.get('active') === 'on'
+                        };
+                        handleAddInventoryItem(newItem);
+                      }}>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="itemName">Item Name</Label>
+                              <Input name="name" id="itemName" placeholder="Enter item name" required />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="description">Description</Label>
+                              <Textarea name="description" id="description" placeholder="Enter description" />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="sku">SKU</Label>
+                              <Input name="sku" id="sku" placeholder="Enter SKU" required />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="category">Category</Label>
+                              <Select name="category_id" required>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {categories.map((category) => (
+                                    <SelectItem key={category.id} value={category.id}>
+                                      {category.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="description">Description</Label>
-                            <Textarea id="description" placeholder="Enter description" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="sku">SKU</Label>
-                            <Input id="sku" placeholder="Enter SKU" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="category">Category</Label>
-                            <Select>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select category" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="food-beverages">Food & Beverages</SelectItem>
-                                <SelectItem value="kitchen-equipment">Kitchen Equipment</SelectItem>
-                                <SelectItem value="dining-room">Dining Room</SelectItem>
-                                <SelectItem value="cleaning">Cleaning & Maintenance</SelectItem>
-                                <SelectItem value="office">Office & Administrative</SelectItem>
-                              </SelectContent>
-                            </Select>
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="currentStock">Current Stock</Label>
+                                <Input name="current_stock" id="currentStock" type="number" step="0.01" placeholder="0.00" required />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="unit">Unit</Label>
+                                <Input name="unit" id="unit" placeholder="e.g., pieces, lbs, bottles" required />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="minStock">Min Stock Level</Label>
+                                <Input name="min_stock" id="minStock" type="number" step="0.01" placeholder="0.00" required />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="maxStock">Max Stock Level</Label>
+                                <Input name="max_stock" id="maxStock" type="number" step="0.01" placeholder="0.00" />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="currentPrice">Current Price (₱)</Label>
+                                <Input name="current_price" id="currentPrice" type="number" step="0.01" placeholder="0.00" required />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="location">Storage Location</Label>
+                                <Input name="location" id="location" placeholder="e.g., Freezer A, Pantry B" />
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                              <div className="flex items-center space-x-2">
+                                <Switch name="perishable" id="perishable" />
+                                <Label htmlFor="perishable">Perishable</Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Switch name="active" id="active" defaultChecked />
+                                <Label htmlFor="active">Active</Label>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="currentStock">Current Stock</Label>
-                              <Input id="currentStock" type="number" step="0.01" placeholder="0.00" />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="unit">Unit</Label>
-                              <Input id="unit" placeholder="e.g., pieces, lbs, bottles" />
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="minStock">Min Stock Level</Label>
-                              <Input id="minStock" type="number" step="0.01" placeholder="0.00" />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="maxStock">Max Stock Level</Label>
-                              <Input id="maxStock" type="number" step="0.01" placeholder="0.00" />
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="currentPrice">Current Price (₱)</Label>
-                              <Input id="currentPrice" type="number" step="0.01" placeholder="0.00" />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="location">Storage Location</Label>
-                              <Input id="location" placeholder="e.g., Freezer A, Pantry B" />
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-2">
-                              <Switch id="perishable" />
-                              <Label htmlFor="perishable">Perishable</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Switch id="active" defaultChecked />
-                              <Label htmlFor="active">Active</Label>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <Button className="w-full bg-primary hover:bg-primary/90 mt-4">Add Item</Button>
+                        <Button type="submit" className="w-full bg-primary hover:bg-primary/90 mt-4">Add Item</Button>
+                      </form>
                     </DialogContent>
                   </Dialog>
                   <Button variant="outline">
@@ -793,281 +1029,196 @@ export const Admin = () => {
                   </div>
                 </div>
 
-                {/* Sample Inventory Items */}
+                {/* Real Inventory Items from Database */}
                 <div className="grid grid-cols-1 gap-4">
-                  {/* Sample Item 1 - Chicken Breast */}
-                  <Card className="border-primary/20">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-4 mb-2">
-                            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                              <Package className="w-6 h-6 text-blue-600" />
-                            </div>
-                            <div>
-                              <h3 className="font-semibold">Chicken Breast</h3>
-                              <p className="text-sm text-muted-foreground">SKU: CHK-BRST-001</p>
-                            </div>
-                            <Badge className="bg-blue-100 text-blue-800 border-blue-200">Food & Beverages</Badge>
-                            <Badge className="bg-orange-100 text-orange-800 border-orange-200">Low Stock</Badge>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div>
-                              <p className="text-muted-foreground">Current Stock</p>
-                              <p className="font-medium">25.5 lbs</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Min Level</p>
-                              <p className="font-medium">10.0 lbs</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Price</p>
-                              <p className="font-medium">₱9.20/lb</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Location</p>
-                              <p className="font-medium">Freezer A</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex space-x-2 mt-4 md:mt-0">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button size="sm" variant="outline">
-                                <ShoppingCart className="w-4 h-4 mr-1" />
-                                Restock
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Restock Chicken Breast</DialogTitle>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div className="space-y-2">
-                                    <Label>Current Stock</Label>
-                                    <Input value="25.5 lbs" disabled />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label>Add Quantity</Label>
-                                    <Input type="number" placeholder="0.00" />
-                                  </div>
+                  {inventoryItems.length === 0 ? (
+                    <Card className="border-primary/20">
+                      <CardContent className="p-6 text-center">
+                        <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">No inventory items found. Add some items to get started.</p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    inventoryItems.map((item) => (
+                      <Card key={item.id} className="border-primary/20">
+                        <CardContent className="p-6">
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-4 mb-2">
+                                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                                  item.categories?.name === 'Food & Beverages' ? 'bg-blue-100' :
+                                  item.categories?.name === 'Kitchen Equipment' ? 'bg-purple-100' :
+                                  item.categories?.name === 'Dining Room' ? 'bg-yellow-100' :
+                                  item.categories?.name === 'Cleaning & Maintenance' ? 'bg-green-100' :
+                                  'bg-gray-100'
+                                }`}>
+                                  <Package className={`w-6 h-6 ${
+                                    item.categories?.name === 'Food & Beverages' ? 'text-blue-600' :
+                                    item.categories?.name === 'Kitchen Equipment' ? 'text-purple-600' :
+                                    item.categories?.name === 'Dining Room' ? 'text-yellow-600' :
+                                    item.categories?.name === 'Cleaning & Maintenance' ? 'text-green-600' :
+                                    'text-gray-600'
+                                  }`} />
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div className="space-y-2">
-                                    <Label>Unit Price (₱)</Label>
-                                    <Input type="number" defaultValue="9.20" />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label>Supplier</Label>
-                                    <Select>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Select supplier" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="fresh-foods">Fresh Foods Co.</SelectItem>
-                                        <SelectItem value="kitchen-pro">Kitchen Pro Supplies</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
+                                <div>
+                                  <h3 className="font-semibold">{item.name}</h3>
+                                  <p className="text-sm text-muted-foreground">SKU: {item.sku}</p>
                                 </div>
-                                <Button className="w-full">Update Stock</Button>
+                                <Badge className={`${
+                                  item.categories?.name === 'Food & Beverages' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                                  item.categories?.name === 'Kitchen Equipment' ? 'bg-purple-100 text-purple-800 border-purple-200' :
+                                  item.categories?.name === 'Dining Room' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                                  item.categories?.name === 'Cleaning & Maintenance' ? 'bg-green-100 text-green-800 border-green-200' :
+                                  'bg-gray-100 text-gray-800 border-gray-200'
+                                }`}>
+                                  {item.categories?.name || 'Uncategorized'}
+                                </Badge>
+                                <Badge className={`${
+                                  parseFloat(item.current_stock) <= parseFloat(item.min_stock_level) 
+                                    ? parseFloat(item.current_stock) === 0 
+                                      ? 'bg-red-100 text-red-800 border-red-200' 
+                                      : 'bg-orange-100 text-orange-800 border-orange-200'
+                                    : 'bg-green-100 text-green-800 border-green-200'
+                                }`}>
+                                  {parseFloat(item.current_stock) <= parseFloat(item.min_stock_level) 
+                                    ? parseFloat(item.current_stock) === 0 
+                                      ? 'Out of Stock' 
+                                      : 'Low Stock'
+                                    : 'In Stock'}
+                                </Badge>
                               </div>
-                            </DialogContent>
-                          </Dialog>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button size="sm" variant="outline">
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Edit Chicken Breast</DialogTitle>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <div className="space-y-2">
-                                  <Label>Item Name</Label>
-                                  <Input defaultValue="Chicken Breast" />
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                <div>
+                                  <p className="text-muted-foreground">Current Stock</p>
+                                  <p className="font-medium">{item.current_stock} {item.unit_of_measurement}</p>
                                 </div>
-                                <div className="space-y-2">
-                                  <Label>Description</Label>
-                                  <Textarea defaultValue="Fresh boneless chicken breast" />
+                                <div>
+                                  <p className="text-muted-foreground">Min Level</p>
+                                  <p className="font-medium">{item.min_stock_level} {item.unit_of_measurement}</p>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div className="space-y-2">
-                                    <Label>Min Stock Level</Label>
-                                    <Input defaultValue="10.0" />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label>Storage Location</Label>
-                                    <Input defaultValue="Freezer A" />
-                                  </div>
+                                <div>
+                                  <p className="text-muted-foreground">Price</p>
+                                  <p className="font-medium">₱{parseFloat(item.current_price || '0').toFixed(2)}/{item.unit_of_measurement}</p>
                                 </div>
-                                <Button className="w-full">Save Changes</Button>
+                                <div>
+                                  <p className="text-muted-foreground">Location</p>
+                                  <p className="font-medium">{item.storage_location}</p>
+                                </div>
                               </div>
-                            </DialogContent>
-                          </Dialog>
-                          <Button size="sm" variant="outline">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Sample Item 2 - Olive Oil */}
-                  <Card className="border-primary/20">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-4 mb-2">
-                            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                              <Package className="w-6 h-6 text-green-600" />
                             </div>
-                            <div>
-                              <h3 className="font-semibold">Extra Virgin Olive Oil</h3>
-                              <p className="text-sm text-muted-foreground">SKU: OIL-OLV-001</p>
-                            </div>
-                            <Badge className="bg-blue-100 text-blue-800 border-blue-200">Food & Beverages</Badge>
-                            <Badge className="bg-green-100 text-green-800 border-green-200">In Stock</Badge>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div>
-                              <p className="text-muted-foreground">Current Stock</p>
-                              <p className="font-medium">15 bottles</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Min Level</p>
-                              <p className="font-medium">5 bottles</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Price</p>
-                              <p className="font-medium">₱13.50/bottle</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Location</p>
-                              <p className="font-medium">Pantry B</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex space-x-2 mt-4 md:mt-0">
-                          <Button size="sm" variant="outline">
-                            <ShoppingCart className="w-4 h-4 mr-1" />
-                            Restock
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Sample Item 3 - Chef Knife */}
-                  <Card className="border-primary/20">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-4 mb-2">
-                            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                              <ChefHat className="w-6 h-6 text-purple-600" />
-                            </div>
-                            <div>
-                              <h3 className="font-semibold">Professional Chef Knife</h3>
-                              <p className="text-sm text-muted-foreground">SKU: KNF-CHF-001</p>
-                            </div>
-                            <Badge className="bg-purple-100 text-purple-800 border-purple-200">Kitchen Equipment</Badge>
-                            <Badge className="bg-orange-100 text-orange-800 border-orange-200">Low Stock</Badge>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div>
-                              <p className="text-muted-foreground">Current Stock</p>
-                              <p className="font-medium">3 pieces</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Min Level</p>
-                              <p className="font-medium">2 pieces</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Price</p>
-                              <p className="font-medium">₱45.00/piece</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Location</p>
-                              <p className="font-medium">Kitchen Storage</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex space-x-2 mt-4 md:mt-0">
-                          <Button size="sm" variant="outline">
-                            <ShoppingCart className="w-4 h-4 mr-1" />
-                            Restock
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Sample Item 4 - Dining Chairs */}
-                  <Card className="border-primary/20">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-4 mb-2">
-                            <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                              <Package className="w-6 h-6 text-yellow-600" />
-                            </div>
-                            <div>
-                              <h3 className="font-semibold">Dining Chair</h3>
-                              <p className="text-sm text-muted-foreground">SKU: CHR-DIN-001</p>
-                            </div>
-                            <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Dining Room</Badge>
-                            <Badge className="bg-green-100 text-green-800 border-green-200">In Stock</Badge>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div>
-                              <p className="text-muted-foreground">Current Stock</p>
-                              <p className="font-medium">8 pieces</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Min Level</p>
-                              <p className="font-medium">4 pieces</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Price</p>
-                              <p className="font-medium">₱90.00/piece</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Location</p>
-                              <p className="font-medium">Dining Storage</p>
+                            <div className="flex space-x-2 mt-4 md:mt-0">
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button size="sm" variant="outline">
+                                    <ShoppingCart className="w-4 h-4 mr-1" />
+                                    Restock
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Restock {item.name}</DialogTitle>
+                                  </DialogHeader>
+                                  <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const formData = new FormData(e.target as HTMLFormElement);
+                                    const restockData = {
+                                      quantity: formData.get('quantity'),
+                                      unit_price: formData.get('unit_price'),
+                                      supplier_id: formData.get('supplier_id')
+                                    };
+                                    handleRestockItem(item.id, restockData);
+                                  }}>
+                                    <div className="space-y-4">
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                          <Label>Current Stock</Label>
+                                          <Input value={`${item.current_stock} ${item.unit_of_measurement}`} disabled />
+                                        </div>
+                                        <div className="space-y-2">
+                                          <Label>Add Quantity</Label>
+                                          <Input name="quantity" type="number" step="0.01" placeholder="0.00" required />
+                                        </div>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                          <Label>Unit Price (₱)</Label>
+                                          <Input name="unit_price" type="number" step="0.01" defaultValue={item.current_price} required />
+                                        </div>
+                                        <div className="space-y-2">
+                                          <Label>Supplier</Label>
+                                          <Select name="supplier_id">
+                                            <SelectTrigger>
+                                              <SelectValue placeholder="Select supplier" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              {suppliers.map((supplier) => (
+                                                <SelectItem key={supplier.id} value={supplier.id}>
+                                                  {supplier.name}
+                                                </SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                      </div>
+                                      <Button type="submit" className="w-full">Update Stock</Button>
+                                    </div>
+                                  </form>
+                                </DialogContent>
+                              </Dialog>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button size="sm" variant="outline">
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Edit {item.name}</DialogTitle>
+                                  </DialogHeader>
+                                  <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const formData = new FormData(e.target as HTMLFormElement);
+                                    const updateData = {
+                                      name: formData.get('name'),
+                                      description: formData.get('description'),
+                                      min_stock_level: formData.get('min_stock_level'),
+                                      storage_location: formData.get('storage_location')
+                                    };
+                                    handleUpdateInventoryItem(item.id, updateData);
+                                  }}>
+                                    <div className="space-y-4">
+                                      <div className="space-y-2">
+                                        <Label>Item Name</Label>
+                                        <Input name="name" defaultValue={item.name} required />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label>Description</Label>
+                                        <Textarea name="description" defaultValue={item.description || ''} />
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                          <Label>Min Stock Level</Label>
+                                          <Input name="min_stock_level" type="number" step="0.01" defaultValue={item.min_stock_level} required />
+                                        </div>
+                                        <div className="space-y-2">
+                                          <Label>Storage Location</Label>
+                                          <Input name="storage_location" defaultValue={item.storage_location || ''} />
+                                        </div>
+                                      </div>
+                                      <Button type="submit" className="w-full">Save Changes</Button>
+                                    </div>
+                                  </form>
+                                </DialogContent>
+                              </Dialog>
+                              <Button size="sm" variant="outline">
+                                <Eye className="w-4 h-4" />
+                              </Button>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex space-x-2 mt-4 md:mt-0">
-                          <Button size="sm" variant="outline">
-                            <ShoppingCart className="w-4 h-4 mr-1" />
-                            Restock
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
                 </div>
 
                 {/* Low Stock Alerts Section */}
