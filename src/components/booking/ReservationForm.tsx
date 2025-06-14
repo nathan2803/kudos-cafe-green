@@ -155,13 +155,13 @@ export const ReservationForm = ({ onReservationComplete, orderTotal }: Reservati
                 {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
+            <PopoverContent className="w-auto p-0" align="start">
               <Calendar
                 mode="single"
                 selected={selectedDate}
                 onSelect={setSelectedDate}
                 disabled={isDateDisabled}
-                initialFocus
+                initialFocus={false}
               />
             </PopoverContent>
           </Popover>
