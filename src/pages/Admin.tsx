@@ -19,6 +19,7 @@ import { ReviewsManagement } from '@/components/admin/ReviewsManagement'
 import { UserManagement } from '@/components/admin/UserManagement'
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard'
 import { AboutUsManagement } from '@/components/admin/AboutUsManagement'
+import { HeroManagement } from '@/components/admin/HeroManagement'
 
 interface MenuItem {
   id: string
@@ -160,7 +161,8 @@ import {
   Download,
   WalletCards,
   MessageSquare,
-  FileText
+  FileText,
+  Home
 } from 'lucide-react'
 
 export const Admin = () => {
@@ -1236,10 +1238,14 @@ export const Admin = () => {
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-9 bg-muted/30">
+          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10 bg-muted/30">
             <TabsTrigger value="dashboard" className="flex items-center space-x-2">
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Dashboard</span>
+            </TabsTrigger>
+            <TabsTrigger value="hero" className="flex items-center space-x-2">
+              <Home className="w-4 h-4" />
+              <span className="hidden sm:inline">Hero</span>
             </TabsTrigger>
             <TabsTrigger value="orders" className="flex items-center space-x-2">
               <Package className="w-4 h-4" />
@@ -2859,6 +2865,11 @@ export const Admin = () => {
           {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-6">
             <AnalyticsDashboard />
+          </TabsContent>
+
+          {/* Hero Management Tab */}
+          <TabsContent value="hero" className="space-y-6">
+            <HeroManagement />
           </TabsContent>
 
           {/* About Us Management Tab */}

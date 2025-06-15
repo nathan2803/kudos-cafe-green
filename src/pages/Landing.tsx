@@ -51,6 +51,7 @@ export const Landing = () => {
   const { user } = useAuth()
   const [featuredDishes, setFeaturedDishes] = useState<MenuItem[]>([])
   const [aboutSections, setAboutSections] = useState<any[]>([])
+  const [heroContent, setHeroContent] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -74,8 +75,16 @@ export const Landing = () => {
         .eq('is_active', true)
         .order('order_index')
 
+      // Fetch hero content
+      const { data: hero } = await supabase
+        .from('site_settings')
+        .select('setting_value')
+        .eq('setting_key', 'hero_content')
+        .single()
+
       setFeaturedDishes(dishes || [])
       setAboutSections(sections || [])
+      setHeroContent(hero?.setting_value || null)
     } catch (error) {
       console.error('Error fetching featured content:', error)
     } finally {
@@ -83,12 +92,13 @@ export const Landing = () => {
     }
   }
 
-  const heroBackgrounds = [
+  const defaultHeroBackgrounds = [
     'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1920&h=1080&fit=crop',
     'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1920&h=1080&fit=crop',
     'https://images.unsplash.com/photo-1493770348161-369560ae357d?w=1920&h=1080&fit=crop'
   ]
 
+  const heroBackgrounds = heroContent?.background_images || defaultHeroBackgrounds
   const [currentBg, setCurrentBg] = useState(0)
 
   useEffect(() => {
@@ -96,7 +106,7 @@ export const Landing = () => {
       setCurrentBg((prev) => (prev + 1) % heroBackgrounds.length)
     }, 5000)
     return () => clearInterval(interval)
-  }, [])
+  }, [heroBackgrounds.length])
 
   const statsData = [
     { icon: Award, label: '5-Star Rating', value: '4.9/5' },
@@ -137,13 +147,12 @@ export const Landing = () => {
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-            <span className="block">Fresh Flavors</span>
-            <span className="block text-light-green">Green Living</span>
+            <span className="block">{heroContent?.title_line1 || 'Fresh Flavors'}</span>
+            <span className="block text-light-green">{heroContent?.title_line2 || 'Green Living'}</span>
           </h1>
           
           <p className="text-xl md:text-2xl mb-8 text-cream/90 max-w-2xl mx-auto leading-relaxed">
-            Experience sustainable dining at its finest. Locally sourced ingredients, 
-            eco-friendly practices, and unforgettable flavors await you.
+            {heroContent?.subtitle || 'Experience sustainable dining at its finest. Locally sourced ingredients, eco-friendly practices, and unforgettable flavors await you.'}
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
