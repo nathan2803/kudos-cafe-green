@@ -412,9 +412,11 @@ export const Menu = () => {
   useEffect(() => {
     let filtered = menuItems
 
-    // Filter by category
+    // Filter by category (case-insensitive)
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(item => item.category === selectedCategory)
+      filtered = filtered.filter(item => 
+        item.category.toLowerCase() === selectedCategory.toLowerCase()
+      )
     }
 
     // Filter by search query
@@ -425,6 +427,16 @@ export const Menu = () => {
         item.dietary_tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
       )
     }
+
+    // Sort filtered items: popular first, then alphabetical
+    filtered.sort((a, b) => {
+      // Popular items first
+      if (a.is_popular && !b.is_popular) return -1
+      if (!a.is_popular && b.is_popular) return 1
+      
+      // Then alphabetical by name
+      return a.name.localeCompare(b.name)
+    })
 
     setFilteredItems(filtered)
   }, [selectedCategory, searchQuery, menuItems])
