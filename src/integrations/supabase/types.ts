@@ -397,10 +397,10 @@ export type Database = {
           is_urgent: boolean
           message: string
           message_type: string
-          order_id: string
+          order_id: string | null
           parent_message_id: string | null
           recipient_id: string | null
-          sender_id: string
+          sender_id: string | null
           subject: string | null
           updated_at: string
         }
@@ -412,10 +412,10 @@ export type Database = {
           is_urgent?: boolean
           message: string
           message_type: string
-          order_id: string
+          order_id?: string | null
           parent_message_id?: string | null
           recipient_id?: string | null
-          sender_id: string
+          sender_id?: string | null
           subject?: string | null
           updated_at?: string
         }
@@ -427,10 +427,10 @@ export type Database = {
           is_urgent?: boolean
           message?: string
           message_type?: string
-          order_id?: string
+          order_id?: string | null
           parent_message_id?: string | null
           recipient_id?: string | null
-          sender_id?: string
+          sender_id?: string | null
           subject?: string | null
           updated_at?: string
         }
