@@ -346,12 +346,18 @@ export const Contact = () => {
           
           <Card className="border-primary/20 overflow-hidden">
             <CardContent className="p-0">
-              <div className="w-full h-96 bg-muted flex items-center justify-center">
-                <div className="text-center space-y-2">
-                  <MapPin className="w-12 h-12 text-primary mx-auto" />
-                  <p className="text-muted-foreground">Interactive map coming soon</p>
-                  <p className="text-sm text-muted-foreground">123 Green Street, Eco District, Manila</p>
-                </div>
+              <div className="w-full h-96">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3861.9896893845524!2d120.97901237586563!3d14.553362285910577!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397ca21af3e5fb9%3A0x5cd7c85e46a4c5dd!2sSM%20Mall%20of%20Asia!5e0!3m2!1sen!2sph!4v1734276000000!5m2!1sen!2sph"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Kudos Cafe & Restaurant Location"
+                  className="rounded-lg"
+                />
               </div>
             </CardContent>
           </Card>
