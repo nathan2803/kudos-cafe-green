@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/hooks/useAuth'
@@ -14,7 +16,14 @@ import {
   Package,
   Send,
   User,
-  AlertTriangle
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+  Trash2,
+  SortAsc,
+  SortDesc,
+  Calendar,
+  Hash
 } from 'lucide-react'
 
 interface OrderMessage {
@@ -60,14 +69,24 @@ export const MessagesInbox = () => {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
   const [replyText, setReplyText] = useState('')
   const [sending, setSending] = useState(false)
+  const [sortBy, setSortBy] = useState<'date' | 'order'>('date')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [expandedConversations, setExpandedConversations] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (user) {
       fetchMessages()
       const cleanup = setupRealtimeSubscription()
-      return cleanup // Return the cleanup function
+      return cleanup
     }
   }, [user])
+
+  useEffect(() => {
+    // Auto-expand all conversations by default
+    if (conversations.length > 0) {
+      setExpandedConversations(new Set(conversations.map(c => c.order_id)))
+    }
+  }, [conversations.length])
 
   const fetchMessages = async () => {
     if (!user) return
@@ -134,7 +153,7 @@ export const MessagesInbox = () => {
         }
       })
 
-      // Sort conversations by last message time and sort messages within each conversation
+      // Sort conversations and messages within each conversation
       const sortedConversations = Array.from(conversationMap.values())
         .map(conv => ({
           ...conv,
@@ -142,9 +161,6 @@ export const MessagesInbox = () => {
             new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
           )
         }))
-        .sort((a, b) => 
-          new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
-        )
 
       setConversations(sortedConversations)
     } catch (error) {
@@ -170,7 +186,7 @@ export const MessagesInbox = () => {
           table: 'order_messages'
         },
         () => {
-          fetchMessages() // Refresh messages when any change occurs
+          fetchMessages()
         }
       )
       .subscribe()
@@ -185,7 +201,6 @@ export const MessagesInbox = () => {
 
     setSending(true)
     try {
-      // Find the conversation to get admin user_id for recipient
       const conversation = conversations.find(c => c.order_id === orderId)
       const lastAdminMessage = conversation?.messages
         .reverse()
@@ -196,7 +211,7 @@ export const MessagesInbox = () => {
         .insert({
           order_id: orderId,
           sender_id: user.id,
-          recipient_id: lastAdminMessage?.sender_id, // Reply to the admin who sent the last message
+          recipient_id: lastAdminMessage?.sender_id,
           parent_message_id: parentMessageId,
           message_type: 'customer_response',
           subject: parentMessageId ? 'Re: Customer Response' : 'Customer Message',
@@ -238,6 +253,61 @@ export const MessagesInbox = () => {
     }
   }
 
+  const deleteMessage = async (messageId: string) => {
+    try {
+      const { error } = await supabase
+        .from('order_messages')
+        .delete()
+        .eq('id', messageId)
+        .eq('sender_id', user?.id)
+      
+      if (error) throw error
+      
+      toast({
+        title: "Message deleted",
+        description: "Your message has been deleted."
+      })
+      
+      fetchMessages()
+    } catch (error) {
+      console.error('Error deleting message:', error)
+      toast({
+        title: "Error",
+        description: "Failed to delete message",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const toggleConversation = (orderId: string) => {
+    const newExpanded = new Set(expandedConversations)
+    if (newExpanded.has(orderId)) {
+      newExpanded.delete(orderId)
+    } else {
+      newExpanded.add(orderId)
+    }
+    setExpandedConversations(newExpanded)
+  }
+
+  const getSortedConversations = () => {
+    let sorted = [...conversations]
+    
+    if (sortBy === 'date') {
+      sorted = sorted.sort((a, b) => {
+        const dateA = new Date(a.lastMessageAt).getTime()
+        const dateB = new Date(b.lastMessageAt).getTime()
+        return sortOrder === 'desc' ? dateB - dateA : dateA - dateB
+      })
+    } else if (sortBy === 'order') {
+      sorted = sorted.sort((a, b) => {
+        const comparison = a.order_number.localeCompare(b.order_number)
+        return sortOrder === 'desc' ? -comparison : comparison
+      })
+    }
+    
+    return sorted
+  }
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -251,100 +321,188 @@ export const MessagesInbox = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Mail className="w-5 h-5 text-primary" />
-          <span>My Messages</span>
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center space-x-2">
+            <Mail className="w-5 h-5 text-primary" />
+            <span>My Messages</span>
+          </CardTitle>
+          
+          {/* Sorting Controls */}
+          <div className="flex items-center gap-2">
+            <Select value={sortBy} onValueChange={(value: 'date' | 'order') => setSortBy(value)}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    <span>Date</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="order">
+                  <div className="flex items-center gap-2">
+                    <Hash className="w-4 h-4" />
+                    <span>Order</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            >
+              {sortOrder === 'desc' ? <SortDesc className="w-4 h-4" /> : <SortAsc className="w-4 h-4" />}
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        {conversations.length > 0 ? (
+        {getSortedConversations().length > 0 ? (
           <div className="space-y-4">
-            {conversations.map((conversation) => (
-              <div key={conversation.order_id} className="border rounded-lg p-4">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-lg flex items-center gap-2">
-                        <Package className="w-4 h-4" />
-                        {conversation.order_number}
-                      </h3>
-                      {conversation.hasUnread && (
-                        <span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
-                          New
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {conversation.messages.length} message{conversation.messages.length !== 1 ? 's' : ''} • 
-                      Last updated {formatDistanceToNow(new Date(conversation.lastMessageAt))} ago
-                    </p>
-                  </div>
-                </div>
-
-                {/* Messages in conversation */}
-                <div className="space-y-3 mb-4">
-                  {conversation.messages.map((message) => (
-                    <div 
-                      key={message.id}
-                      className={`p-3 rounded border ${
-                        message.sender?.is_admin 
-                          ? 'bg-blue-50 border-blue-200' 
-                          : 'bg-muted border-border'
-                      } ${!message.is_read && message.sender_id !== user?.id ? 'ring-2 ring-primary/30' : ''}`}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <User className="w-3 h-3" />
-                          <span className="text-sm font-medium">
-                            {message.sender?.is_admin ? 'Restaurant Staff' : 'You'}
-                          </span>
-                          {message.is_urgent && (
-                            <AlertTriangle className="w-3 h-3 text-orange-600" />
-                          )}
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(message.created_at))} ago
-                        </span>
-                      </div>
-                      
-                      {message.subject && (
-                        <p className="text-sm font-medium mb-1">{message.subject}</p>
-                      )}
-                      
-                      <p className="text-sm whitespace-pre-wrap">{message.message}</p>
-                      
-                      {message.cancellation_reason && (
-                        <div className="mt-2 pt-2 border-t border-yellow-300 bg-yellow-50 rounded p-2">
-                          <p className="text-sm"><strong>Reason:</strong> {message.cancellation_reason}</p>
-                        </div>
-                      )}
-
-                      {!message.is_read && message.sender_id !== user?.id && (
+            {getSortedConversations().map((conversation) => {
+              const isExpanded = expandedConversations.has(conversation.order_id)
+              
+              return (
+                <div key={conversation.order_id} className="border rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => markAsRead(message.id)}
-                          className="mt-2 text-xs"
+                          onClick={() => toggleConversation(conversation.order_id)}
+                          className="p-1 h-auto"
                         >
-                          Mark as read
+                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </Button>
-                      )}
+                        <h3 className="font-semibold text-lg flex items-center gap-2">
+                          <Package className="w-4 h-4" />
+                          {conversation.order_number}
+                        </h3>
+                        {conversation.hasUnread && (
+                          <span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
+                            New
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {conversation.messages.length} message{conversation.messages.length !== 1 ? 's' : ''} • 
+                        Last updated {formatDistanceToNow(new Date(conversation.lastMessageAt))} ago
+                      </p>
                     </div>
-                  ))}
-                </div>
+                  </div>
 
-                {/* Reply button */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedConversation(conversation.order_id)}
-                  className="flex items-center gap-1"
-                >
-                  <MessageSquare className="w-3 h-3" />
-                  Reply
-                </Button>
-              </div>
-            ))}
+                  {/* Messages in conversation - only show when expanded */}
+                  {isExpanded && (
+                    <div className="space-y-3 mb-4">
+                      {conversation.messages.map((message) => (
+                        <div 
+                          key={message.id}
+                          className={`p-3 rounded border ${
+                            message.sender?.is_admin 
+                              ? 'bg-blue-50 border-blue-200' 
+                              : 'bg-muted border-border'
+                          } ${!message.is_read && message.sender_id !== user?.id ? 'ring-2 ring-primary/30' : ''}`}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <User className="w-3 h-3" />
+                              <span className="text-sm font-medium">
+                                {message.sender?.is_admin ? 'Restaurant Staff' : 'You'}
+                              </span>
+                              {message.is_urgent && (
+                                <AlertTriangle className="w-3 h-3 text-orange-600" />
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">
+                                {formatDistanceToNow(new Date(message.created_at))} ago
+                              </span>
+                              {/* Only show delete button for user's own messages */}
+                              {message.sender_id === user?.id && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-auto p-1 text-destructive hover:text-destructive"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Message</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to delete this message? This action cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => deleteMessage(message.id)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                            </div>
+                          </div>
+                        
+                          {message.subject && (
+                            <p className="text-sm font-medium mb-1">{message.subject}</p>
+                          )}
+                          
+                          <p className="text-sm whitespace-pre-wrap">{message.message}</p>
+                          
+                          {message.cancellation_reason && (
+                            <div className="mt-2 pt-2 border-t border-yellow-300 bg-yellow-50 rounded p-2">
+                              <p className="text-sm"><strong>Reason:</strong> {message.cancellation_reason}</p>
+                            </div>
+                          )}
+
+                          {!message.is_read && message.sender_id !== user?.id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => markAsRead(message.id)}
+                              className="mt-2 text-xs"
+                            >
+                              Mark as read
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Reply button - always visible */}
+                  <div className="flex items-center justify-between">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedConversation(conversation.order_id)}
+                      className="flex items-center gap-1"
+                    >
+                      <MessageSquare className="w-3 h-3" />
+                      Reply
+                    </Button>
+                    
+                    {!isExpanded && (
+                      <span className="text-xs text-muted-foreground">
+                        Click to expand {conversation.messages.length} message{conversation.messages.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
