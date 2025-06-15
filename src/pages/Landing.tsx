@@ -50,7 +50,6 @@ import {
 export const Landing = () => {
   const { user } = useAuth()
   const [featuredDishes, setFeaturedDishes] = useState<MenuItem[]>([])
-  const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -68,8 +67,6 @@ export const Landing = () => {
         .limit(6)
 
       setFeaturedDishes(dishes || [])
-      // Skip reviews since the table doesn't exist yet
-      setReviews([])
     } catch (error) {
       console.error('Error fetching featured content:', error)
     } finally {
