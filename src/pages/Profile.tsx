@@ -31,17 +31,26 @@ interface Order {
 interface Review {
   id: string
   user_id: string
+  order_id?: string
   menu_item_id?: string
   rating: number
   comment: string
+  is_approved: boolean
+  admin_response?: string
   created_at: string
-  user?: {
-    full_name: string
+  updated_at: string
+  orders?: {
+    order_number: string
+  }
+  menu_items?: {
+    name: string
   }
 }
 import { useToast } from '@/hooks/use-toast'
 import { EnhancedOrderHistory } from '@/components/profile/EnhancedOrderHistory'
 import { MessagesInbox } from '@/components/profile/MessagesInbox'
+import { ReviewForm } from '@/components/profile/ReviewForm'
+import { ReviewsList } from '@/components/profile/ReviewsList'
 import { 
   User, 
   Mail, 
@@ -127,25 +136,8 @@ export const Profile = () => {
   const [cancellingOrder, setCancellingOrder] = useState<string | null>(null)
   const [cancellationReason, setCancellationReason] = useState('')
   const [customReason, setCustomReason] = useState('')
-
-
-  const sampleReviews: Review[] = [
-    {
-      id: '1',
-      user_id: user?.id || '',
-      menu_item_id: '1',
-      rating: 5,
-      comment: 'Amazing fresh salad! The green goddess dressing is incredible.',
-      created_at: '2024-01-16T09:00:00Z'
-    },
-    {
-      id: '2',
-      user_id: user?.id || '',
-      rating: 4,
-      comment: 'Great sustainable dining experience. Love the eco-friendly approach!',
-      created_at: '2024-01-10T15:30:00Z'
-    }
-  ]
+  const [reviewsLoading, setReviewsLoading] = useState(false)
+  const [menuItems, setMenuItems] = useState<any[]>([])
 
   const dietaryOptions = [
     'Vegetarian', 'Vegan', 'Gluten-free', 'Dairy-free', 'Nut allergies', 
@@ -164,9 +156,53 @@ export const Profile = () => {
     if (userProfile) {
       fetchUserData()
       fetchUserOrders()
-      setReviews(sampleReviews)
+      fetchUserReviews()
+      fetchMenuItems()
     }
   }, [userProfile])
+
+  const fetchUserReviews = async () => {
+    if (!user) return
+    
+    setReviewsLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select(`
+          *,
+          orders:order_id (order_number),
+          menu_items:menu_item_id (name)
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setReviews(data as any || [])
+    } catch (error) {
+      console.error('Error fetching reviews:', error)
+      toast({
+        title: "Error",
+        description: "Failed to load reviews",
+        variant: "destructive"
+      })
+    } finally {
+      setReviewsLoading(false)
+    }
+  }
+
+  const fetchMenuItems = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('menu_items')
+        .select('id, name')
+        .eq('is_available', true)
+
+      if (error) throw error
+      setMenuItems(data || [])
+    } catch (error) {
+      console.error('Error fetching menu items:', error)
+    }
+  }
 
   const fetchUserData = async () => {
     if (!user) return
@@ -589,56 +625,20 @@ export const Profile = () => {
 
           {/* Reviews Tab */}
           <TabsContent value="reviews" className="space-y-6">
-            <Card className="border-primary/20">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Star className="w-5 h-5 text-primary" />
-                  <span>My Reviews</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="space-y-4">
-                    {[1, 2].map((i) => (
-                      <div key={i} className="h-24 bg-muted animate-pulse rounded-lg" />
-                    ))}
-                  </div>
-                ) : reviews.length > 0 ? (
-                  <div className="space-y-4">
-                    {reviews.map((review) => (
-                      <div key={review.id} className="border border-primary/20 rounded-lg p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center space-x-1">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star 
-                                key={star}
-                                className={`w-4 h-4 ${
-                                  star <= review.rating ? 'text-primary fill-primary' : 'text-muted'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          <span className="text-sm text-muted-foreground">
-                            {formatDate(review.created_at)}
-                          </span>
-                        </div>
-                        <p className="text-muted-foreground">{review.comment}</p>
-                        {review.menu_item_id && (
-                          <p className="text-xs text-muted-foreground mt-2">
-                            Review for: Menu Item #{review.menu_item_id}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Star className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No reviews yet. Share your dining experience!</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">My Reviews</h2>
+              <ReviewForm 
+                onReviewSubmitted={fetchUserReviews}
+                orders={orders}
+                menuItems={menuItems}
+              />
+            </div>
+            
+            <ReviewsList 
+              reviews={reviews}
+              loading={reviewsLoading}
+              onRefresh={fetchUserReviews}
+            />
           </TabsContent>
 
           {/* Preferences Tab */}
