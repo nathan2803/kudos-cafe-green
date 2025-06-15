@@ -20,10 +20,12 @@ import {
   ChevronDown,
   ChevronUp,
   Archive,
+  ArchiveRestore,
   SortAsc,
   SortDesc,
   Calendar,
-  Hash
+  Hash,
+  Inbox
 } from 'lucide-react'
 
 interface OrderMessage {
@@ -72,6 +74,7 @@ export const MessagesInbox = () => {
   const [sortBy, setSortBy] = useState<'date' | 'order'>('date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [expandedConversations, setExpandedConversations] = useState<Set<string>>(new Set())
+  const [showArchived, setShowArchived] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -79,7 +82,7 @@ export const MessagesInbox = () => {
       const cleanup = setupRealtimeSubscription()
       return cleanup
     }
-  }, [user])
+  }, [user, showArchived])
 
   useEffect(() => {
     // Auto-expand all conversations by default
@@ -104,7 +107,7 @@ export const MessagesInbox = () => {
             created_at
           )
         `)
-        .eq('archived', false)
+        .eq('archived', showArchived)
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -282,6 +285,32 @@ export const MessagesInbox = () => {
     }
   }
 
+  const unarchiveConversation = async (orderId: string) => {
+    try {
+      const { error } = await supabase
+        .from('order_messages')
+        .update({ archived: false })
+        .eq('order_id', orderId)
+        .eq('sender_id', user?.id)
+      
+      if (error) throw error
+      
+      toast({
+        title: "Conversation unarchived",
+        description: "This conversation has been moved back to your inbox."
+      })
+      
+      fetchMessages()
+    } catch (error) {
+      console.error('Error unarchiving conversation:', error)
+      toast({
+        title: "Error",
+        description: "Failed to unarchive conversation",
+        variant: "destructive"
+      })
+    }
+  }
+
   const toggleConversation = (orderId: string) => {
     const newExpanded = new Set(expandedConversations)
     if (newExpanded.has(orderId)) {
@@ -323,15 +352,25 @@ export const MessagesInbox = () => {
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
+       <CardHeader>
+        <div className="flex items-center justify-between mb-4">
           <CardTitle className="flex items-center space-x-2">
             <Mail className="w-5 h-5 text-primary" />
             <span>My Messages</span>
           </CardTitle>
           
-          {/* Sorting Controls */}
+          {/* View Toggle and Sorting Controls */}
           <div className="flex items-center gap-2">
+            <Button
+              variant={showArchived ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowArchived(!showArchived)}
+              className="flex items-center gap-2"
+            >
+              {showArchived ? <Archive className="w-4 h-4" /> : <Inbox className="w-4 h-4" />}
+              {showArchived ? "Archived" : "Inbox"}
+            </Button>
+            
             <Select value={sortBy} onValueChange={(value: 'date' | 'order') => setSortBy(value)}>
               <SelectTrigger className="w-32">
                 <SelectValue />
@@ -454,47 +493,80 @@ export const MessagesInbox = () => {
                     </div>
                   )}
 
-                   {/* Reply and Archive buttons - always visible */}
+                   {/* Reply and Archive/Unarchive buttons - always visible */}
                    <div className="flex items-center justify-between">
                      <div className="flex items-center gap-2">
-                       <Button
-                         variant="outline"
-                         size="sm"
-                         onClick={() => setSelectedConversation(conversation.order_id)}
-                         className="flex items-center gap-1"
-                       >
-                         <MessageSquare className="w-3 h-3" />
-                         Reply
-                       </Button>
+                       {!showArchived && (
+                         <Button
+                           variant="outline"
+                           size="sm"
+                           onClick={() => setSelectedConversation(conversation.order_id)}
+                           className="flex items-center gap-1"
+                         >
+                           <MessageSquare className="w-3 h-3" />
+                           Reply
+                         </Button>
+                       )}
                        
-                       <AlertDialog>
-                         <AlertDialogTrigger asChild>
-                           <Button
-                             variant="outline"
-                             size="sm"
-                             className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
-                           >
-                             <Archive className="w-3 h-3" />
-                             Archive
-                           </Button>
-                         </AlertDialogTrigger>
-                         <AlertDialogContent>
-                           <AlertDialogHeader>
-                             <AlertDialogTitle>Archive Conversation</AlertDialogTitle>
-                             <AlertDialogDescription>
-                               Are you sure you want to archive this entire conversation? It will no longer appear in your inbox.
-                             </AlertDialogDescription>
-                           </AlertDialogHeader>
-                           <AlertDialogFooter>
-                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                             <AlertDialogAction
-                               onClick={() => archiveConversation(conversation.order_id)}
+                       {showArchived ? (
+                         <AlertDialog>
+                           <AlertDialogTrigger asChild>
+                             <Button
+                               variant="outline"
+                               size="sm"
+                               className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
                              >
-                               Archive Conversation
-                             </AlertDialogAction>
-                           </AlertDialogFooter>
-                         </AlertDialogContent>
-                       </AlertDialog>
+                               <ArchiveRestore className="w-3 h-3" />
+                               Unarchive
+                             </Button>
+                           </AlertDialogTrigger>
+                           <AlertDialogContent>
+                             <AlertDialogHeader>
+                               <AlertDialogTitle>Unarchive Conversation</AlertDialogTitle>
+                               <AlertDialogDescription>
+                                 Are you sure you want to unarchive this conversation? It will be moved back to your inbox.
+                               </AlertDialogDescription>
+                             </AlertDialogHeader>
+                             <AlertDialogFooter>
+                               <AlertDialogCancel>Cancel</AlertDialogCancel>
+                               <AlertDialogAction
+                                 onClick={() => unarchiveConversation(conversation.order_id)}
+                               >
+                                 Unarchive Conversation
+                               </AlertDialogAction>
+                             </AlertDialogFooter>
+                           </AlertDialogContent>
+                         </AlertDialog>
+                       ) : (
+                         <AlertDialog>
+                           <AlertDialogTrigger asChild>
+                             <Button
+                               variant="outline"
+                               size="sm"
+                               className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                             >
+                               <Archive className="w-3 h-3" />
+                               Archive
+                             </Button>
+                           </AlertDialogTrigger>
+                           <AlertDialogContent>
+                             <AlertDialogHeader>
+                               <AlertDialogTitle>Archive Conversation</AlertDialogTitle>
+                               <AlertDialogDescription>
+                                 Are you sure you want to archive this entire conversation? It will no longer appear in your inbox.
+                               </AlertDialogDescription>
+                             </AlertDialogHeader>
+                             <AlertDialogFooter>
+                               <AlertDialogCancel>Cancel</AlertDialogCancel>
+                               <AlertDialogAction
+                                 onClick={() => archiveConversation(conversation.order_id)}
+                               >
+                                 Archive Conversation
+                               </AlertDialogAction>
+                             </AlertDialogFooter>
+                           </AlertDialogContent>
+                         </AlertDialog>
+                       )}
                      </div>
                      
                      {!isExpanded && (
