@@ -20,6 +20,7 @@ import { UserManagement } from '@/components/admin/UserManagement'
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard'
 import { AboutUsManagement } from '@/components/admin/AboutUsManagement'
 import { HeroManagement } from '@/components/admin/HeroManagement'
+import { GalleryHeroManagement } from '@/components/admin/GalleryHeroManagement'
 import { ContactManagement } from '@/components/admin/ContactManagement'
 
 interface MenuItem {
@@ -2876,6 +2877,7 @@ export const Admin = () => {
           {/* Hero Management Tab */}
           <TabsContent value="hero" className="space-y-6">
             <HeroManagement />
+            <GalleryHeroManagement />
           </TabsContent>
 
           {/* Contact Management Tab */}

@@ -41,6 +41,7 @@ export const Gallery = () => {
   const [loading, setLoading] = useState(true)
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
   const [deleteImageId, setDeleteImageId] = useState<string | null>(null)
+  const [galleryHeroSettings, setGalleryHeroSettings] = useState<any>(null)
 
   const categories = [
     { id: 'all', name: 'All Photos', count: 0 },
@@ -77,8 +78,29 @@ export const Gallery = () => {
     }
   }
 
+  const fetchGalleryHeroSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('setting_value')
+        .eq('setting_key', 'gallery_hero_background')
+        .single()
+
+      if (error && error.code !== 'PGRST116') {
+        throw error
+      }
+
+      if (data?.setting_value) {
+        setGalleryHeroSettings(data.setting_value)
+      }
+    } catch (error) {
+      console.error('Error fetching gallery hero settings:', error)
+    }
+  }
+
   useEffect(() => {
     fetchImages()
+    fetchGalleryHeroSettings()
 
     // Set up real-time subscription
     const channel = supabase
@@ -218,12 +240,26 @@ export const Gallery = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Compact Header */}
-      <section className="relative py-12 bg-gradient-to-r from-primary to-secondary">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
-            Gallery
+      {/* Hero Header with Background Image */}
+      <section 
+        className="relative py-12 min-h-[300px] flex items-center justify-center"
+        style={{
+          backgroundImage: `url(${galleryHeroSettings?.background_image || 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1920&h=1080&fit=crop'})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-forest/80 via-forest/60 to-primary/40" />
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            {galleryHeroSettings?.title || 'Gallery'}
           </h1>
+          
+          {galleryHeroSettings?.subtitle && (
+            <p className="text-lg text-white/90 mb-6 max-w-2xl mx-auto">
+              {galleryHeroSettings.subtitle}
+            </p>
+          )}
           
           <div className="flex flex-wrap justify-center gap-2 mb-6">
             {categories.map((category) => (
