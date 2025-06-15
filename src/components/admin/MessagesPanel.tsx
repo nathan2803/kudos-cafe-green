@@ -163,6 +163,31 @@ export const MessagesPanel = () => {
     }
   }
 
+  const deleteConversation = async (orderId: string) => {
+    try {
+      const { error } = await supabase
+        .from('order_messages')
+        .delete()
+        .eq('order_id', orderId)
+      
+      if (error) throw error
+      
+      toast({
+        title: "Conversation deleted",
+        description: "All messages in this conversation have been deleted."
+      })
+      
+      fetchMessages()
+    } catch (error) {
+      console.error('Error deleting conversation:', error)
+      toast({
+        title: "Error",
+        description: "Failed to delete conversation",
+        variant: "destructive"
+      })
+    }
+  }
+
   const toggleConversation = (orderId: string) => {
     const newExpanded = new Set(expandedConversations)
     if (newExpanded.has(orderId)) {
@@ -521,20 +546,48 @@ export const MessagesPanel = () => {
                         </Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
-                      <span className="flex items-center gap-1">
-                        <DollarSign className="w-3 h-3" />
-                        ₱{conversation.order.total_amount.toFixed(2)}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MessageSquare className="w-3 h-3" />
-                        {conversation.messages.length} message{conversation.messages.length !== 1 ? 's' : ''}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {formatDistanceToNow(new Date(conversation.latest_message_date))} ago
-                      </span>
-                    </div>
+                     <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
+                       <span className="flex items-center gap-1">
+                         <DollarSign className="w-3 h-3" />
+                         ₱{conversation.order.total_amount.toFixed(2)}
+                       </span>
+                       <span className="flex items-center gap-1">
+                         <MessageSquare className="w-3 h-3" />
+                         {conversation.messages.length} message{conversation.messages.length !== 1 ? 's' : ''}
+                       </span>
+                       <span className="flex items-center gap-1">
+                         <Clock className="w-3 h-3" />
+                         {formatDistanceToNow(new Date(conversation.latest_message_date))} ago
+                       </span>
+                       <AlertDialog>
+                         <AlertDialogTrigger asChild>
+                           <Button
+                             variant="ghost"
+                             size="sm"
+                             className="h-auto p-1 text-destructive hover:text-destructive"
+                           >
+                             <Trash2 className="w-4 h-4" />
+                           </Button>
+                         </AlertDialogTrigger>
+                         <AlertDialogContent>
+                           <AlertDialogHeader>
+                             <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
+                             <AlertDialogDescription>
+                               Are you sure you want to delete this entire conversation? This will permanently delete all {conversation.messages.length} message{conversation.messages.length !== 1 ? 's' : ''} in this conversation. This action cannot be undone.
+                             </AlertDialogDescription>
+                           </AlertDialogHeader>
+                           <AlertDialogFooter>
+                             <AlertDialogCancel>Cancel</AlertDialogCancel>
+                             <AlertDialogAction
+                               onClick={() => deleteConversation(conversation.order_id)}
+                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                             >
+                               Delete Conversation
+                             </AlertDialogAction>
+                           </AlertDialogFooter>
+                         </AlertDialogContent>
+                       </AlertDialog>
+                     </div>
                    </div>
                  </div>
 
