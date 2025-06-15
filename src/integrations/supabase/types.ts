@@ -344,6 +344,8 @@ export type Database = {
           customer_email: string | null
           customer_name: string | null
           customer_phone: string | null
+          delivery_address: string | null
+          delivery_charge: number | null
           deposit_paid: number | null
           id: string
           is_priority: boolean | null
@@ -370,6 +372,8 @@ export type Database = {
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          delivery_address?: string | null
+          delivery_charge?: number | null
           deposit_paid?: number | null
           id?: string
           is_priority?: boolean | null
@@ -396,6 +400,8 @@ export type Database = {
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          delivery_address?: string | null
+          delivery_charge?: number | null
           deposit_paid?: number | null
           id?: string
           is_priority?: boolean | null

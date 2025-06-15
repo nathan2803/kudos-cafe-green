@@ -38,9 +38,11 @@ interface Order {
   customer_name?: string
   customer_phone?: string
   customer_email?: string
+  delivery_address?: string
   notes?: string
   pickup_time?: string
   asap_charge?: number
+  delivery_charge?: number
   is_priority?: boolean
   deposit_paid?: number
   remaining_amount?: number
@@ -1402,7 +1404,17 @@ export const Admin = () => {
                             </p>
                             {order.pickup_time && (
                               <p>
-                                <strong>Pickup Time:</strong> {order.pickup_time}
+                                <strong>{order.order_type === 'pickup' ? 'Pickup Time' : 'Ready Time'}:</strong> {order.pickup_time}
+                              </p>
+                            )}
+                            {order.delivery_address && (
+                              <p>
+                                <strong>Delivery Address:</strong> {order.delivery_address}
+                              </p>
+                            )}
+                            {order.delivery_charge && order.delivery_charge > 0 && (
+                              <p className="text-blue-600">
+                                <strong>Delivery Charge:</strong> ₱{order.delivery_charge.toFixed(2)}
                               </p>
                             )}
                             {order.asap_charge && order.asap_charge > 0 && (
@@ -1614,11 +1626,14 @@ export const Admin = () => {
                                   </DialogHeader>
                                   <div className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
-                                      <div>
+                                       <div>
                                         <h4 className="font-semibold">Customer Information</h4>
                                         <p>Name: {order.customer_name || 'N/A'}</p>
                                         <p>Phone: {order.customer_phone || 'N/A'}</p>
                                         <p>Email: {order.customer_email || 'N/A'}</p>
+                                        {order.delivery_address && (
+                                          <p>Delivery Address: {order.delivery_address}</p>
+                                        )}
                                       </div>
                                        <div>
                                          <h4 className="font-semibold">Order Information</h4>
@@ -1626,7 +1641,10 @@ export const Admin = () => {
                                          <p>Status: {order.status}</p>
                                          <p>Total: ₱{order.total_amount.toFixed(2)}</p>
                                          {order.pickup_time && (
-                                           <p>Pickup Time: {order.pickup_time}</p>
+                                           <p>{order.order_type === 'pickup' ? 'Pickup Time' : 'Ready Time'}: {order.pickup_time}</p>
+                                         )}
+                                         {order.delivery_charge && order.delivery_charge > 0 && (
+                                           <p className="text-blue-600">Delivery Charge: ₱{order.delivery_charge.toFixed(2)}</p>
                                          )}
                                          {order.asap_charge && order.asap_charge > 0 && (
                                            <p className="text-orange-600">ASAP Charge: ₱{order.asap_charge.toFixed(2)}</p>

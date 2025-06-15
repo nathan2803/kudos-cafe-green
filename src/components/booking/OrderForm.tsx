@@ -17,17 +17,20 @@ export function OrderForm({ orderType, onOrderCreate, totalAmount }: OrderFormPr
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
   const [pickupTime, setPickupTime] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
 
   const isASAP = pickupTime === 'ASAP (15-20 mins)';
+  const isDelivery = orderType === 'delivery';
   const asapCharge = isASAP ? 25 : 0;
-  const finalTotal = totalAmount + asapCharge;
+  const deliveryCharge = isDelivery ? 15 : 0;
+  const finalTotal = totalAmount + asapCharge + deliveryCharge;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerName || !customerPhone) {
+    if (!customerName || !customerPhone || (isDelivery && !deliveryAddress)) {
       return;
     }
 
@@ -37,10 +40,12 @@ export function OrderForm({ orderType, onOrderCreate, totalAmount }: OrderFormPr
       customer_name: customerName,
       customer_phone: customerPhone,
       customer_email: customerEmail,
+      delivery_address: isDelivery ? deliveryAddress : null,
       pickup_time: pickupTime,
       notes: notes,
       order_type: orderType,
       asap_charge: asapCharge,
+      delivery_charge: deliveryCharge,
       is_priority: isASAP,
     };
 
@@ -111,6 +116,20 @@ export function OrderForm({ orderType, onOrderCreate, totalAmount }: OrderFormPr
             />
           </div>
 
+          {isDelivery && (
+            <div className="space-y-2">
+              <Label htmlFor="delivery-address">Delivery Address *</Label>
+              <Textarea
+                id="delivery-address"
+                placeholder="Enter your full delivery address including street, city, and postal code"
+                value={deliveryAddress}
+                onChange={(e) => setDeliveryAddress(e.target.value)}
+                required={isDelivery}
+                className="min-h-[60px]"
+              />
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="pickup-time">
               {orderType === 'pickup' ? 'Pickup Time' : 'Ready Time'}
@@ -144,6 +163,9 @@ export function OrderForm({ orderType, onOrderCreate, totalAmount }: OrderFormPr
             <div className="space-y-1 text-sm">
               <p><strong>Order Type:</strong> {orderType === 'pickup' ? 'Pickup' : 'Delivery'}</p>
               <p><strong>Subtotal:</strong> ${totalAmount.toFixed(2)}</p>
+              {isDelivery && (
+                <p className="text-blue-600"><strong>Delivery Charge:</strong> ${deliveryCharge.toFixed(2)}</p>
+              )}
               {isASAP && (
                 <p className="text-orange-600"><strong>ASAP Charge:</strong> ${asapCharge.toFixed(2)}</p>
               )}
@@ -160,7 +182,7 @@ export function OrderForm({ orderType, onOrderCreate, totalAmount }: OrderFormPr
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={loading || !customerName || !customerPhone}
+            disabled={loading || !customerName || !customerPhone || (isDelivery && !deliveryAddress)}
           >
             {loading ? 'Processing...' : 'Proceed to Payment'}
           </Button>
