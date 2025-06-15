@@ -1304,31 +1304,68 @@ export const Admin = () => {
                               </span>
                             </p>
                             
-                            {/* Table Assignment for Dine-in */}
+                            {/* Table Assignment and Reservation Details for Dine-in */}
                             {order.order_type === 'dine_in' && (
-                              <div className="flex items-center gap-2">
-                                <strong>Table:</strong>
-                                {order.reservations?.tables ? (
-                                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                                    Table {order.reservations.tables.table_number} ({order.reservations.tables.location})
-                                  </Badge>
-                                ) : order.assigned_table ? (
-                                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                                    Table {order.assigned_table.table_number}
-                                  </Badge>
-                                ) : (
-                                  <Select onValueChange={(tableId) => assignTable(order.id, tableId)}>
-                                    <SelectTrigger className="w-32 h-6 text-xs">
-                                      <SelectValue placeholder="Assign table" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {tables.filter(t => t.is_available).map((table) => (
-                                        <SelectItem key={table.id} value={table.id}>
-                                          Table {table.table_number}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <strong>Table:</strong>
+                                  {order.reservations?.tables ? (
+                                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                                      Table {order.reservations.tables.table_number} ({order.reservations.tables.location})
+                                    </Badge>
+                                  ) : order.assigned_table ? (
+                                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                                      Table {order.assigned_table.table_number}
+                                    </Badge>
+                                  ) : (
+                                    <Select onValueChange={(tableId) => assignTable(order.id, tableId)}>
+                                      <SelectTrigger className="w-32 h-6 text-xs">
+                                        <SelectValue placeholder="Assign table" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {tables.filter(t => t.is_available).map((table) => (
+                                          <SelectItem key={table.id} value={table.id}>
+                                            Table {table.table_number} ({table.capacity} seats)
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                                </div>
+                                
+                                {/* Reservation Details */}
+                                {order.reservations && (
+                                  <div className="text-sm space-y-1 bg-blue-50 p-2 rounded-md">
+                                    <div className="flex items-center gap-2">
+                                      <strong>Reservation Date:</strong>
+                                      <span>{new Date(order.reservations.reservation_date).toLocaleDateString('en-US', { 
+                                        weekday: 'short', 
+                                        month: 'short', 
+                                        day: 'numeric', 
+                                        year: 'numeric' 
+                                      })}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <strong>Reservation Time:</strong>
+                                      <span>{order.reservations.reservation_time}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <strong>Party Size:</strong>
+                                      <span>{order.reservations.party_size} guests</span>
+                                    </div>
+                                    {order.reservations.special_requests && (
+                                      <div className="flex items-start gap-2">
+                                        <strong>Special Requests:</strong>
+                                        <span className="text-muted-foreground">{order.reservations.special_requests}</span>
+                                      </div>
+                                    )}
+                                    {order.reservations.deposit_amount && (
+                                      <div className="flex items-center gap-2">
+                                        <strong>Deposit Paid:</strong>
+                                        <span>₱{order.reservations.deposit_amount.toFixed(2)}</span>
+                                      </div>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                             )}
@@ -1412,6 +1449,41 @@ export const Admin = () => {
                                         <p>Total: ₱{order.total_amount.toFixed(2)}</p>
                                       </div>
                                     </div>
+                                    
+                                    {/* Reservation Details for Dine-in */}
+                                    {order.order_type === 'dine_in' && order.reservations && (
+                                      <div className="bg-blue-50 p-4 rounded-lg">
+                                        <h4 className="font-semibold mb-3">Reservation Details</h4>
+                                        <div className="grid grid-cols-2 gap-4 text-sm">
+                                          <div>
+                                            <p><strong>Date:</strong> {new Date(order.reservations.reservation_date).toLocaleDateString('en-US', { 
+                                              weekday: 'long', 
+                                              month: 'long', 
+                                              day: 'numeric', 
+                                              year: 'numeric' 
+                                            })}</p>
+                                            <p><strong>Time:</strong> {order.reservations.reservation_time}</p>
+                                            <p><strong>Party Size:</strong> {order.reservations.party_size} guests</p>
+                                          </div>
+                                          <div>
+                                            {order.reservations.tables && (
+                                              <p><strong>Table:</strong> Table {order.reservations.tables.table_number} ({order.reservations.tables.location})</p>
+                                            )}
+                                            {order.reservations.deposit_amount && (
+                                              <p><strong>Deposit:</strong> ₱{order.reservations.deposit_amount.toFixed(2)}</p>
+                                            )}
+                                            <p><strong>Status:</strong> {order.reservations.status}</p>
+                                          </div>
+                                        </div>
+                                        {order.reservations.special_requests && (
+                                          <div className="mt-3">
+                                            <p><strong>Special Requests:</strong></p>
+                                            <p className="text-muted-foreground italic">{order.reservations.special_requests}</p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                    
                                     {order.order_items && (
                                       <div>
                                         <h4 className="font-semibold mb-2">Order Items</h4>
