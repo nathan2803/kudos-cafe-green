@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { formatDistanceToNow } from 'date-fns'
@@ -15,7 +17,14 @@ import {
   Package,
   Send,
   CheckCircle,
-  XCircle
+  XCircle,
+  ChevronDown,
+  ChevronUp,
+  Trash2,
+  SortAsc,
+  SortDesc,
+  Calendar,
+  Hash
 } from 'lucide-react'
 
 interface OrderMessage {
@@ -52,6 +61,9 @@ export const MessagesPanel = () => {
   const [selectedMessage, setSelectedMessage] = useState<OrderMessage | null>(null)
   const [replyText, setReplyText] = useState('')
   const [sending, setSending] = useState(false)
+  const [sortBy, setSortBy] = useState<'date' | 'order'>('date')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetchMessages()
@@ -106,6 +118,62 @@ export const MessagesPanel = () => {
     } finally {
       setLoading(false)
     }
+  }
+
+  const deleteMessage = async (messageId: string) => {
+    try {
+      const { error } = await supabase
+        .from('order_messages')
+        .delete()
+        .eq('id', messageId)
+      
+      if (error) throw error
+      
+      toast({
+        title: "Message deleted",
+        description: "The message has been deleted."
+      })
+      
+      fetchMessages()
+    } catch (error) {
+      console.error('Error deleting message:', error)
+      toast({
+        title: "Error",
+        description: "Failed to delete message",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const toggleMessage = (messageId: string) => {
+    const newExpanded = new Set(expandedMessages)
+    if (newExpanded.has(messageId)) {
+      newExpanded.delete(messageId)
+    } else {
+      newExpanded.add(messageId)
+    }
+    setExpandedMessages(newExpanded)
+  }
+
+  const getSortedMessages = () => {
+    let sorted = [...messages]
+    
+    if (sortBy === 'date') {
+      sorted = sorted.sort((a, b) => {
+        const dateA = new Date(a.created_at).getTime()
+        const dateB = new Date(b.created_at).getTime()
+        return sortOrder === 'desc' ? dateB - dateA : dateA - dateB
+      })
+    } else if (sortBy === 'order') {
+      sorted = sorted.sort((a, b) => {
+        const orderA = a.order?.order_number || ''
+        const orderB = b.order?.order_number || ''
+        const comparison = orderA.localeCompare(orderB)
+        return sortOrder === 'desc' ? -comparison : comparison
+      })
+    }
+    
+    return sorted
   }
 
   const sendReply = async () => {
@@ -176,10 +244,43 @@ export const MessagesPanel = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <MessageSquare className="w-5 h-5 text-primary" />
-          <span>Customer Messages</span>
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center space-x-2">
+            <MessageSquare className="w-5 h-5 text-primary" />
+            <span>Customer Messages</span>
+          </CardTitle>
+          
+          {/* Sorting Controls */}
+          <div className="flex items-center gap-2">
+            <Select value={sortBy} onValueChange={(value: 'date' | 'order') => setSortBy(value)}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    <span>Date</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="order">
+                  <div className="flex items-center gap-2">
+                    <Hash className="w-4 h-4" />
+                    <span>Order</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            >
+              {sortOrder === 'desc' ? <SortDesc className="w-4 h-4" /> : <SortAsc className="w-4 h-4" />}
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -188,21 +289,32 @@ export const MessagesPanel = () => {
               <div key={i} className="h-24 bg-muted animate-pulse rounded-lg" />
             ))}
           </div>
-        ) : messages.length > 0 ? (
+        ) : getSortedMessages().length > 0 ? (
           <div className="space-y-4">
-            {messages.map((message) => (
+            {getSortedMessages().map((message) => {
+              const isExpanded = expandedMessages.has(message.id)
+              
+              return (
               <div 
                 key={message.id} 
                 className={`border rounded-lg p-4 ${
                   message.is_urgent ? 'border-red-300 bg-red-50' : 'border-border'
                 } ${!message.is_read ? 'bg-blue-50 border-blue-300' : ''}`}
               >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-lg">
-                        {message.subject || 'Customer Message'}
-                      </h3>
+                 <div className="flex items-start justify-between mb-3">
+                   <div className="flex-1">
+                     <div className="flex items-center gap-2 mb-1">
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={() => toggleMessage(message.id)}
+                         className="p-1 h-auto"
+                       >
+                         {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                       </Button>
+                       <h3 className="font-semibold text-lg">
+                         {message.subject || 'Customer Message'}
+                       </h3>
                       {message.is_urgent && (
                         <AlertTriangle className="w-4 h-4 text-red-600" />
                       )}
@@ -226,22 +338,52 @@ export const MessagesPanel = () => {
                         {formatDistanceToNow(new Date(message.created_at))} ago
                       </span>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    {message.message_type === 'cancellation_request' && (
-                      <div className="text-sm">
-                        <p className="font-semibold text-red-600">Cancellation Request</p>
-                        {message.order && (
-                          <p className="text-muted-foreground">
-                            ₱{message.order.total_amount.toFixed(2)}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                   </div>
+                   <div className="flex items-center gap-2">
+                     {message.message_type === 'cancellation_request' && (
+                       <div className="text-sm">
+                         <p className="font-semibold text-red-600">Cancellation Request</p>
+                         {message.order && (
+                           <p className="text-muted-foreground">
+                             ₱{message.order.total_amount.toFixed(2)}
+                           </p>
+                         )}
+                       </div>
+                     )}
+                     <AlertDialog>
+                       <AlertDialogTrigger asChild>
+                         <Button
+                           variant="ghost"
+                           size="sm"
+                           className="h-auto p-1 text-destructive hover:text-destructive"
+                         >
+                           <Trash2 className="w-3 h-3" />
+                         </Button>
+                       </AlertDialogTrigger>
+                       <AlertDialogContent>
+                         <AlertDialogHeader>
+                           <AlertDialogTitle>Delete Message</AlertDialogTitle>
+                           <AlertDialogDescription>
+                             Are you sure you want to delete this message? This action cannot be undone.
+                           </AlertDialogDescription>
+                         </AlertDialogHeader>
+                         <AlertDialogFooter>
+                           <AlertDialogCancel>Cancel</AlertDialogCancel>
+                           <AlertDialogAction
+                             onClick={() => deleteMessage(message.id)}
+                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                           >
+                             Delete
+                           </AlertDialogAction>
+                         </AlertDialogFooter>
+                       </AlertDialogContent>
+                     </AlertDialog>
+                   </div>
+                 </div>
 
-                <div className="space-y-3">
+                 {/* Message content - only show when expanded */}
+                 {isExpanded && (
+                   <div className="space-y-3">
                   <div className="bg-white rounded p-3 border">
                     <p className="text-sm whitespace-pre-wrap">{message.message}</p>
                   </div>
@@ -273,42 +415,44 @@ export const MessagesPanel = () => {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedMessage(message)}
-                      className="flex items-center gap-1"
-                    >
-                      <Send className="w-3 h-3" />
-                      Reply
-                    </Button>
-                    
-                    {message.message_type === 'cancellation_request' && (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-green-600 border-green-600 hover:bg-green-50"
-                        >
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          Approve
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 border-red-600 hover:bg-red-50"
-                        >
-                          <XCircle className="w-3 h-3 mr-1" />
-                          Deny
-                        </Button>
-                      </>
-                    )}
-                  </div>
+                   <div className="flex items-center gap-2">
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       onClick={() => setSelectedMessage(message)}
+                       className="flex items-center gap-1"
+                     >
+                       <Send className="w-3 h-3" />
+                       Reply
+                     </Button>
+                     
+                     {message.message_type === 'cancellation_request' && (
+                       <>
+                         <Button
+                           variant="outline"
+                           size="sm"
+                           className="text-green-600 border-green-600 hover:bg-green-50"
+                         >
+                           <CheckCircle className="w-3 h-3 mr-1" />
+                           Approve
+                         </Button>
+                         <Button
+                           variant="outline"
+                           size="sm"
+                           className="text-red-600 border-red-600 hover:bg-red-50"
+                         >
+                           <XCircle className="w-3 h-3 mr-1" />
+                           Deny
+                         </Button>
+                       </>
+                     )}
+                   </div>
+                   </div>
+                   )}
                 </div>
-              </div>
-            ))}
-          </div>
+                )
+              })}
+            </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
             <MessageSquare className="w-12 h-12 mx-auto mb-4" />
