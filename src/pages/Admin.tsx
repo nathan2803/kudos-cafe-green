@@ -1373,19 +1373,34 @@ export const Admin = () => {
                   <CardTitle>Quick Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Button className="w-full justify-start bg-primary hover:bg-primary/90">
+                  <Button 
+                    className="w-full justify-start bg-primary hover:bg-primary/90"
+                    onClick={() => setActiveTab('menu')}
+                  >
                     <Plus className="w-4 h-4 mr-2" />
                     Add New Menu Item
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => setActiveTab('users')}
+                  >
                     <Users className="w-4 h-4 mr-2" />
                     Manage Users
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => setActiveTab('analytics')}
+                  >
                     <BarChart3 className="w-4 h-4 mr-2" />
                     View Reports
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => setActiveTab('inventory')}
+                  >
                     <Calendar className="w-4 h-4 mr-2" />
                     Schedule Tasks
                   </Button>
