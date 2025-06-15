@@ -51,10 +51,27 @@ interface AnalyticsData {
     delivery: { count: number; revenue: number; percentage: number }
     dine_in: { count: number; revenue: number; percentage: number }
   }
+  orderStatusStats: {
+    pending: number
+    confirmed: number
+    preparing: number
+    ready: number
+    delivered: number
+    cancelled: number
+  }
+  customerMetrics: {
+    newCustomers: number
+    returningCustomers: number
+    customerRetentionRate: number
+  }
   peakHours: Array<{ hour: string; orders: number }>
   peakDays: Array<{ day: string; orders: number; revenue: number }>
   topMenuItems: Array<{ name: string; orders: number; revenue: number }>
   recentTrends: Array<{ date: string; revenue: number; orders: number }>
+  dailyAverage: number
+  weeklyRevenue: number
+  monthlyRevenue: number
+  inventoryTurnover: number
 }
 
 export const AnalyticsDashboard = () => {
@@ -74,10 +91,27 @@ export const AnalyticsDashboard = () => {
       delivery: { count: 0, revenue: 0, percentage: 0 },
       dine_in: { count: 0, revenue: 0, percentage: 0 }
     },
+    orderStatusStats: {
+      pending: 0,
+      confirmed: 0,
+      preparing: 0,
+      ready: 0,
+      delivered: 0,
+      cancelled: 0
+    },
+    customerMetrics: {
+      newCustomers: 0,
+      returningCustomers: 0,
+      customerRetentionRate: 0
+    },
     peakHours: [],
     peakDays: [],
     topMenuItems: [],
-    recentTrends: []
+    recentTrends: [],
+    dailyAverage: 0,
+    weeklyRevenue: 0,
+    monthlyRevenue: 0,
+    inventoryTurnover: 0
   })
   const [loading, setLoading] = useState(true)
 
@@ -85,7 +119,14 @@ export const AnalyticsDashboard = () => {
     try {
       setLoading(true)
       
-      // Fetch total revenue and orders
+      // Fetch all orders including cancelled for status analytics
+      const { data: allOrders, error: allOrdersError } = await supabase
+        .from('orders')
+        .select('total_amount, order_type, created_at, status, user_id')
+
+      if (allOrdersError) throw allOrdersError
+
+      // Fetch revenue orders (excluding cancelled)
       const { data: orders, error: ordersError } = await supabase
         .from('orders')
         .select('total_amount, order_type, created_at, status')
@@ -245,6 +286,43 @@ export const AnalyticsDashboard = () => {
 
       const averageOrderValue = totalOrderCount > 0 ? totalRevenue / totalOrderCount : 0
 
+      // Calculate order status distribution
+      const orderStatusStats = {
+        pending: 0,
+        confirmed: 0,
+        preparing: 0,
+        ready: 0,
+        delivered: 0,
+        cancelled: 0
+      }
+
+      allOrders?.forEach(order => {
+        const status = order.status as keyof typeof orderStatusStats
+        if (orderStatusStats[status] !== undefined) {
+          orderStatusStats[status]++
+        }
+      })
+
+      // Calculate customer metrics
+      const uniqueCustomers = new Set(allOrders?.map(order => order.user_id).filter(Boolean))
+      const totalUniqueCustomers = uniqueCustomers.size
+
+      // Calculate new vs returning customers (last 30 days)
+      const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+      const recentOrders = allOrders?.filter(order => new Date(order.created_at) >= last30Days) || []
+      const recentUniqueCustomers = new Set(recentOrders.map(order => order.user_id).filter(Boolean))
+      
+      const newCustomers = recentUniqueCustomers.size
+      const returningCustomers = totalUniqueCustomers - newCustomers
+      const customerRetentionRate = totalUniqueCustomers > 0 ? (returningCustomers / totalUniqueCustomers) * 100 : 0
+
+      // Calculate daily average
+      const totalDays = Math.max(1, Math.ceil((now.getTime() - new Date(allOrders?.[0]?.created_at || now).getTime()) / (24 * 60 * 60 * 1000)))
+      const dailyAverage = totalOrderCount / totalDays
+
+      // Calculate inventory turnover (placeholder - would need cost of goods sold data)
+      const inventoryTurnover = totalInventoryValue > 0 ? totalRevenue / totalInventoryValue : 0
+
       setAnalytics({
         totalRevenue,
         totalEarnings,
@@ -256,10 +334,20 @@ export const AnalyticsDashboard = () => {
         monthlyGrowth: 8.7,
         averageOrderValue,
         orderTypeStats,
+        orderStatusStats,
+        customerMetrics: {
+          newCustomers,
+          returningCustomers,
+          customerRetentionRate: Math.round(customerRetentionRate * 10) / 10
+        },
         peakHours,
         peakDays,
         topMenuItems,
-        recentTrends
+        recentTrends,
+        dailyAverage: Math.round(dailyAverage * 10) / 10,
+        weeklyRevenue,
+        monthlyRevenue,
+        inventoryTurnover: Math.round(inventoryTurnover * 100) / 100
       })
 
     } catch (error: any) {
@@ -586,6 +674,76 @@ export const AnalyticsDashboard = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Order Status Overview and Customer Metrics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Activity className="w-5 h-5 mr-2" />
+              Order Status Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {Object.entries(analytics.orderStatusStats).map(([status, count]) => (
+                <div key={status} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Badge variant={status === 'delivered' ? 'default' : status === 'cancelled' ? 'destructive' : 'secondary'}>
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </Badge>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold">{count} orders</p>
+                    <p className="text-sm text-muted-foreground">
+                      {((count / (analytics.totalOrders + analytics.orderStatusStats.cancelled)) * 100).toFixed(1)}%
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Users className="w-5 h-5 mr-2" />
+              Customer Insights
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-4 bg-muted rounded-lg">
+                  <p className="text-2xl font-bold text-primary">{analytics.customerMetrics.newCustomers}</p>
+                  <p className="text-sm text-muted-foreground">New Customers</p>
+                  <p className="text-xs text-muted-foreground">(Last 30 days)</p>
+                </div>
+                <div className="text-center p-4 bg-muted rounded-lg">
+                  <p className="text-2xl font-bold text-primary">{analytics.customerMetrics.returningCustomers}</p>
+                  <p className="text-sm text-muted-foreground">Returning Customers</p>
+                  <p className="text-xs text-muted-foreground">All time</p>
+                </div>
+              </div>
+              <div className="text-center p-4 bg-muted rounded-lg">
+                <p className="text-xl font-bold text-primary">{analytics.customerMetrics.customerRetentionRate}%</p>
+                <p className="text-sm text-muted-foreground">Customer Retention Rate</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-4 bg-muted rounded-lg">
+                  <p className="text-lg font-bold text-primary">{analytics.dailyAverage}</p>
+                  <p className="text-sm text-muted-foreground">Daily Average Orders</p>
+                </div>
+                <div className="text-center p-4 bg-muted rounded-lg">
+                  <p className="text-lg font-bold text-primary">{analytics.inventoryTurnover}</p>
+                  <p className="text-sm text-muted-foreground">Inventory Turnover</p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
