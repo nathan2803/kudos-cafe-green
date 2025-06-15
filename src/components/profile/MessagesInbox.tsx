@@ -257,6 +257,21 @@ export const MessagesInbox = () => {
 
   const deleteMessage = async (messageId: string) => {
     try {
+      // Check if this message has replies (child messages)
+      const { data: childMessages } = await supabase
+        .from('order_messages')
+        .select('id')
+        .eq('parent_message_id', messageId)
+      
+      if (childMessages && childMessages.length > 0) {
+        toast({
+          title: "Cannot delete message",
+          description: "This message has replies and cannot be deleted.",
+          variant: "destructive"
+        })
+        return
+      }
+      
       const { error } = await supabase
         .from('order_messages')
         .delete()
