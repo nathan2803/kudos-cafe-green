@@ -166,18 +166,26 @@ export const Gallery = () => {
       const image = images.find(img => img.id === imageId)
       if (!image) return
 
-      // Extract filename from URL for storage deletion
-      const urlParts = image.image_url.split('/')
-      const fileName = urlParts[urlParts.length - 1]
+      // Optimistically update UI first
+      setImages(prev => prev.filter(img => img.id !== imageId))
 
-      // Delete from storage
-      const { error: storageError } = await supabase.storage
-        .from('gallery-images')
-        .remove([fileName])
+      // Check if this is a Supabase storage URL or external URL
+      const isSupabaseStorage = image.image_url.includes('zuawgikivwqvkdxbqdyj.supabase.co/storage/v1/object/public/gallery-images/')
+      
+      if (isSupabaseStorage) {
+        // Extract filename from Supabase storage URL
+        const urlParts = image.image_url.split('/')
+        const fileName = urlParts[urlParts.length - 1]
 
-      if (storageError) {
-        console.warn('Storage deletion failed:', storageError)
-        // Continue with database deletion even if storage fails
+        // Delete from storage
+        const { error: storageError } = await supabase.storage
+          .from('gallery-images')
+          .remove([fileName])
+
+        if (storageError) {
+          console.warn('Storage deletion failed:', storageError)
+          // Continue with database deletion even if storage fails
+        }
       }
 
       // Delete from database
@@ -186,7 +194,11 @@ export const Gallery = () => {
         .delete()
         .eq('id', imageId)
 
-      if (dbError) throw dbError
+      if (dbError) {
+        // Revert optimistic update on error
+        fetchImages()
+        throw dbError
+      }
 
       toast({
         title: "Image Deleted",
