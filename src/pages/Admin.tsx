@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
@@ -532,6 +533,58 @@ export const Admin = () => {
       toast({
         title: "Error",
         description: "Failed to unarchive order",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const deleteOrder = async (orderId: string) => {
+    try {
+      // Delete related records first (cascading deletion)
+      
+      // 1. Delete order items
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .delete()
+        .eq('order_id', orderId)
+
+      if (itemsError) throw itemsError
+
+      // 2. Delete order messages
+      const { error: messagesError } = await supabase
+        .from('order_messages')
+        .delete()
+        .eq('order_id', orderId)
+
+      if (messagesError) throw messagesError
+
+      // 3. Update reservations to unlink them (don't delete reservations)
+      const { error: reservationsError } = await supabase
+        .from('reservations')
+        .update({ order_id: null })
+        .eq('order_id', orderId)
+
+      if (reservationsError) throw reservationsError
+
+      // 4. Finally delete the order
+      const { error: orderError } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderId)
+
+      if (orderError) throw orderError
+
+      // Remove from local state
+      setOrders(prev => prev.filter(order => order.id !== orderId))
+
+      toast({
+        title: "Order Deleted",
+        description: "Order and all related data have been permanently deleted",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete order",
         variant: "destructive"
       })
     }
@@ -1691,14 +1744,57 @@ export const Admin = () => {
                                   <Archive className="w-4 h-4" />
                                 </Button>
                               ) : (
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => unarchiveOrder(order.id)}
-                                  className="text-blue-600 hover:text-blue-700"
-                                >
-                                  <Archive className="w-4 h-4 rotate-180" />
-                                </Button>
+                                <div className="flex space-x-2">
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => unarchiveOrder(order.id)}
+                                    className="text-blue-600 hover:text-blue-700"
+                                  >
+                                    <Archive className="w-4 h-4 rotate-180" />
+                                  </Button>
+                                  
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button 
+                                        size="sm" 
+                                        variant="outline"
+                                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete Order Permanently</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to permanently delete order {order.order_number || order.id}?
+                                          <br /><br />
+                                          <strong>This action cannot be undone.</strong> This will permanently delete:
+                                          <ul className="list-disc list-inside mt-2 space-y-1">
+                                            <li>The order record</li>
+                                            <li>All order items</li>
+                                            <li>All order messages</li>
+                                            <li>Links to reservations (reservations will be preserved)</li>
+                                          </ul>
+                                          <br />
+                                          Customer: {order.customer_name}<br />
+                                          Total: ₱{order.total_amount.toFixed(2)}<br />
+                                          Date: {formatDate(order.created_at)}
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction 
+                                          onClick={() => deleteOrder(order.id)}
+                                          className="bg-red-600 hover:bg-red-700"
+                                        >
+                                          Delete Permanently
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
                               )}
                               
                               {/* Cancel Order Button for Dine-in */}
