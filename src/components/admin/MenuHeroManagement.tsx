@@ -131,10 +131,10 @@ export const MenuHeroManagement = () => {
 
       const { error } = await supabase
         .from('site_settings')
-        .upsert({
-          setting_key: 'menu_hero',
+        .update({
           setting_value: updatedSettings
         })
+        .eq('setting_key', 'menu_hero')
 
       if (error) {
         console.error('Supabase error:', error)
