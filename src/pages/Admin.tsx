@@ -1317,103 +1317,116 @@ export const Admin = () => {
                             {order.order_type === 'dine_in' && (
                               <div className="space-y-2">
                                 <div className="flex items-center gap-2">
-                                  <strong>Table:</strong>
-                                  {order.reservations?.tables || order.reservations_via_order?.tables ? (
-                                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                                      Table {(order.reservations?.tables || order.reservations_via_order?.tables)?.table_number} 
-                                      ({(order.reservations?.tables || order.reservations_via_order?.tables)?.location})
-                                    </Badge>
-                                  ) : order.assigned_table ? (
-                                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                                      Table {order.assigned_table.table_number}
-                                    </Badge>
-                                  ) : (
-                                    <Select onValueChange={(tableId) => assignTable(order.id, tableId)}>
-                                      <SelectTrigger className="w-32 h-6 text-xs">
-                                        <SelectValue placeholder="Assign table" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {tables.filter(t => t.is_available).map((table) => (
-                                          <SelectItem key={table.id} value={table.id}>
-                                            Table {table.table_number} ({table.capacity} seats)
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  )}
-                                </div>
+                                   <strong>Customer Selected Table:</strong>
+                                   {order.reservations?.tables || order.reservations_via_order?.tables ? (
+                                     <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                                       Table {(order.reservations?.tables || order.reservations_via_order?.tables)?.table_number} 
+                                       ({(order.reservations?.tables || order.reservations_via_order?.tables)?.location})
+                                     </Badge>
+                                   ) : (
+                                     <span className="text-muted-foreground italic">No table selected by customer</span>
+                                   )}
+                                 </div>
                                 
-                                {/* Reservation Details */}
-                                {(order.reservations || order.reservations_via_order) && (
-                                  <div className="text-sm space-y-1 bg-blue-50 p-2 rounded-md">
-                                    {(() => {
-                                      const reservation = order.reservations || order.reservations_via_order;
-                                      if (!reservation) return null;
+                                 {/* Customer Selected Reservation Details */}
+                                 {(order.reservations || order.reservations_via_order) && (
+                                   <div className="text-sm space-y-1 bg-blue-50 dark:bg-blue-950/20 p-2 rounded-md">
+                                     <h5 className="font-medium text-blue-900 dark:text-blue-100 mb-1">Customer Reservation</h5>
+                                     {(() => {
+                                       const reservation = order.reservations || order.reservations_via_order;
+                                       if (!reservation) return null;
 
-                                      // Format date safely
-                                      const formatDate = (dateString: string) => {
-                                        try {
-                                          const date = new Date(dateString);
-                                          if (isNaN(date.getTime())) return 'Invalid Date';
-                                          return date.toLocaleDateString('en-US', { 
-                                            weekday: 'short', 
-                                            month: 'short', 
-                                            day: 'numeric', 
-                                            year: 'numeric' 
-                                          });
-                                        } catch (error) {
-                                          return 'Invalid Date';
-                                        }
-                                      };
+                                       // Format date safely
+                                       const formatDate = (dateString: string) => {
+                                         try {
+                                           if (!dateString) return 'Not specified';
+                                           const date = new Date(dateString);
+                                           if (isNaN(date.getTime())) return 'Invalid Date';
+                                           return date.toLocaleDateString('en-US', { 
+                                             weekday: 'short', 
+                                             month: 'short', 
+                                             day: 'numeric', 
+                                             year: 'numeric' 
+                                           });
+                                         } catch (error) {
+                                           return 'Invalid Date';
+                                         }
+                                       };
 
-                                      // Format time safely
-                                      const formatTime = (timeString: string) => {
-                                        if (!timeString) return 'No time specified';
-                                        try {
-                                          if (timeString.includes(':')) {
-                                            const [hours, minutes] = timeString.split(':');
-                                            const hour24 = parseInt(hours);
-                                            const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
-                                            const period = hour24 >= 12 ? 'PM' : 'AM';
-                                            return `${hour12}:${minutes.padStart(2, '0')} ${period}`;
-                                          }
-                                          return timeString;
-                                        } catch (error) {
-                                          return timeString;
-                                        }
-                                      };
+                                       // Format time safely
+                                       const formatTime = (timeString: string) => {
+                                         if (!timeString) return 'Not specified';
+                                         try {
+                                           if (timeString.includes(':')) {
+                                             const [hours, minutes, seconds] = timeString.split(':');
+                                             const hour24 = parseInt(hours, 10);
+                                             const minute = parseInt(minutes, 10);
+                                             
+                                             if (isNaN(hour24) || isNaN(minute)) return 'Invalid time';
+                                             
+                                             const period = hour24 >= 12 ? 'PM' : 'AM';
+                                             const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
+                                             
+                                             return `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
+                                           }
+                                           return timeString;
+                                         } catch (error) {
+                                           return 'Invalid time';
+                                         }
+                                       };
 
-                                      return (
-                                        <>
-                                          <div className="flex items-center gap-2">
-                                            <strong>Reservation Date:</strong>
-                                            <span>{formatDate(reservation.reservation_date)}</span>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <strong>Reservation Time:</strong>
-                                            <span>{formatTime(reservation.reservation_time)}</span>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <strong>Party Size:</strong>
-                                            <span>{reservation.party_size || 'N/A'} {reservation.party_size ? 'guests' : ''}</span>
-                                          </div>
-                                          {reservation.special_requests && (
-                                            <div className="flex items-start gap-2">
-                                              <strong>Special Requests:</strong>
-                                              <span className="text-muted-foreground">{reservation.special_requests}</span>
-                                            </div>
-                                          )}
-                                          {reservation.deposit_amount && (
-                                            <div className="flex items-center gap-2">
-                                              <strong>Deposit Paid:</strong>
-                                              <span>₱{reservation.deposit_amount.toFixed(2)}</span>
-                                            </div>
-                                          )}
-                                        </>
-                                      );
-                                    })()}
-                                  </div>
-                                )}
+                                       return (
+                                         <>
+                                           <div className="flex items-center gap-2">
+                                             <strong>Date:</strong>
+                                             <span>{formatDate(reservation.reservation_date)}</span>
+                                           </div>
+                                           <div className="flex items-center gap-2">
+                                             <strong>Time:</strong>
+                                             <span>{formatTime(reservation.reservation_time)}</span>
+                                           </div>
+                                           <div className="flex items-center gap-2">
+                                             <strong>Party Size:</strong>
+                                             <span>
+                                               {reservation.party_size ? `${reservation.party_size} guests` : 'Not specified'}
+                                             </span>
+                                           </div>
+                                           {reservation.special_requests && (
+                                             <div className="flex items-start gap-2">
+                                               <strong>Special Requests:</strong>
+                                               <span className="text-muted-foreground">{reservation.special_requests}</span>
+                                             </div>
+                                           )}
+                                           {reservation.deposit_amount && reservation.deposit_amount > 0 && (
+                                             <div className="flex items-center gap-2">
+                                               <strong>Deposit Paid:</strong>
+                                               <span>₱{reservation.deposit_amount.toFixed(2)}</span>
+                                             </div>
+                                           )}
+                                         </>
+                                       );
+                                     })()}
+                                   </div>
+                                 )}
+                                 
+                                 {/* Admin Table Assignment (separate from customer selection) */}
+                                 {order.order_type === 'dine_in' && !order.reservations?.tables && !order.reservations_via_order?.tables && (
+                                   <div className="text-sm p-2 border rounded-md">
+                                     <h5 className="font-medium mb-1">Admin Table Assignment</h5>
+                                     <Select onValueChange={(tableId) => assignTable(order.id, tableId)}>
+                                       <SelectTrigger className="w-full h-8 text-xs">
+                                         <SelectValue placeholder="Assign table to customer" />
+                                       </SelectTrigger>
+                                       <SelectContent>
+                                         {tables.filter(t => t.is_available).map((table) => (
+                                           <SelectItem key={table.id} value={table.id}>
+                                             Table {table.table_number} ({table.capacity} seats, {table.location})
+                                           </SelectItem>
+                                         ))}
+                                       </SelectContent>
+                                     </Select>
+                                   </div>
+                                 )}
                               </div>
                             )}
 
