@@ -50,9 +50,13 @@ export const Header = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <Leaf className="w-5 h-5 text-primary-foreground" />
+            <Link to="/" className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center p-1 shadow-sm border border-primary/20">
+                <img 
+                  src="/lovable-uploads/0fb532fd-64ad-4f84-9330-470f382bc7db.png" 
+                  alt="Kudos Cafe Logo" 
+                  className="w-8 h-8 object-contain"
+                />
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-bold text-primary">Kudos Cafe</span>

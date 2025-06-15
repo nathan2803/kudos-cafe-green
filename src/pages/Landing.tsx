@@ -150,8 +150,12 @@ export const Landing = () => {
         {/* Hero Content */}
         <div className="relative z-10 text-center text-white max-w-4xl mx-auto px-4">
           <div className="flex items-center justify-center mb-6">
-            <div className="w-16 h-16 bg-light-green rounded-full flex items-center justify-center mb-4">
-              <Leaf className="w-8 h-8 text-forest" />
+            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 shadow-lg border-4 border-light-green/30">
+              <img 
+                src="/lovable-uploads/0fb532fd-64ad-4f84-9330-470f382bc7db.png" 
+                alt="Kudos Cafe Logo" 
+                className="w-16 h-16 object-contain"
+              />
             </div>
           </div>
           
