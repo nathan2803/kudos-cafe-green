@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { MessagesPanel } from '@/components/admin/MessagesPanel'
 import { OrderMessaging } from '@/components/admin/OrderMessaging'
 import { MenuManagement } from '@/components/admin/MenuManagement'
+import { ReviewsManagement } from '@/components/admin/ReviewsManagement'
 
 interface MenuItem {
   id: string
@@ -2757,11 +2758,7 @@ export const Admin = () => {
 
           {/* Reviews Management Tab */}
           <TabsContent value="reviews" className="space-y-6">
-            <div className="text-center py-12">
-              <Star className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Review Management</h3>
-              <p className="text-muted-foreground">Review management features will be available soon.</p>
-            </div>
+            <ReviewsManagement />
           </TabsContent>
 
           {/* Analytics Tab */}
