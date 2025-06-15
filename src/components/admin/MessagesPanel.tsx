@@ -175,6 +175,29 @@ export const MessagesPanel = () => {
 
   const groupMessagesByOrder = (): OrderConversation[] => {
     const grouped = messages.reduce((acc, message) => {
+      // Handle contact inquiries separately
+      if (message.message_type === 'contact_inquiry') {
+        const inquiryKey = `inquiry_${message.id}`
+        acc[inquiryKey] = {
+          order_id: inquiryKey,
+          order: {
+            order_number: 'Contact Inquiry',
+            total_amount: 0,
+            status: 'inquiry',
+            deposit_paid: 0,
+            customer_name: 'Contact Form',
+            customer_email: '',
+            order_type: 'contact_inquiry',
+            created_at: message.created_at
+          },
+          messages: [message],
+          latest_message_date: message.created_at,
+          unread_count: message.is_read ? 0 : 1,
+          has_urgent: message.is_urgent
+        }
+        return acc
+      }
+
       if (!message.order_id || !message.order) return acc
       
       if (!acc[message.order_id]) {
@@ -518,26 +541,39 @@ export const MessagesPanel = () => {
                  {/* Conversation content - only show when expanded */}
                  {isExpanded && (
                    <div className="space-y-4 mt-4 border-t pt-4">
-                     {/* Order Summary */}
-                     <div className="bg-card rounded p-3 border">
-                       <h4 className="font-semibold text-sm mb-2 flex items-center gap-1">
-                         <Package className="w-3 h-3" />
-                         Order Details
-                       </h4>
-                       <div className="grid grid-cols-2 gap-4 text-sm">
-                         <div>
-                           <p><strong>Customer:</strong> {conversation.order.customer_name}</p>
-                           <p><strong>Email:</strong> {conversation.order.customer_email}</p>
-                           <p><strong>Order Type:</strong> {conversation.order.order_type.replace('_', ' ')}</p>
-                           <p><strong>Status:</strong> {conversation.order.status}</p>
-                         </div>
-                         <div>
-                           <p><strong>Total Amount:</strong> ₱{conversation.order.total_amount.toFixed(2)}</p>
-                           <p><strong>Deposit Paid:</strong> ₱{(conversation.order.deposit_paid || 0).toFixed(2)}</p>
-                           <p><strong>Order Date:</strong> {formatDistanceToNow(new Date(conversation.order.created_at))} ago</p>
-                         </div>
-                       </div>
-                     </div>
+                      {/* Order Summary or Contact Inquiry Details */}
+                      {conversation.order.order_type === 'contact_inquiry' ? (
+                        <div className="bg-blue-50 rounded p-3 border border-blue-200">
+                          <h4 className="font-semibold text-sm mb-2 flex items-center gap-1">
+                            <MessageSquare className="w-3 h-3 text-blue-600" />
+                            Contact Inquiry
+                          </h4>
+                          <div className="text-sm">
+                            <p><strong>Type:</strong> Website Contact Form</p>
+                            <p><strong>Received:</strong> {formatDistanceToNow(new Date(conversation.order.created_at))} ago</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-card rounded p-3 border">
+                          <h4 className="font-semibold text-sm mb-2 flex items-center gap-1">
+                            <Package className="w-3 h-3" />
+                            Order Details
+                          </h4>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <p><strong>Customer:</strong> {conversation.order.customer_name}</p>
+                              <p><strong>Email:</strong> {conversation.order.customer_email}</p>
+                              <p><strong>Order Type:</strong> {conversation.order.order_type.replace('_', ' ')}</p>
+                              <p><strong>Status:</strong> {conversation.order.status}</p>
+                            </div>
+                            <div>
+                              <p><strong>Total Amount:</strong> ₱{conversation.order.total_amount.toFixed(2)}</p>
+                              <p><strong>Deposit Paid:</strong> ₱{(conversation.order.deposit_paid || 0).toFixed(2)}</p>
+                              <p><strong>Order Date:</strong> {formatDistanceToNow(new Date(conversation.order.created_at))} ago</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                      {/* Messages Thread */}
                      <div className="space-y-3">
@@ -555,9 +591,12 @@ export const MessagesPanel = () => {
                                <span className="font-medium text-sm">
                                  {message.message_type === 'admin_response' ? 'Admin' : (message.sender?.full_name || 'Customer')}
                                </span>
-                               {message.message_type === 'cancellation_request' && (
-                                 <Badge variant="destructive" className="text-xs">Cancellation Request</Badge>
-                               )}
+                                {message.message_type === 'cancellation_request' && (
+                                  <Badge variant="destructive" className="text-xs">Cancellation Request</Badge>
+                                )}
+                                {message.message_type === 'contact_inquiry' && (
+                                  <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800 border-blue-300">Contact Inquiry</Badge>
+                                )}
                                {message.is_urgent && (
                                  <AlertTriangle className="w-3 h-3 text-red-600" />
                                )}

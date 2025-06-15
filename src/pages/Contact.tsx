@@ -104,12 +104,38 @@ export const Contact = () => {
     e.preventDefault()
     setLoading(true)
 
-    // Simulate form submission
-    setTimeout(() => {
+    try {
+      // Format the message with sender information
+      const messageWithContactInfo = `
+Contact Inquiry from: ${formData.name}
+Email: ${formData.email}
+Phone: ${formData.phone || 'Not provided'}
+
+Subject: ${formData.subject}
+
+Message:
+${formData.message}
+      `.trim()
+
+      const { error } = await supabase
+        .from('order_messages')
+        .insert({
+          message_type: 'contact_inquiry',
+          subject: formData.subject,
+          message: messageWithContactInfo,
+          sender_id: null, // No authenticated user
+          order_id: null, // Not tied to an order
+          is_urgent: false,
+          is_read: false
+        })
+
+      if (error) throw error
+
       toast({
         title: "Message sent!",
         description: "We'll get back to you within 24 hours.",
       })
+      
       setFormData({
         name: '',
         email: '',
@@ -117,8 +143,16 @@ export const Contact = () => {
         subject: '',
         message: ''
       })
+    } catch (error) {
+      console.error('Error sending message:', error)
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
       setLoading(false)
-    }, 1000)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
