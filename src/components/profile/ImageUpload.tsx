@@ -11,16 +11,15 @@ interface ImageUploadProps {
   onImagesChange: (images: string[]) => void
   maxImages?: number
   disabled?: boolean
-  bucketName?: string
 }
 
 export const ImageUpload = ({ 
   images, 
   onImagesChange, 
   maxImages = 5, 
-  disabled = false,
-  bucketName = "profile-images"
+  disabled = false
 }: ImageUploadProps) => {
+  const bucketName = "review-images" // Default to review-images for reviews
   const { user } = useAuth()
   const { toast } = useToast()
   const [uploading, setUploading] = useState(false)

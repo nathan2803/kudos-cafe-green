@@ -103,7 +103,9 @@ export const ReviewsManagement = () => {
 
         return {
           ...review,
-          images: Array.isArray(review.images) ? review.images as string[] : [],
+          images: Array.isArray(review.images) 
+            ? (review.images as string[]) 
+            : (review.images ? [review.images as string] : []),
           customer_name: profile?.full_name,
           customer_email: profile?.email,
           order_number: order?.order_number,
