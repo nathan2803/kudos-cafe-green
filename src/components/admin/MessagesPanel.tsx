@@ -54,6 +54,24 @@ interface OrderMessage {
   }
 }
 
+interface OrderConversation {
+  order_id: string
+  order: {
+    order_number: string
+    total_amount: number
+    status: string
+    deposit_paid: number
+    customer_name: string
+    customer_email: string
+    order_type: string
+    created_at: string
+  }
+  messages: OrderMessage[]
+  latest_message_date: string
+  unread_count: number
+  has_urgent: boolean
+}
+
 export const MessagesPanel = () => {
   const { toast } = useToast()
   const [messages, setMessages] = useState<OrderMessage[]>([])
@@ -63,7 +81,7 @@ export const MessagesPanel = () => {
   const [sending, setSending] = useState(false)
   const [sortBy, setSortBy] = useState<'date' | 'order'>('date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set())
+  const [expandedConversations, setExpandedConversations] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetchMessages()
@@ -145,29 +163,67 @@ export const MessagesPanel = () => {
     }
   }
 
-  const toggleMessage = (messageId: string) => {
-    const newExpanded = new Set(expandedMessages)
-    if (newExpanded.has(messageId)) {
-      newExpanded.delete(messageId)
+  const toggleConversation = (orderId: string) => {
+    const newExpanded = new Set(expandedConversations)
+    if (newExpanded.has(orderId)) {
+      newExpanded.delete(orderId)
     } else {
-      newExpanded.add(messageId)
+      newExpanded.add(orderId)
     }
-    setExpandedMessages(newExpanded)
+    setExpandedConversations(newExpanded)
   }
 
-  const getSortedMessages = () => {
-    let sorted = [...messages]
+  const groupMessagesByOrder = (): OrderConversation[] => {
+    const grouped = messages.reduce((acc, message) => {
+      if (!message.order_id || !message.order) return acc
+      
+      if (!acc[message.order_id]) {
+        acc[message.order_id] = {
+          order_id: message.order_id,
+          order: message.order,
+          messages: [],
+          latest_message_date: message.created_at,
+          unread_count: 0,
+          has_urgent: false
+        }
+      }
+      
+      acc[message.order_id].messages.push(message)
+      
+      // Update latest message date
+      if (new Date(message.created_at) > new Date(acc[message.order_id].latest_message_date)) {
+        acc[message.order_id].latest_message_date = message.created_at
+      }
+      
+      // Count unread messages
+      if (!message.is_read) {
+        acc[message.order_id].unread_count++
+      }
+      
+      // Check for urgent messages
+      if (message.is_urgent) {
+        acc[message.order_id].has_urgent = true
+      }
+      
+      return acc
+    }, {} as Record<string, OrderConversation>)
+    
+    return Object.values(grouped)
+  }
+
+  const getSortedConversations = () => {
+    let sorted = groupMessagesByOrder()
     
     if (sortBy === 'date') {
       sorted = sorted.sort((a, b) => {
-        const dateA = new Date(a.created_at).getTime()
-        const dateB = new Date(b.created_at).getTime()
+        const dateA = new Date(a.latest_message_date).getTime()
+        const dateB = new Date(b.latest_message_date).getTime()
         return sortOrder === 'desc' ? dateB - dateA : dateA - dateB
       })
     } else if (sortBy === 'order') {
       sorted = sorted.sort((a, b) => {
-        const orderA = a.order?.order_number || ''
-        const orderB = b.order?.order_number || ''
+        const orderA = a.order.order_number || ''
+        const orderB = b.order.order_number || ''
         const comparison = orderA.localeCompare(orderB)
         return sortOrder === 'desc' ? -comparison : comparison
       })
@@ -289,17 +345,20 @@ export const MessagesPanel = () => {
               <div key={i} className="h-24 bg-muted animate-pulse rounded-lg" />
             ))}
           </div>
-        ) : getSortedMessages().length > 0 ? (
+        ) : getSortedConversations().length > 0 ? (
           <div className="space-y-4">
-            {getSortedMessages().map((message) => {
-              const isExpanded = expandedMessages.has(message.id)
+            {getSortedConversations().map((conversation) => {
+              const isExpanded = expandedConversations.has(conversation.order_id)
+              const sortedMessages = conversation.messages.sort((a, b) => 
+                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+              )
               
               return (
               <div 
-                key={message.id} 
+                key={conversation.order_id} 
                 className={`border rounded-lg p-4 ${
-                  message.is_urgent ? 'border-red-300 bg-red-50' : 'border-border'
-                } ${!message.is_read ? 'bg-blue-50 border-blue-300' : ''}`}
+                  conversation.has_urgent ? 'border-red-300 bg-red-50' : 'border-border'
+                } ${conversation.unread_count > 0 ? 'bg-blue-50 border-blue-300' : ''}`}
               >
                  <div className="flex items-start justify-between mb-3">
                    <div className="flex-1">
@@ -307,146 +366,172 @@ export const MessagesPanel = () => {
                        <Button
                          variant="ghost"
                          size="sm"
-                         onClick={() => toggleMessage(message.id)}
+                         onClick={() => toggleConversation(conversation.order_id)}
                          className="p-1 h-auto"
                        >
                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                        </Button>
                        <h3 className="font-semibold text-lg">
-                         {message.subject || 'Customer Message'}
+                         {conversation.order.order_number} - {conversation.order.customer_name}
                        </h3>
-                      {message.is_urgent && (
+                      {conversation.has_urgent && (
                         <AlertTriangle className="w-4 h-4 text-red-600" />
                       )}
-                      {!message.is_read && (
-                        <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded">
-                          New
-                        </span>
+                      {conversation.unread_count > 0 && (
+                        <Badge variant="secondary" className="bg-blue-600 text-white">
+                          {conversation.unread_count} new
+                        </Badge>
                       )}
                     </div>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                       <span className="flex items-center gap-1">
-                        <User className="w-3 h-3" />
-                        {message.sender?.full_name || 'Customer'}
+                        <DollarSign className="w-3 h-3" />
+                        ₱{conversation.order.total_amount.toFixed(2)}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Package className="w-3 h-3" />
-                        {message.order?.order_number}
+                        <MessageSquare className="w-3 h-3" />
+                        {conversation.messages.length} message{conversation.messages.length !== 1 ? 's' : ''}
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        {formatDistanceToNow(new Date(message.created_at))} ago
+                        {formatDistanceToNow(new Date(conversation.latest_message_date))} ago
                       </span>
                     </div>
                    </div>
-                   <div className="flex items-center gap-2">
-                     {message.message_type === 'cancellation_request' && (
-                       <div className="text-sm">
-                         <p className="font-semibold text-red-600">Cancellation Request</p>
-                         {message.order && (
-                           <p className="text-muted-foreground">
-                             ₱{message.order.total_amount.toFixed(2)}
-                           </p>
-                         )}
-                       </div>
-                     )}
-                     <AlertDialog>
-                       <AlertDialogTrigger asChild>
-                         <Button
-                           variant="ghost"
-                           size="sm"
-                           className="h-auto p-1 text-destructive hover:text-destructive"
-                         >
-                           <Trash2 className="w-3 h-3" />
-                         </Button>
-                       </AlertDialogTrigger>
-                       <AlertDialogContent>
-                         <AlertDialogHeader>
-                           <AlertDialogTitle>Delete Message</AlertDialogTitle>
-                           <AlertDialogDescription>
-                             Are you sure you want to delete this message? This action cannot be undone.
-                           </AlertDialogDescription>
-                         </AlertDialogHeader>
-                         <AlertDialogFooter>
-                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                           <AlertDialogAction
-                             onClick={() => deleteMessage(message.id)}
-                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                           >
-                             Delete
-                           </AlertDialogAction>
-                         </AlertDialogFooter>
-                       </AlertDialogContent>
-                     </AlertDialog>
-                   </div>
                  </div>
 
-                 {/* Message content - only show when expanded */}
+                 {/* Conversation content - only show when expanded */}
                  {isExpanded && (
-                   <div className="space-y-3">
-                  <div className="bg-white rounded p-3 border">
-                    <p className="text-sm whitespace-pre-wrap">{message.message}</p>
-                  </div>
+                   <div className="space-y-4 mt-4 border-t pt-4">
+                     {/* Order Summary */}
+                     <div className="bg-card rounded p-3 border">
+                       <h4 className="font-semibold text-sm mb-2 flex items-center gap-1">
+                         <Package className="w-3 h-3" />
+                         Order Details
+                       </h4>
+                       <div className="grid grid-cols-2 gap-4 text-sm">
+                         <div>
+                           <p><strong>Customer:</strong> {conversation.order.customer_name}</p>
+                           <p><strong>Email:</strong> {conversation.order.customer_email}</p>
+                           <p><strong>Order Type:</strong> {conversation.order.order_type.replace('_', ' ')}</p>
+                           <p><strong>Status:</strong> {conversation.order.status}</p>
+                         </div>
+                         <div>
+                           <p><strong>Total Amount:</strong> ₱{conversation.order.total_amount.toFixed(2)}</p>
+                           <p><strong>Deposit Paid:</strong> ₱{(conversation.order.deposit_paid || 0).toFixed(2)}</p>
+                           <p><strong>Order Date:</strong> {formatDistanceToNow(new Date(conversation.order.created_at))} ago</p>
+                         </div>
+                       </div>
+                     </div>
 
-                  {message.message_type === 'cancellation_request' && message.order && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
-                      <h4 className="font-semibold text-sm mb-2 flex items-center gap-1">
-                        <DollarSign className="w-3 h-3" />
-                        Order Details
-                      </h4>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <p><strong>Customer:</strong> {message.order.customer_name}</p>
-                          <p><strong>Email:</strong> {message.order.customer_email}</p>
-                          <p><strong>Order Type:</strong> {message.order.order_type.replace('_', ' ')}</p>
-                          <p><strong>Status:</strong> {message.order.status}</p>
-                        </div>
-                        <div>
-                          <p><strong>Total Amount:</strong> ₱{message.order.total_amount.toFixed(2)}</p>
-                          <p><strong>Deposit Paid:</strong> ₱{(message.order.deposit_paid || 0).toFixed(2)}</p>
-                          <p><strong>Order Date:</strong> {formatDistanceToNow(new Date(message.order.created_at))} ago</p>
-                        </div>
-                      </div>
-                      {message.cancellation_reason && (
-                        <div className="mt-2 pt-2 border-t border-yellow-300">
-                          <p><strong>Cancellation Reason:</strong> {message.cancellation_reason}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                     {/* Messages Thread */}
+                     <div className="space-y-3">
+                       {sortedMessages.map((message) => (
+                         <div 
+                           key={message.id} 
+                           className={`p-3 rounded border-l-4 ${
+                             message.message_type === 'admin_response' 
+                               ? 'bg-green-50 border-l-green-500 ml-4' 
+                               : 'bg-gray-50 border-l-blue-500 mr-4'
+                           }`}
+                         >
+                           <div className="flex items-start justify-between mb-2">
+                             <div className="flex items-center gap-2">
+                               <span className="font-medium text-sm">
+                                 {message.message_type === 'admin_response' ? 'Admin' : (message.sender?.full_name || 'Customer')}
+                               </span>
+                               {message.message_type === 'cancellation_request' && (
+                                 <Badge variant="destructive" className="text-xs">Cancellation Request</Badge>
+                               )}
+                               {message.is_urgent && (
+                                 <AlertTriangle className="w-3 h-3 text-red-600" />
+                               )}
+                               {!message.is_read && (
+                                 <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded">New</span>
+                               )}
+                             </div>
+                             <div className="flex items-center gap-2">
+                               <span className="text-xs text-muted-foreground">
+                                 {formatDistanceToNow(new Date(message.created_at))} ago
+                               </span>
+                               <AlertDialog>
+                                 <AlertDialogTrigger asChild>
+                                   <Button
+                                     variant="ghost"
+                                     size="sm"
+                                     className="h-auto p-1 text-destructive hover:text-destructive"
+                                   >
+                                     <Trash2 className="w-3 h-3" />
+                                   </Button>
+                                 </AlertDialogTrigger>
+                                 <AlertDialogContent>
+                                   <AlertDialogHeader>
+                                     <AlertDialogTitle>Delete Message</AlertDialogTitle>
+                                     <AlertDialogDescription>
+                                       Are you sure you want to delete this message? This action cannot be undone.
+                                     </AlertDialogDescription>
+                                   </AlertDialogHeader>
+                                   <AlertDialogFooter>
+                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                     <AlertDialogAction
+                                       onClick={() => deleteMessage(message.id)}
+                                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                     >
+                                       Delete
+                                     </AlertDialogAction>
+                                   </AlertDialogFooter>
+                                 </AlertDialogContent>
+                               </AlertDialog>
+                             </div>
+                           </div>
+                           
+                           {message.subject && (
+                             <p className="font-medium text-sm mb-1">{message.subject}</p>
+                           )}
+                           
+                           <p className="text-sm whitespace-pre-wrap mb-2">{message.message}</p>
+                           
+                           {message.cancellation_reason && (
+                             <div className="mt-2 pt-2 border-t border-yellow-300 bg-yellow-100 rounded p-2">
+                               <p className="text-sm"><strong>Cancellation Reason:</strong> {message.cancellation_reason}</p>
+                             </div>
+                           )}
 
-                   <div className="flex items-center gap-2">
-                     <Button
-                       variant="outline"
-                       size="sm"
-                       onClick={() => setSelectedMessage(message)}
-                       className="flex items-center gap-1"
-                     >
-                       <Send className="w-3 h-3" />
-                       Reply
-                     </Button>
-                     
-                     {message.message_type === 'cancellation_request' && (
-                       <>
-                         <Button
-                           variant="outline"
-                           size="sm"
-                           className="text-green-600 border-green-600 hover:bg-green-50"
-                         >
-                           <CheckCircle className="w-3 h-3 mr-1" />
-                           Approve
-                         </Button>
-                         <Button
-                           variant="outline"
-                           size="sm"
-                           className="text-red-600 border-red-600 hover:bg-red-50"
-                         >
-                           <XCircle className="w-3 h-3 mr-1" />
-                           Deny
-                         </Button>
-                       </>
-                     )}
-                   </div>
+                           <div className="flex items-center gap-2 mt-2">
+                             <Button
+                               variant="outline"
+                               size="sm"
+                               onClick={() => setSelectedMessage(message)}
+                               className="flex items-center gap-1"
+                             >
+                               <Send className="w-3 h-3" />
+                               Reply
+                             </Button>
+                             
+                             {message.message_type === 'cancellation_request' && (
+                               <>
+                                 <Button
+                                   variant="outline"
+                                   size="sm"
+                                   className="text-green-600 border-green-600 hover:bg-green-50"
+                                 >
+                                   <CheckCircle className="w-3 h-3 mr-1" />
+                                   Approve
+                                 </Button>
+                                 <Button
+                                   variant="outline"
+                                   size="sm"
+                                   className="text-red-600 border-red-600 hover:bg-red-50"
+                                 >
+                                   <XCircle className="w-3 h-3 mr-1" />
+                                   Deny
+                                 </Button>
+                               </>
+                             )}
+                           </div>
+                         </div>
+                       ))}
+                     </div>
                    </div>
                    )}
                 </div>
