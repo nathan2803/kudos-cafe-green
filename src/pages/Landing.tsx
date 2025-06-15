@@ -52,6 +52,7 @@ export const Landing = () => {
   const [featuredDishes, setFeaturedDishes] = useState<MenuItem[]>([])
   const [aboutSections, setAboutSections] = useState<any[]>([])
   const [heroContent, setHeroContent] = useState<any>(null)
+  const [contactInfo, setContactInfo] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -82,9 +83,17 @@ export const Landing = () => {
         .eq('setting_key', 'hero_content')
         .single()
 
+      // Fetch contact info
+      const { data: contact } = await supabase
+        .from('site_settings')
+        .select('setting_value')
+        .eq('setting_key', 'contact_info')
+        .single()
+
       setFeaturedDishes(dishes || [])
       setAboutSections(sections || [])
       setHeroContent(hero?.setting_value || null)
+      setContactInfo(contact?.setting_value || null)
     } catch (error) {
       console.error('Error fetching featured content:', error)
     } finally {
@@ -458,12 +467,11 @@ export const Landing = () => {
               </div>
               
               <h2 className="text-4xl md:text-5xl font-bold leading-tight">
-                Experience <span className="text-light-green">Green Dining</span> Today
+                {contactInfo?.title || 'Experience Green Dining Today'}
               </h2>
               
               <p className="text-lg text-cream/90 leading-relaxed">
-                Come and discover the perfect blend of sustainable practices and exceptional flavors. 
-                We're open and ready to serve you the finest eco-friendly dining experience.
+                {contactInfo?.subtitle || 'Come and discover the perfect blend of sustainable practices and exceptional flavors. We\'re open and ready to serve you the finest eco-friendly dining experience.'}
               </p>
 
               <div className="space-y-4">
@@ -472,8 +480,8 @@ export const Landing = () => {
                     <MapPin className="w-6 h-6 text-light-green" />
                   </div>
                   <div>
-                    <p className="font-semibold">123 Green Street, Eco District</p>
-                    <p className="text-cream/80">London, EC1 2AB</p>
+                    <p className="font-semibold">{contactInfo?.address_line1 || '123 Green Street, Eco District'}</p>
+                    <p className="text-cream/80">{contactInfo?.address_line2 || 'London, EC1 2AB'}</p>
                   </div>
                 </div>
                 
@@ -482,8 +490,8 @@ export const Landing = () => {
                     <Phone className="w-6 h-6 text-light-green" />
                   </div>
                   <div>
-                    <p className="font-semibold">+44 (0) 20 7123 4567</p>
-                    <p className="text-cream/80">Call us for reservations</p>
+                    <p className="font-semibold">{contactInfo?.phone || '+44 (0) 20 7123 4567'}</p>
+                    <p className="text-cream/80">{contactInfo?.phone_description || 'Call us for reservations'}</p>
                   </div>
                 </div>
                 
@@ -492,8 +500,11 @@ export const Landing = () => {
                     <Clock className="w-6 h-6 text-light-green" />
                   </div>
                   <div>
-                    <p className="font-semibold">Mon-Thu: 7AM - 10PM</p>
-                    <p className="text-cream/80">Fri-Sat: 7AM - 11PM, Sun: 8AM - 9PM</p>
+                    <p className="font-semibold">Mon-Thu: {contactInfo?.opening_hours?.monday_thursday || '7AM - 10PM'}</p>
+                    <p className="text-cream/80">
+                      Fri-Sat: {contactInfo?.opening_hours?.friday_saturday || '7AM - 11PM'}, 
+                      Sun: {contactInfo?.opening_hours?.sunday || '8AM - 9PM'}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -508,13 +519,13 @@ export const Landing = () => {
 
             <div className="relative">
               <img 
-                src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&h=400&fit=crop"
+                src={contactInfo?.restaurant_image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&h=400&fit=crop"}
                 alt="Restaurant exterior"
                 className="rounded-lg shadow-2xl"
               />
               <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-light-green/20 rounded-full flex items-center justify-center backdrop-blur-sm">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-light-green">4.9</div>
+                  <div className="text-2xl font-bold text-light-green">{contactInfo?.rating || '4.9'}</div>
                   <div className="text-xs text-cream">Rating</div>
                 </div>
               </div>

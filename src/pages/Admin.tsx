@@ -20,6 +20,7 @@ import { UserManagement } from '@/components/admin/UserManagement'
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard'
 import { AboutUsManagement } from '@/components/admin/AboutUsManagement'
 import { HeroManagement } from '@/components/admin/HeroManagement'
+import { ContactManagement } from '@/components/admin/ContactManagement'
 
 interface MenuItem {
   id: string
@@ -162,7 +163,8 @@ import {
   WalletCards,
   MessageSquare,
   FileText,
-  Home
+  Home,
+  MapPin
 } from 'lucide-react'
 
 export const Admin = () => {
@@ -1238,7 +1240,7 @@ export const Admin = () => {
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10 bg-muted/30">
+          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-11 bg-muted/30">
             <TabsTrigger value="dashboard" className="flex items-center space-x-2">
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Dashboard</span>
@@ -1274,6 +1276,10 @@ export const Admin = () => {
             <TabsTrigger value="analytics" className="flex items-center space-x-2">
               <TrendingUp className="w-4 h-4" />
               <span className="hidden sm:inline">Analytics</span>
+            </TabsTrigger>
+            <TabsTrigger value="contact" className="flex items-center space-x-2">
+              <MapPin className="w-4 h-4" />
+              <span className="hidden sm:inline">Contact</span>
             </TabsTrigger>
             <TabsTrigger value="about" className="flex items-center space-x-2">
               <FileText className="w-4 h-4" />
@@ -2870,6 +2876,11 @@ export const Admin = () => {
           {/* Hero Management Tab */}
           <TabsContent value="hero" className="space-y-6">
             <HeroManagement />
+          </TabsContent>
+
+          {/* Contact Management Tab */}
+          <TabsContent value="contact" className="space-y-6">
+            <ContactManagement />
           </TabsContent>
 
           {/* About Us Management Tab */}
