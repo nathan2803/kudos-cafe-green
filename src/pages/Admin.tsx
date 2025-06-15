@@ -1481,8 +1481,8 @@ export const Admin = () => {
                               </div>
                             )}
 
-                            {/* Payment Status */}
-                            <div className="flex items-center gap-2">
+                            {/* Payment Status with inline actions */}
+                            <div className="flex items-center gap-2 flex-wrap">
                               <strong>Payment:</strong>
                               <Badge className={
                                 order.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
@@ -1517,32 +1517,38 @@ export const Admin = () => {
                         
                         <div className="flex flex-col md:items-end space-y-2 mt-4 md:mt-0">
                           <p className="text-lg font-bold">₱{order.total_amount.toFixed(2)}</p>
-                          <div className="flex flex-col space-y-2">
-                            <div className="flex space-x-2">
-                              <Select 
-                                value={order.status} 
-                                onValueChange={(value) => updateOrderStatus(order.id, value)}
-                              >
-                                <SelectTrigger className="w-32">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="pending">Pending</SelectItem>
-                                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                                  <SelectItem value="preparing">Preparing</SelectItem>
-                                  <SelectItem value="ready">Ready</SelectItem>
-                                  <SelectItem value="delivered">Delivered</SelectItem>
-                                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                                </SelectContent>
-                               </Select>
-                               <Button
-                                 size="sm"
-                                 variant={order.is_priority ? "default" : "outline"}
-                                 onClick={() => toggleOrderPriority(order.id, !order.is_priority)}
-                                 className={order.is_priority ? "bg-orange-500 hover:bg-orange-600" : ""}
+                           <div className="flex flex-col space-y-2">
+                             {/* Status controls with priority button inline */}
+                             <div className="flex space-x-2 items-center">
+                               <Select 
+                                 value={order.status} 
+                                 onValueChange={(value) => updateOrderStatus(order.id, value)}
                                >
-                                 {order.is_priority ? "Remove Priority" : "Set Priority"}
-                               </Button>
+                                 <SelectTrigger className="w-32">
+                                   <SelectValue />
+                                 </SelectTrigger>
+                                 <SelectContent>
+                                   <SelectItem value="pending">Pending</SelectItem>
+                                   <SelectItem value="confirmed">Confirmed</SelectItem>
+                                   <SelectItem value="preparing">Preparing</SelectItem>
+                                   <SelectItem value="ready">Ready</SelectItem>
+                                   <SelectItem value="delivered">Delivered</SelectItem>
+                                   <SelectItem value="cancelled">Cancelled</SelectItem>
+                                 </SelectContent>
+                                </Select>
+                                <Button
+                                  size="sm"
+                                  variant={order.is_priority ? "default" : "outline"}
+                                  onClick={() => toggleOrderPriority(order.id, !order.is_priority)}
+                                  className={order.is_priority ? "bg-orange-500 hover:bg-orange-600" : ""}
+                                  title={order.is_priority ? "Remove priority status" : "Set as priority order"}
+                                >
+                                  {order.is_priority ? "Priority" : "Set Priority"}
+                                </Button>
+                             </div>
+                             
+                             {/* View details button */}
+                             <div className="flex space-x-2">
                               <Dialog>
                                 <DialogTrigger asChild>
                                   <Button size="sm" variant="outline">
