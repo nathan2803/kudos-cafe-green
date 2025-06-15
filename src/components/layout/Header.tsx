@@ -51,11 +51,11 @@ export const Header = () => {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center p-1 shadow-sm border border-primary/20">
+              <div className="w-12 h-12 bg-gradient-to-br from-white to-cream rounded-full flex items-center justify-center p-2 shadow-lg border-2 border-primary/30">
                 <img 
                   src="/lovable-uploads/0fb532fd-64ad-4f84-9330-470f382bc7db.png" 
-                  alt="Kudos Cafe Logo" 
-                  className="w-8 h-8 object-contain"
+                  alt="Kudos Cafe Professional Logo" 
+                  className="w-8 h-8 object-contain filter drop-shadow-sm"
                 />
               </div>
               <div className="flex flex-col">
