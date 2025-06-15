@@ -63,6 +63,8 @@ export const ContactMapManagement = () => {
         .upsert({
           setting_key: 'contact_map',
           setting_value: settings as any
+        }, {
+          onConflict: 'setting_key'
         })
 
       if (error) throw error
