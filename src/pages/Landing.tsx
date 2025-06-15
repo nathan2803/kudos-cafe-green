@@ -154,7 +154,7 @@ export const Landing = () => {
               <img 
                 src="/lovable-uploads/10da77c8-bfac-41e7-8ab4-672648c51cc4.png" 
                 alt="Kudos Cafe Professional Logo" 
-                className="w-16 h-16 object-contain filter drop-shadow-lg"
+                className="w-20 h-20 object-cover rounded-full filter drop-shadow-lg"
               />
             </div>
           </div>

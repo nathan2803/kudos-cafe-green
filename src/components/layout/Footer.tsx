@@ -28,7 +28,7 @@ export const Footer = () => {
                 <img 
                   src="/lovable-uploads/10da77c8-bfac-41e7-8ab4-672648c51cc4.png" 
                   alt="Kudos Cafe Professional Logo" 
-                  className="w-full h-full object-cover rounded-full filter drop-shadow-sm"
+                  className="w-10 h-10 object-cover rounded-full filter drop-shadow-sm"
                 />
               </div>
               <div className="flex flex-col">
