@@ -23,6 +23,7 @@ import { HeroManagement } from '@/components/admin/HeroManagement'
 import { GalleryHeroManagement } from '@/components/admin/GalleryHeroManagement'
 import { ContactManagement } from '@/components/admin/ContactManagement'
 import { ContactHeroManagement } from '@/components/admin/ContactHeroManagement'
+import { ContactMapManagement } from '@/components/admin/ContactMapManagement'
 
 interface MenuItem {
   id: string
@@ -2884,6 +2885,7 @@ export const Admin = () => {
           {/* Contact Management Tab */}
           <TabsContent value="contact" className="space-y-6">
             <ContactHeroManagement />
+            <ContactMapManagement />
             <ContactManagement />
           </TabsContent>
 

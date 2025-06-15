@@ -24,6 +24,15 @@ interface ContactHeroSettings {
   overlay_color: string
 }
 
+interface ContactMapSettings {
+  map_enabled: boolean
+  map_url: string
+  location_title: string
+  location_description: string
+  use_static_image: boolean
+  static_image_url: string
+}
+
 export const Contact = () => {
   const { toast } = useToast()
   const [heroSettings, setHeroSettings] = useState<ContactHeroSettings>({
@@ -32,6 +41,14 @@ export const Contact = () => {
     background_image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&h=600&fit=crop',
     overlay_opacity: 0.6,
     overlay_color: '#2D5016'
+  })
+  const [mapSettings, setMapSettings] = useState<ContactMapSettings>({
+    map_enabled: true,
+    map_url: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3861.9896893845524!2d120.97901237586563!3d14.553362285910577!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397ca21af3e5fb9%3A0x5cd7c85e46a4c5dd!2sSM%20Mall%20of%20Asia!5e0!3m2!1sen!2sph!4v1734276000000!5m2!1sen!2sph',
+    location_title: 'Find Us',
+    location_description: 'Located at SM Mall of Asia, Quezon',
+    use_static_image: false,
+    static_image_url: ''
   })
   const [formData, setFormData] = useState({
     name: '',
@@ -44,6 +61,7 @@ export const Contact = () => {
 
   useEffect(() => {
     fetchHeroSettings()
+    fetchMapSettings()
   }, [])
 
   const fetchHeroSettings = async () => {
@@ -61,6 +79,24 @@ export const Contact = () => {
       }
     } catch (error) {
       console.error('Error fetching contact hero settings:', error)
+    }
+  }
+
+  const fetchMapSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('setting_value')
+        .eq('setting_key', 'contact_map')
+        .maybeSingle()
+
+      if (error) throw error
+      
+      if (data?.setting_value) {
+        setMapSettings(data.setting_value as unknown as ContactMapSettings)
+      }
+    } catch (error) {
+      console.error('Error fetching contact map settings:', error)
     }
   }
 
@@ -337,32 +373,48 @@ export const Contact = () => {
       </section>
 
       {/* Map Section */}
-      <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-foreground mb-4">Find Us</h2>
-            <p className="text-muted-foreground">Located at SM Mall of Asia, Quezon</p>
+      {mapSettings.map_enabled && (
+        <section className="py-16 bg-muted/30">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-foreground mb-4">{mapSettings.location_title}</h2>
+              <p className="text-muted-foreground">{mapSettings.location_description}</p>
+            </div>
+            
+            <Card className="border-primary/20 overflow-hidden">
+              <CardContent className="p-0">
+                <div className="w-full h-96">
+                  {mapSettings.use_static_image ? (
+                    mapSettings.static_image_url ? (
+                      <img 
+                        src={mapSettings.static_image_url} 
+                        alt="Restaurant location map"
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-muted flex items-center justify-center rounded-lg">
+                        <p className="text-muted-foreground">Map image not available</p>
+                      </div>
+                    )
+                  ) : (
+                    <iframe
+                      src={mapSettings.map_url}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0, pointerEvents: 'none' }}
+                      allowFullScreen
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title="Kudos Cafe & Restaurant Location"
+                      className="rounded-lg"
+                    />
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
-          
-          <Card className="border-primary/20 overflow-hidden">
-            <CardContent className="p-0">
-              <div className="w-full h-96">
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3861.9896893845524!2d120.97901237586563!3d14.553362285910577!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397ca21af3e5fb9%3A0x5cd7c85e46a4c5dd!2sSM%20Mall%20of%20Asia!5e0!3m2!1sen!2sph!4v1734276000000!5m2!1sen!2sph"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Kudos Cafe & Restaurant Location"
-                  className="rounded-lg"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   )
 }
