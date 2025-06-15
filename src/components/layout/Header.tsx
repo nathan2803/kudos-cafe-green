@@ -55,7 +55,7 @@ export const Header = () => {
                 <img 
                   src="/lovable-uploads/0fb532fd-64ad-4f84-9330-470f382bc7db.png" 
                   alt="Kudos Cafe Professional Logo" 
-                  className="w-8 h-8 object-contain filter drop-shadow-sm"
+                  className="w-full h-full object-contain filter drop-shadow-sm"
                 />
               </div>
               <div className="flex flex-col">
