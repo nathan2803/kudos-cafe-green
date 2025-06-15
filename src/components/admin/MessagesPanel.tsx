@@ -116,11 +116,20 @@ export const MessagesPanel = () => {
       const { data: currentUser } = await supabase.auth.getUser()
       if (!currentUser.user) throw new Error('Not authenticated')
 
+      // Get the customer's user_id from the order
+      const { data: orderData } = await supabase
+        .from('orders')
+        .select('user_id')
+        .eq('id', selectedMessage.order_id)
+        .single()
+
       const { error } = await supabase
         .from('order_messages')
         .insert({
           order_id: selectedMessage.order_id,
           sender_id: currentUser.user.id,
+          recipient_id: orderData?.user_id, // Set customer as recipient
+          parent_message_id: selectedMessage.id, // Link to original message
           message_type: 'admin_response',
           subject: `Re: ${selectedMessage.subject || 'Order Inquiry'}`,
           message: replyText
@@ -128,12 +137,19 @@ export const MessagesPanel = () => {
 
       if (error) throw error
 
+      // Mark the original message as read
+      await supabase
+        .from('order_messages')
+        .update({ is_read: true })
+        .eq('id', selectedMessage.id)
+
       toast({
         title: "Reply sent",
         description: "Your response has been sent to the customer."
       })
 
       setReplyText('')
+      setSelectedMessage(null)
       fetchMessages()
     } catch (error) {
       console.error('Error sending reply:', error)

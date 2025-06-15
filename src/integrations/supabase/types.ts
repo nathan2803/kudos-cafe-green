@@ -293,6 +293,8 @@ export type Database = {
           message: string
           message_type: string
           order_id: string
+          parent_message_id: string | null
+          recipient_id: string | null
           sender_id: string
           subject: string | null
           updated_at: string
@@ -306,6 +308,8 @@ export type Database = {
           message: string
           message_type: string
           order_id: string
+          parent_message_id?: string | null
+          recipient_id?: string | null
           sender_id: string
           subject?: string | null
           updated_at?: string
@@ -319,6 +323,8 @@ export type Database = {
           message?: string
           message_type?: string
           order_id?: string
+          parent_message_id?: string | null
+          recipient_id?: string | null
           sender_id?: string
           subject?: string | null
           updated_at?: string
@@ -329,6 +335,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_messages_parent_message_id_fkey"
+            columns: ["parent_message_id"]
+            isOneToOne: false
+            referencedRelation: "order_messages"
             referencedColumns: ["id"]
           },
         ]

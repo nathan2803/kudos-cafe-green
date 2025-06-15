@@ -41,6 +41,7 @@ interface Review {
 }
 import { useToast } from '@/hooks/use-toast'
 import { EnhancedOrderHistory } from '@/components/profile/EnhancedOrderHistory'
+import { MessagesInbox } from '@/components/profile/MessagesInbox'
 import { 
   User, 
   Mail, 
@@ -57,7 +58,8 @@ import {
   Package,
   Edit2,
   Save,
-  X
+  X,
+  MessageSquare
 } from 'lucide-react'
 
 interface UserProfile {
@@ -427,7 +429,7 @@ export const Profile = () => {
 
         {/* Profile Content */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-muted/30">
+          <TabsList className="grid w-full grid-cols-6 bg-muted/30">
             <TabsTrigger value="overview" className="flex items-center space-x-2">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Overview</span>
@@ -435,6 +437,10 @@ export const Profile = () => {
             <TabsTrigger value="orders" className="flex items-center space-x-2">
               <Package className="w-4 h-4" />
               <span className="hidden sm:inline">Orders</span>
+            </TabsTrigger>
+            <TabsTrigger value="messages" className="flex items-center space-x-2">
+              <MessageSquare className="w-4 h-4" />
+              <span className="hidden sm:inline">Messages</span>
             </TabsTrigger>
             <TabsTrigger value="reviews" className="flex items-center space-x-2">
               <Star className="w-4 h-4" />
@@ -574,6 +580,11 @@ export const Profile = () => {
               loading={loading}
               onRefresh={fetchUserOrders}
             />
+          </TabsContent>
+
+          {/* Messages Tab */}
+          <TabsContent value="messages" className="space-y-6">
+            <MessagesInbox />
           </TabsContent>
 
           {/* Reviews Tab */}
