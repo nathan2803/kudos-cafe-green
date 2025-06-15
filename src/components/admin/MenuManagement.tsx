@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, Edit, Trash2, Upload, ImageIcon, Tag } from 'lucide-react'
+import { Plus, Edit, Trash2, ImageIcon } from 'lucide-react'
 import { TagManagement } from './TagManagement'
 
 interface MenuItem {
@@ -28,25 +28,26 @@ interface MenuItem {
   dietary_tags: string[] | null
 }
 
-interface Category {
-  id: string
-  name: string
-  description: string | null
-  color: string | null
-  icon: string | null
-}
-
 export const MenuManagement = () => {
   const { user, userProfile } = useAuth()
   const { toast } = useToast()
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
+
+  // Predefined food categories
+  const foodCategories = [
+    'Appetizers',
+    'Soups & Salads',
+    'Main Course',
+    'Pasta',
+    'Pizza',
+    'Desserts',
+    'Drinks',
+    'Beverages'
+  ]
 
   // Form states
   const [formData, setFormData] = useState({
@@ -60,19 +61,11 @@ export const MenuManagement = () => {
     dietary_tags: [] as string[]
   })
 
-  const [categoryFormData, setCategoryFormData] = useState({
-    name: '',
-    description: '',
-    color: '#3B82F6',
-    icon: ''
-  })
-
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
 
   useEffect(() => {
     fetchMenuItems()
-    fetchCategories()
   }, [])
 
   const fetchMenuItems = async () => {
@@ -80,7 +73,7 @@ export const MenuManagement = () => {
       const { data, error } = await supabase
         .from('menu_items')
         .select('*')
-        .order('name')
+        .order('category, name')
 
       if (error) throw error
       setMenuItems(data || [])
@@ -89,25 +82,6 @@ export const MenuManagement = () => {
       toast({
         title: "Error",
         description: "Failed to load menu items",
-        variant: "destructive"
-      })
-    }
-  }
-
-  const fetchCategories = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name')
-
-      if (error) throw error
-      setCategories(data || [])
-    } catch (error: any) {
-      console.error('Error fetching categories:', error)
-      toast({
-        title: "Error",
-        description: "Failed to load categories",
         variant: "destructive"
       })
     }
@@ -227,62 +201,6 @@ export const MenuManagement = () => {
     }
   }
 
-  const saveCategory = async () => {
-    if (!categoryFormData.name) {
-      toast({
-        title: "Error",
-        description: "Category name is required",
-        variant: "destructive"
-      })
-      return
-    }
-
-    setLoading(true)
-    try {
-      const categoryData = {
-        name: categoryFormData.name,
-        description: categoryFormData.description || null,
-        color: categoryFormData.color,
-        icon: categoryFormData.icon || null
-      }
-
-      if (editingCategory) {
-        // Update existing category
-        const { error } = await supabase
-          .from('categories')
-          .update(categoryData)
-          .eq('id', editingCategory.id)
-
-        if (error) throw error
-      } else {
-        // Create new category
-        const { error } = await supabase
-          .from('categories')
-          .insert([categoryData])
-
-        if (error) throw error
-      }
-
-      await fetchCategories()
-      resetCategoryForm()
-      setIsCategoryDialogOpen(false)
-
-      toast({
-        title: "Success",
-        description: editingCategory ? "Category updated" : "Category created",
-      })
-    } catch (error: any) {
-      console.error('Error saving category:', error)
-      toast({
-        title: "Error",
-        description: "Failed to save category",
-        variant: "destructive"
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const deleteMenuItem = async (id: string) => {
     if (!confirm('Are you sure you want to delete this menu item?')) return
 
@@ -309,32 +227,6 @@ export const MenuManagement = () => {
     }
   }
 
-  const deleteCategory = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this category?')) return
-
-    try {
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', id)
-
-      if (error) throw error
-
-      await fetchCategories()
-      toast({
-        title: "Success",
-        description: "Category deleted",
-      })
-    } catch (error: any) {
-      console.error('Error deleting category:', error)
-      toast({
-        title: "Error",
-        description: "Failed to delete category",
-        variant: "destructive"
-      })
-    }
-  }
-
   const openEditDialog = (item?: MenuItem) => {
     if (item) {
       setEditingItem(item)
@@ -356,22 +248,6 @@ export const MenuManagement = () => {
     setIsEditDialogOpen(true)
   }
 
-  const openCategoryDialog = (category?: Category) => {
-    if (category) {
-      setEditingCategory(category)
-      setCategoryFormData({
-        name: category.name,
-        description: category.description || '',
-        color: category.color || '#3B82F6',
-        icon: category.icon || ''
-      })
-    } else {
-      setEditingCategory(null)
-      resetCategoryForm()
-    }
-    setIsCategoryDialogOpen(true)
-  }
-
   const resetForm = () => {
     setFormData({
       name: '',
@@ -387,15 +263,6 @@ export const MenuManagement = () => {
     setImagePreview(null)
   }
 
-  const resetCategoryForm = () => {
-    setCategoryFormData({
-      name: '',
-      description: '',
-      color: '#3B82F6',
-      icon: ''
-    })
-  }
-
   const toggleDietaryTag = (tag: string) => {
     setFormData(prev => ({
       ...prev,
@@ -406,6 +273,19 @@ export const MenuManagement = () => {
   }
 
   const dietaryOptions = ['Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 'Nut-Free', 'Spicy', 'Halal', 'Kosher']
+
+  // Group menu items by category
+  const groupedMenuItems = menuItems.reduce((acc, item) => {
+    if (!acc[item.category]) {
+      acc[item.category] = []
+    }
+    acc[item.category].push(item)
+    return acc
+  }, {} as { [key: string]: MenuItem[] })
+
+  // Sort categories by predefined order, with popular items first within each category
+  const sortedCategories = foodCategories.filter(cat => groupedMenuItems[cat])
+  const otherCategories = Object.keys(groupedMenuItems).filter(cat => !foodCategories.includes(cat))
 
   if (!userProfile?.is_admin) {
     return (
@@ -420,9 +300,8 @@ export const MenuManagement = () => {
       <h2 className="text-2xl font-bold">Menu Management</h2>
 
       <Tabs defaultValue="menu-items" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="menu-items">Menu Items</TabsTrigger>
-          <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="tags">Tags</TabsTrigger>
         </TabsList>
 
@@ -438,124 +317,91 @@ export const MenuManagement = () => {
             </Dialog>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Menu Items</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {menuItems.map((item) => (
-                  <div key={item.id} className="border rounded-lg overflow-hidden">
-                    <div className="aspect-video bg-muted flex items-center justify-center">
-                      {item.image_url ? (
-                        <img 
-                          src={item.image_url} 
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <ImageIcon className="w-12 h-12 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-medium">{item.name}</h4>
-                        <span className="font-bold">${item.price}</span>
-                      </div>
-                      
-                      {item.description && (
-                        <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
-                      )}
-                      
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        <Badge variant="secondary">{item.category}</Badge>
-                        {!item.is_available && <Badge variant="destructive">Unavailable</Badge>}
-                        {item.is_popular && <Badge variant="default">Popular</Badge>}
-                        {item.is_new && <Badge className="bg-green-500">New</Badge>}
-                        {item.dietary_tags?.map(tag => (
-                          <Badge key={tag} variant="outline">{tag}</Badge>
-                        ))}
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditDialog(item)}
-                          className="flex-1"
-                        >
-                          <Edit className="w-4 h-4 mr-2" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => deleteMenuItem(item.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+          {/* Display menu items grouped by category */}
+          {[...sortedCategories, ...otherCategories].map((category) => {
+            const categoryItems = groupedMenuItems[category].sort((a, b) => {
+              // Sort by popular first, then by name
+              if (a.is_popular && !b.is_popular) return -1
+              if (!a.is_popular && b.is_popular) return 1
+              return a.name.localeCompare(b.name)
+            })
 
-        <TabsContent value="categories" className="space-y-6">
-          <div className="flex justify-end">
-            <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" onClick={() => openCategoryDialog()}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Category
-                </Button>
-              </DialogTrigger>
-            </Dialog>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Categories</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {categories.map((category) => (
-                  <div key={category.id} className="border rounded-lg p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className="w-4 h-4 rounded"
-                        style={{ backgroundColor: category.color || '#3B82F6' }}
-                      />
-                      <div>
-                        <h4 className="font-medium">{category.name}</h4>
-                        {category.description && (
-                          <p className="text-sm text-muted-foreground">{category.description}</p>
-                        )}
+            return (
+              <Card key={category}>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>{category}</span>
+                    <Badge variant="secondary">{categoryItems.length} items</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {categoryItems.map((item) => (
+                      <div key={item.id} className="border rounded-lg overflow-hidden">
+                        <div className="aspect-video bg-muted flex items-center justify-center">
+                          {item.image_url ? (
+                            <img 
+                              src={item.image_url} 
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <ImageIcon className="w-12 h-12 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-medium">{item.name}</h4>
+                            <span className="font-bold">${item.price}</span>
+                          </div>
+                          
+                          {item.description && (
+                            <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
+                          )}
+                          
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            {!item.is_available && <Badge variant="destructive">Unavailable</Badge>}
+                            {item.is_popular && <Badge variant="default">Popular</Badge>}
+                            {item.is_new && <Badge className="bg-green-500">New</Badge>}
+                            {item.dietary_tags?.map(tag => (
+                              <Badge key={tag} variant="outline">{tag}</Badge>
+                            ))}
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openEditDialog(item)}
+                              className="flex-1"
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => deleteMenuItem(item.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openCategoryDialog(category)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteCategory(category.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            )
+          })}
+
+          {menuItems.length === 0 && (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-muted-foreground">No menu items found. Add your first menu item to get started.</p>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="tags">
@@ -636,18 +482,18 @@ export const MenuManagement = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="category">Category *</Label>
+            <Label htmlFor="category">Food Category *</Label>
             <Select
               value={formData.category}
               onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select category" />
+                <SelectValue placeholder="Select food category" />
               </SelectTrigger>
               <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.name}>
-                    {category.name}
+                {foodCategories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -719,71 +565,6 @@ export const MenuManagement = () => {
             </Button>
           </div>
         </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Category Edit Dialog */}
-      <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {editingCategory ? 'Edit Category' : 'Add New Category'}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="categoryName">Name *</Label>
-              <Input
-                id="categoryName"
-                value={categoryFormData.name}
-                onChange={(e) => setCategoryFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Category name"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="categoryDescription">Description</Label>
-              <Textarea
-                id="categoryDescription"
-                value={categoryFormData.description}
-                onChange={(e) => setCategoryFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Category description"
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="categoryColor">Color</Label>
-              <div className="flex gap-2 items-center">
-                <Input
-                  id="categoryColor"
-                  type="color"
-                  value={categoryFormData.color}
-                  onChange={(e) => setCategoryFormData(prev => ({ ...prev, color: e.target.value }))}
-                  className="w-20 h-10"
-                />
-                <span className="text-sm text-muted-foreground">{categoryFormData.color}</span>
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-4">
-              <Button
-                onClick={saveCategory}
-                disabled={loading}
-                className="flex-1"
-              >
-                {loading ? 'Saving...' : editingCategory ? 'Update Category' : 'Create Category'}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setIsCategoryDialogOpen(false)}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
     </div>
