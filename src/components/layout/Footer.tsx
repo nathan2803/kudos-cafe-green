@@ -18,33 +18,33 @@ export const Footer = () => {
   const { isAdmin } = useAuth()
 
   return (
-    <footer className="bg-forest text-cream">
+    <footer className="bg-background/95 backdrop-blur-sm border-t border-primary/20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand & Description */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-light-green rounded-full flex items-center justify-center">
-                <Leaf className="w-5 h-5 text-forest" />
+              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                <Leaf className="w-5 h-5 text-primary-foreground" />
               </div>
               <div className="flex flex-col">
-                <span className="text-lg font-bold">Kudos Cafe</span>
-                <span className="text-xs opacity-80">& Restaurant</span>
+                <span className="text-xl font-bold text-primary">Kudos Cafe</span>
+                <span className="text-xs text-muted-foreground -mt-1">& Restaurant</span>
               </div>
             </div>
-            <p className="text-sm opacity-80 leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Fresh flavors and green living come together at Kudos Cafe. 
               We're committed to sustainable dining experiences with locally 
               sourced ingredients and eco-friendly practices.
             </p>
             <div className="flex space-x-3">
-              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-cream hover:bg-light-green hover:text-forest">
+              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-primary">
                 <Facebook className="h-4 w-4" />
               </Button>
-              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-cream hover:bg-light-green hover:text-forest">
+              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-primary">
                 <Instagram className="h-4 w-4" />
               </Button>
-              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-cream hover:bg-light-green hover:text-forest">
+              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-primary">
                 <Twitter className="h-4 w-4" />
               </Button>
             </div>
@@ -52,21 +52,21 @@ export const Footer = () => {
 
           {/* Quick Links */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Quick Links</h3>
+            <h3 className="text-lg font-semibold text-foreground">Quick Links</h3>
             <div className="space-y-2">
-              <Link to="/" className="block text-sm opacity-80 hover:opacity-100 hover:text-light-green transition-colors">
+              <Link to="/" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
                 Home
               </Link>
-              <Link to="/gallery" className="block text-sm opacity-80 hover:opacity-100 hover:text-light-green transition-colors">
+              <Link to="/gallery" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
                 Gallery
               </Link>
-              <Link to="/menu" className="block text-sm opacity-80 hover:opacity-100 hover:text-light-green transition-colors">
+              <Link to="/menu" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
                 Menu
               </Link>
-              <Link to="/contact" className="block text-sm opacity-80 hover:opacity-100 hover:text-light-green transition-colors">
+              <Link to="/contact" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
                 Contact Us
               </Link>
-              <Link to="/about" className="block text-sm opacity-80 hover:opacity-100 hover:text-light-green transition-colors">
+              <Link to="/about" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
                 About Us
               </Link>
             </div>
@@ -74,26 +74,26 @@ export const Footer = () => {
 
           {/* Contact Info */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Contact Info</h3>
+            <h3 className="text-lg font-semibold text-foreground">Contact Info</h3>
             <div className="space-y-3">
               <div className="flex items-start space-x-2">
-                <MapPin className="w-4 h-4 mt-0.5 text-light-green" />
-                <div className="text-sm opacity-80">
+                <MapPin className="w-4 h-4 mt-0.5 text-primary" />
+                <div className="text-sm text-muted-foreground">
                   <p>123 Green Street</p>
                   <p>Eco District, EC1 2AB</p>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                <Phone className="w-4 h-4 text-light-green" />
-                <span className="text-sm opacity-80">+44 (0) 20 7123 4567</span>
+                <Phone className="w-4 h-4 text-primary" />
+                <span className="text-sm text-muted-foreground">+44 (0) 20 7123 4567</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Mail className="w-4 h-4 text-light-green" />
-                <span className="text-sm opacity-80">hello@kudoscafe.com</span>
+                <Mail className="w-4 h-4 text-primary" />
+                <span className="text-sm text-muted-foreground">hello@kudoscafe.com</span>
               </div>
               <div className="flex items-start space-x-2">
-                <Clock className="w-4 h-4 mt-0.5 text-light-green" />
-                <div className="text-sm opacity-80">
+                <Clock className="w-4 h-4 mt-0.5 text-primary" />
+                <div className="text-sm text-muted-foreground">
                   <p>Mon-Thu: 7:00 AM - 10:00 PM</p>
                   <p>Fri-Sat: 7:00 AM - 11:00 PM</p>
                   <p>Sunday: 8:00 AM - 9:00 PM</p>
@@ -104,16 +104,16 @@ export const Footer = () => {
 
           {/* Newsletter */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Stay Updated</h3>
-            <p className="text-sm opacity-80">
+            <h3 className="text-lg font-semibold text-foreground">Stay Updated</h3>
+            <p className="text-sm text-muted-foreground">
               Subscribe to our newsletter for the latest menu updates and eco-friendly initiatives.
             </p>
             <div className="space-y-2">
               <Input 
                 placeholder="Enter your email" 
-                className="bg-forest/50 border-light-green/30 text-cream placeholder:text-cream/60"
+                className="bg-background border-primary/20 text-foreground placeholder:text-muted-foreground"
               />
-              <Button className="w-full bg-light-green text-forest hover:bg-light-green/90">
+              <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
                 Subscribe
               </Button>
             </div>
@@ -121,21 +121,21 @@ export const Footer = () => {
         </div>
 
         {/* Bottom Section */}
-        <div className="border-t border-light-green/20 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-          <div className="text-sm opacity-80">
+        <div className="border-t border-primary/20 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+          <div className="text-sm text-muted-foreground">
             © 2024 Kudos Cafe & Restaurant. All rights reserved. | Made with 🌱 for sustainability
           </div>
           <div className="flex items-center space-x-4">
-            <Link to="/privacy" className="text-sm opacity-80 hover:opacity-100 hover:text-light-green transition-colors">
+            <Link to="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Privacy Policy
             </Link>
-            <Link to="/terms" className="text-sm opacity-80 hover:opacity-100 hover:text-light-green transition-colors">
+            <Link to="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Terms of Service
             </Link>
             {isAdmin && (
               <Link 
                 to="/admin" 
-                className="text-xs opacity-60 hover:opacity-100 hover:text-light-green transition-colors flex items-center space-x-1"
+                className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center space-x-1"
               >
                 <Shield className="w-3 h-3" />
                 <span>Admin</span>
