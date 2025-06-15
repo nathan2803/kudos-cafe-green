@@ -14,6 +14,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/integrations/supabase/client'
 import { MessagesPanel } from '@/components/admin/MessagesPanel'
 import { OrderMessaging } from '@/components/admin/OrderMessaging'
+import { MenuManagement } from '@/components/admin/MenuManagement'
 
 interface MenuItem {
   id: string
@@ -158,7 +159,7 @@ import {
 export const Admin = () => {
   const { user, userProfile, isAdmin } = useAuth()
   const { toast } = useToast()
-  const [activeTab, setActiveTab] = useState('dashboard')
+  const [activeTab, setActiveTab] = useState('orders')
   const [loading, setLoading] = useState(true)
 
   // State for different data sections
@@ -1949,6 +1950,11 @@ export const Admin = () => {
 
           {/* Menu Management Tab */}
           <TabsContent value="menu" className="space-y-6">
+            <MenuManagement />
+          </TabsContent>
+
+          {/* Legacy Menu Management - Remove this section */}
+          <TabsContent value="menu-old" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Menu Management</h2>
               <Dialog>
