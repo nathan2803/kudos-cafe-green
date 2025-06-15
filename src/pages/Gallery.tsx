@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
+import { GalleryUploadModal } from '@/components/gallery/GalleryUploadModal'
 import { 
   Camera, 
   Heart,
@@ -13,7 +15,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Upload
+  Upload,
+  Trash2
 } from 'lucide-react'
 
 interface GalleryImage {
@@ -36,6 +39,8 @@ export const Gallery = () => {
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [uploadModalOpen, setUploadModalOpen] = useState(false)
+  const [deleteImageId, setDeleteImageId] = useState<string | null>(null)
 
   const categories = [
     { id: 'all', name: 'All Photos', count: 0 },
@@ -156,6 +161,49 @@ export const Gallery = () => {
     }
   }
 
+  const handleDeleteImage = async (imageId: string) => {
+    try {
+      const image = images.find(img => img.id === imageId)
+      if (!image) return
+
+      // Extract filename from URL for storage deletion
+      const urlParts = image.image_url.split('/')
+      const fileName = urlParts[urlParts.length - 1]
+
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('gallery-images')
+        .remove([fileName])
+
+      if (storageError) {
+        console.warn('Storage deletion failed:', storageError)
+        // Continue with database deletion even if storage fails
+      }
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('gallery_images')
+        .delete()
+        .eq('id', imageId)
+
+      if (dbError) throw dbError
+
+      toast({
+        title: "Image Deleted",
+        description: "The image has been removed from the gallery"
+      })
+
+      setDeleteImageId(null)
+    } catch (error) {
+      console.error('Error deleting image:', error)
+      toast({
+        title: "Error",
+        description: "Failed to delete image",
+        variant: "destructive"
+      })
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Compact Header */}
@@ -182,7 +230,10 @@ export const Gallery = () => {
           </div>
 
           {isAdmin && (
-            <Button className="bg-primary-foreground text-primary hover:bg-primary-foreground/90">
+            <Button 
+              className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+              onClick={() => setUploadModalOpen(true)}
+            >
               <Upload className="mr-2 w-4 h-4" />
               Upload Photos
             </Button>
@@ -222,8 +273,21 @@ export const Gallery = () => {
                       className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     
-                    {/* Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                     {/* Admin Delete Button */}
+                     {isAdmin && (
+                       <button
+                         className="absolute top-2 right-2 bg-destructive/80 text-destructive-foreground rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-destructive z-10"
+                         onClick={(e) => {
+                           e.stopPropagation()
+                           setDeleteImageId(image.id)
+                         }}
+                       >
+                         <Trash2 className="w-4 h-4" />
+                       </button>
+                     )}
+
+                     {/* Overlay */}
+                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     
                     {/* Content overlay */}
                     <div className="absolute bottom-0 left-0 right-0 p-4 text-white transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
@@ -367,6 +431,34 @@ export const Gallery = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Upload Modal */}
+      <GalleryUploadModal
+        open={uploadModalOpen}
+        onOpenChange={setUploadModalOpen}
+        onUploadComplete={fetchImages}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteImageId} onOpenChange={() => setDeleteImageId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Image</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this image? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteImageId && handleDeleteImage(deleteImageId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
