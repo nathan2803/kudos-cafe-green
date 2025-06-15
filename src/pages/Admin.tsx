@@ -16,6 +16,7 @@ import { MessagesPanel } from '@/components/admin/MessagesPanel'
 import { OrderMessaging } from '@/components/admin/OrderMessaging'
 import { MenuManagement } from '@/components/admin/MenuManagement'
 import { ReviewsManagement } from '@/components/admin/ReviewsManagement'
+import { UserManagement } from '@/components/admin/UserManagement'
 
 interface MenuItem {
   id: string
@@ -105,6 +106,7 @@ interface Reservation {
 
 interface User {
   id: string
+  user_id: string
   email: string
   full_name: string
   phone?: string
@@ -181,15 +183,17 @@ export const Admin = () => {
   const [showArchivedOrders, setShowArchivedOrders] = useState(false)
   
   const [analytics, setAnalytics] = useState({
-    totalRevenue: 12450.75,
-    totalOrders: 342,
-    totalCustomers: 156,
-    averageRating: 4.7,
-    weeklyGrowth: 12.5,
-    monthlyGrowth: 23.8,
-    totalInventoryValue: 8750.25,
-    lowStockItems: 12,
-    outOfStockItems: 3
+    totalRevenue: 0,
+    totalOrders: 0,
+    totalCustomers: 0,
+    averageRating: 0,
+    weeklyGrowth: 0,
+    monthlyGrowth: 0,
+    totalInventoryValue: 0,
+    lowStockItems: 0,
+    outOfStockItems: 0,
+    weeklyRevenue: 0,
+    monthlyRevenue: 0
   })
 
   // Sample data
@@ -297,7 +301,7 @@ export const Admin = () => {
         
         if (suppliersData) setSuppliers(suppliersData);
 
-        // Fetch orders with related data
+        // Fetch orders with related data and users/profiles
         console.log('Fetching orders...');
         const { data: ordersData, error: ordersError } = await supabase
           .from('orders')
@@ -329,6 +333,25 @@ export const Admin = () => {
           console.log('No orders data received, error:', ordersError);
         }
 
+        // Fetch users for user management
+        const { data: usersData } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (usersData) setUsers(usersData as any);
+
+        // Fetch reviews for analytics
+        const { data: reviewsData } = await supabase
+          .from('reviews')
+          .select(`
+            *,
+            profiles!reviews_user_id_fkey (full_name)
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (reviewsData) setReviews(reviewsData as any);
+
         // Fetch tables
         const { data: tablesData } = await supabase
           .from('tables')
@@ -357,22 +380,65 @@ export const Admin = () => {
           console.log('No reservations data received, error:', reservationsError);
         }
 
-        // Calculate analytics
+        // Calculate analytics from real data
+        const now = new Date();
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+        // Calculate revenue and orders
+        const totalRevenue = ordersData?.reduce((sum, order) => 
+          order.status !== 'cancelled' ? sum + parseFloat(String(order.total_amount)) : sum, 0) || 0;
+        
+        const weeklyRevenue = ordersData?.filter(order => 
+          new Date(order.created_at) >= weekAgo && order.status !== 'cancelled')
+          .reduce((sum, order) => sum + parseFloat(String(order.total_amount)), 0) || 0;
+        
+        const monthlyRevenue = ordersData?.filter(order => 
+          new Date(order.created_at) >= monthAgo && order.status !== 'cancelled')
+          .reduce((sum, order) => sum + parseFloat(String(order.total_amount)), 0) || 0;
+
+        const totalOrders = ordersData?.filter(order => order.status !== 'cancelled').length || 0;
+        const weeklyOrders = ordersData?.filter(order => 
+          new Date(order.created_at) >= weekAgo && order.status !== 'cancelled').length || 0;
+        const monthlyOrders = ordersData?.filter(order => 
+          new Date(order.created_at) >= monthAgo && order.status !== 'cancelled').length || 0;
+
+        // Calculate growth rates
+        const weeklyGrowth = weeklyOrders > 0 ? ((weeklyOrders / Math.max(totalOrders - weeklyOrders, 1)) * 100) : 0;
+        const monthlyGrowth = monthlyOrders > 0 ? ((monthlyOrders / Math.max(totalOrders - monthlyOrders, 1)) * 100) : 0;
+
+        // Calculate average rating
+        const averageRating = reviewsData?.length > 0 
+          ? reviewsData.reduce((sum, review) => sum + review.rating, 0) / reviewsData.length 
+          : 0;
+
+        // Calculate inventory analytics
+        let totalInventoryValue = 0;
+        let lowStockCount = 0;
+        let outOfStockCount = 0;
+
         if (inventoryData) {
-          const totalValue = inventoryData.reduce((sum, item) => 
+          totalInventoryValue = inventoryData.reduce((sum, item) => 
             sum + (parseFloat(String(item.current_stock)) * parseFloat(String(item.current_price || '0'))), 0);
-          const lowStockCount = inventoryData.filter(item => 
+          lowStockCount = inventoryData.filter(item => 
             parseFloat(String(item.current_stock)) <= parseFloat(String(item.min_stock_level))).length;
-          const outOfStockCount = inventoryData.filter(item => 
+          outOfStockCount = inventoryData.filter(item => 
             parseFloat(String(item.current_stock)) === 0).length;
-          
-          setAnalytics(prev => ({
-            ...prev,
-            totalInventoryValue: totalValue,
-            lowStockItems: lowStockCount,
-            outOfStockItems: outOfStockCount
-          }));
         }
+          
+        setAnalytics({
+          totalRevenue,
+          totalOrders,
+          totalCustomers: usersData?.length || 0,
+          averageRating: Math.round(averageRating * 10) / 10,
+          weeklyGrowth: Math.round(weeklyGrowth * 10) / 10,
+          monthlyGrowth: Math.round(monthlyGrowth * 10) / 10,
+          totalInventoryValue,
+          lowStockItems: lowStockCount,
+          outOfStockItems: outOfStockCount,
+          weeklyRevenue,
+          monthlyRevenue
+        });
 
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -2744,11 +2810,17 @@ export const Admin = () => {
 
           {/* Users Management Tab */}
           <TabsContent value="users" className="space-y-6">
-            <div className="text-center py-12">
-              <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">User Management</h3>
-              <p className="text-muted-foreground">User management features will be available soon.</p>
-            </div>
+            <UserManagement 
+              users={users}
+              onUserUpdate={(updatedUser) => {
+                setUsers(prev => prev.map(user => 
+                  user.user_id === updatedUser.user_id ? updatedUser : user
+                ))
+              }}
+              onUserDelete={(userId) => {
+                setUsers(prev => prev.filter(user => user.user_id !== userId))
+              }}
+            />
           </TabsContent>
 
           {/* Messages Tab */}
@@ -2763,11 +2835,279 @@ export const Admin = () => {
 
           {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-6">
-            <div className="text-center py-12">
-              <BarChart3 className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Advanced Analytics</h3>
-              <p className="text-muted-foreground">Detailed analytics and reports will be available soon.</p>
+            {/* Detailed Analytics Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="border-primary/20">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Weekly Revenue</p>
+                      <p className="text-2xl font-bold text-primary">₱{analytics.weeklyRevenue.toLocaleString()}</p>
+                    </div>
+                    <DollarSign className="w-8 h-8 text-primary" />
+                  </div>
+                  <div className="mt-2 flex items-center text-sm">
+                    <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
+                    <span className="text-green-500">+{analytics.weeklyGrowth}%</span>
+                    <span className="text-muted-foreground ml-1">growth</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-primary/20">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Monthly Revenue</p>
+                      <p className="text-2xl font-bold text-primary">₱{analytics.monthlyRevenue.toLocaleString()}</p>
+                    </div>
+                    <TrendingUp className="w-8 h-8 text-primary" />
+                  </div>
+                  <div className="mt-2 flex items-center text-sm">
+                    <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
+                    <span className="text-green-500">+{analytics.monthlyGrowth}%</span>
+                    <span className="text-muted-foreground ml-1">growth</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-primary/20">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Customer Satisfaction</p>
+                      <p className="text-2xl font-bold text-primary">{analytics.averageRating}/5</p>
+                    </div>
+                    <Star className="w-8 h-8 text-primary" />
+                  </div>
+                  <div className="mt-2 flex items-center text-sm">
+                    <span className="text-green-500">⭐ {analytics.averageRating} stars</span>
+                    <span className="text-muted-foreground ml-1">average rating</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-primary/20">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Active Users</p>
+                      <p className="text-2xl font-bold text-primary">{analytics.totalCustomers}</p>
+                    </div>
+                    <Users className="w-8 h-8 text-primary" />
+                  </div>
+                  <div className="mt-2 flex items-center text-sm">
+                    <Activity className="w-4 h-4 text-blue-500 mr-1" />
+                    <span className="text-blue-500">Registered customers</span>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
+
+            {/* Order Status Breakdown */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <PieChart className="w-5 h-5 mr-2" />
+                    Order Status Breakdown
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'].map((status) => {
+                      const count = orders.filter(order => order.status === status).length
+                      const percentage = orders.length > 0 ? (count / orders.length * 100).toFixed(1) : 0
+                      return (
+                        <div key={status} className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <div className={`w-3 h-3 rounded-full ${getStatusColor(status).split(' ')[0]}`} />
+                            <span className="capitalize">{status.replace('_', ' ')}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-semibold">{count}</span>
+                            <span className="text-sm text-muted-foreground ml-2">({percentage}%)</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Activity className="w-5 h-5 mr-2" />
+                    Recent Activity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="text-sm">
+                      <p className="font-medium">Today's Summary</p>
+                      <ul className="mt-2 space-y-1 text-muted-foreground">
+                        <li>• {orders.filter(order => 
+                          new Date(order.created_at).toDateString() === new Date().toDateString()
+                        ).length} new orders today</li>
+                        <li>• {reviews.filter(review => 
+                          new Date(review.created_at).toDateString() === new Date().toDateString()
+                        ).length} new reviews today</li>
+                        <li>• {users.filter(user => 
+                          new Date(user.created_at).toDateString() === new Date().toDateString()
+                        ).length} new customers today</li>
+                        <li>• {analytics.lowStockItems} items need restocking</li>
+                        <li>• {analytics.outOfStockItems} items are out of stock</li>
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Menu Performance */}
+            <Card className="border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <ChefHat className="w-5 h-5 mr-2" />
+                  Menu Performance
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-muted/30 rounded-lg">
+                      <p className="text-2xl font-bold text-primary">{menuItems.filter(item => item.is_popular).length}</p>
+                      <p className="text-sm text-muted-foreground">Popular Items</p>
+                    </div>
+                    <div className="text-center p-4 bg-muted/30 rounded-lg">
+                      <p className="text-2xl font-bold text-primary">{menuItems.filter(item => item.is_new).length}</p>
+                      <p className="text-sm text-muted-foreground">New Items</p>
+                    </div>
+                    <div className="text-center p-4 bg-muted/30 rounded-lg">
+                      <p className="text-2xl font-bold text-primary">{menuItems.filter(item => item.is_available).length}</p>
+                      <p className="text-sm text-muted-foreground">Available Items</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Export and Reports */}
+            <Card className="border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Download className="w-5 h-5 mr-2" />
+                  Reports & Export
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Button 
+                    variant="outline" 
+                    className="h-auto flex-col py-4"
+                    onClick={() => {
+                      const csvData = [
+                        ['Order ID', 'Customer', 'Total', 'Status', 'Type', 'Date'].join(','),
+                        ...orders.map(order => [
+                          order.order_number || order.id.slice(0, 8),
+                          order.customer_name || 'N/A',
+                          order.total_amount,
+                          order.status,
+                          order.order_type,
+                          new Date(order.created_at).toLocaleDateString()
+                        ].join(','))
+                      ].join('\n');
+                      
+                      const blob = new Blob([csvData], { type: 'text/csv' });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `orders-export-${new Date().toISOString().split('T')[0]}.csv`;
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      
+                      toast({
+                        title: "Export Successful",
+                        description: "Orders data exported to CSV file"
+                      });
+                    }}
+                  >
+                    <Package className="w-6 h-6 mb-2" />
+                    <span className="text-sm">Export Orders</span>
+                  </Button>
+
+                  <Button 
+                    variant="outline" 
+                    className="h-auto flex-col py-4"
+                    onClick={() => {
+                      const csvData = [
+                        ['User ID', 'Name', 'Email', 'Phone', 'Role', 'Status', 'Joined'].join(','),
+                        ...users.map(user => [
+                          user.user_id,
+                          user.full_name,
+                          user.email,
+                          user.phone || 'N/A',
+                          user.is_admin ? 'Admin' : 'Customer',
+                          user.is_verified ? 'Verified' : 'Unverified',
+                          new Date(user.created_at).toLocaleDateString()
+                        ].join(','))
+                      ].join('\n');
+                      
+                      const blob = new Blob([csvData], { type: 'text/csv' });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `users-export-${new Date().toISOString().split('T')[0]}.csv`;
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      
+                      toast({
+                        title: "Export Successful",
+                        description: "Users data exported to CSV file"
+                      });
+                    }}
+                  >
+                    <Users className="w-6 h-6 mb-2" />
+                    <span className="text-sm">Export Users</span>
+                  </Button>
+
+                  <Button 
+                    variant="outline" 
+                    className="h-auto flex-col py-4"
+                    onClick={() => {
+                      const csvData = [
+                        ['Review ID', 'User', 'Rating', 'Comment', 'Date', 'Status'].join(','),
+                        ...reviews.map(review => [
+                          review.id.slice(0, 8),
+                          review.user?.full_name || 'Anonymous',
+                          review.rating,
+                          `"${review.comment.replace(/"/g, '""')}"`,
+                          new Date(review.created_at).toLocaleDateString(),
+                          review.is_featured ? 'Featured' : 'Standard'
+                        ].join(','))
+                      ].join('\n');
+                      
+                      const blob = new Blob([csvData], { type: 'text/csv' });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `reviews-export-${new Date().toISOString().split('T')[0]}.csv`;
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      
+                      toast({
+                        title: "Export Successful",
+                        description: "Reviews data exported to CSV file"
+                      });
+                    }}
+                  >
+                    <Star className="w-6 h-6 mb-2" />
+                    <span className="text-sm">Export Reviews</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
