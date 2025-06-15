@@ -471,6 +471,31 @@ export const Admin = () => {
     }
   }
 
+  const unarchiveOrder = async (orderId: string) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ archived: false })
+        .eq('id', orderId)
+
+      if (error) throw error
+
+      // Remove from current orders list
+      setOrders(prev => prev.filter(order => order.id !== orderId))
+
+      toast({
+        title: "Order Unarchived",
+        description: "Order has been restored to active orders",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to unarchive order",
+        variant: "destructive"
+      })
+    }
+  }
+
   const refreshOrders = async () => {
     try {
       const { data: ordersData } = await supabase
@@ -1410,7 +1435,7 @@ export const Admin = () => {
                                 </DialogContent>
                               </Dialog>
                               
-                              {!showArchivedOrders && (
+                              {!showArchivedOrders ? (
                                 <Button 
                                   size="sm" 
                                   variant="outline"
@@ -1418,6 +1443,15 @@ export const Admin = () => {
                                   className="text-orange-600 hover:text-orange-700"
                                 >
                                   <Archive className="w-4 h-4" />
+                                </Button>
+                              ) : (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => unarchiveOrder(order.id)}
+                                  className="text-blue-600 hover:text-blue-700"
+                                >
+                                  <Archive className="w-4 h-4 rotate-180" />
                                 </Button>
                               )}
                               
