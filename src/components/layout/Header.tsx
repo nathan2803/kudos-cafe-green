@@ -48,31 +48,31 @@ export const Header = () => {
     <>
       <header className="bg-background/95 backdrop-blur-sm border-b border-primary/20 sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-20">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-white to-cream rounded-full overflow-hidden flex items-center justify-center shadow-lg border-2 border-primary/30">
+            <Link to="/" className="flex items-center space-x-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-white to-cream rounded-full overflow-hidden flex items-center justify-center shadow-lg border-2 border-primary/30">
                 <img 
                   src="/lovable-uploads/10da77c8-bfac-41e7-8ab4-672648c51cc4.png" 
                   alt="Kudos Cafe Professional Logo" 
-                  className="w-10 h-10 object-cover rounded-full filter drop-shadow-sm"
+                  className="w-14 h-14 object-cover rounded-full filter drop-shadow-sm"
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-bold text-primary">Kudos Cafe</span>
-                <span className="text-xs text-muted-foreground -mt-1">& Restaurant</span>
+                <span className="text-2xl font-bold text-primary">Kudos Cafe</span>
+                <span className="text-sm text-muted-foreground -mt-1">& Restaurant</span>
               </div>
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-8">
+            <nav className="hidden md:flex space-x-10">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`text-sm font-medium transition-colors hover:text-primary ${
+                  className={`text-base font-medium transition-colors hover:text-primary ${
                     isActive(item.href) 
-                      ? 'text-primary border-b-2 border-primary' 
+                      ? 'text-primary border-b-2 border-primary pb-1' 
                       : 'text-muted-foreground'
                   }`}
                 >
@@ -82,13 +82,13 @@ export const Header = () => {
             </nav>
 
             {/* User Actions */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-5">
               {user && userProfile ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                      <Avatar className="h-8 w-8 border-2 border-primary/20">
-                        <AvatarFallback className="bg-primary text-primary-foreground">
+                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                      <Avatar className="h-10 w-10 border-2 border-primary/20">
+                        <AvatarFallback className="bg-primary text-primary-foreground text-base">
                           {userProfile.full_name?.charAt(0).toUpperCase() || 'U'}
                         </AvatarFallback>
                       </Avatar>
@@ -144,19 +144,19 @@ export const Header = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3">
                   <Button 
                     variant="ghost" 
-                    size="sm"
+                    size="default"
                     onClick={() => handleAuthOpen('signin')}
-                    className="text-muted-foreground hover:text-primary"
+                    className="text-muted-foreground hover:text-primary text-base px-4 py-2"
                   >
                     Login
                   </Button>
                   <Button 
-                    size="sm"
+                    size="default"
                     onClick={() => handleAuthOpen('signup')}
-                    className="bg-primary hover:bg-primary/90"
+                    className="bg-primary hover:bg-primary/90 text-base px-4 py-2"
                   >
                     Sign Up
                   </Button>
@@ -166,14 +166,14 @@ export const Header = () => {
               {/* Mobile menu button */}
               <Button
                 variant="ghost"
-                size="sm"
-                className="md:hidden"
+                size="default"
+                className="md:hidden p-2"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               >
                 {mobileMenuOpen ? (
-                  <X className="h-5 w-5" />
+                  <X className="h-6 w-6" />
                 ) : (
-                  <Menu className="h-5 w-5" />
+                  <Menu className="h-6 w-6" />
                 )}
               </Button>
             </div>
