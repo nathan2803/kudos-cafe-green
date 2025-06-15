@@ -51,11 +51,11 @@ export const Menu = () => {
 
   const categories = [
     { id: 'all', name: 'All Items', icon: Award },
-    { id: 'appetizers', name: 'Appetizers', icon: Zap },
-    { id: 'pasta', name: 'Pasta', icon: Star },
-    { id: 'mains', name: 'Main Courses', icon: Flame },
-    { id: 'desserts', name: 'Desserts', icon: Heart },
-    { id: 'beverages', name: 'Beverages', icon: Leaf }
+    { id: 'Appetizers', name: 'Appetizers', icon: Zap },
+    { id: 'Pasta', name: 'Pasta', icon: Star },
+    { id: 'Main Course', name: 'Main Courses', icon: Flame },
+    { id: 'Desserts', name: 'Desserts', icon: Heart },
+    { id: 'Drinks', name: 'Beverages', icon: Leaf }
   ]
 
   // Kudos Cafe Menu Items
