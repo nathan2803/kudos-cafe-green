@@ -64,10 +64,10 @@ export const HeroManagement = () => {
     try {
       const { error } = await supabase
         .from('site_settings')
-        .upsert({
-          setting_key: 'hero_content',
+        .update({
           setting_value: content as unknown as any
         })
+        .eq('setting_key', 'hero_content')
 
       if (error) throw error
 
