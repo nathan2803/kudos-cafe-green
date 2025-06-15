@@ -336,6 +336,7 @@ export type Database = {
       orders: {
         Row: {
           archived: boolean
+          asap_charge: number | null
           cancellation_reason: string | null
           cancelled_at: string | null
           cancelled_by: string | null
@@ -345,10 +346,12 @@ export type Database = {
           customer_phone: string | null
           deposit_paid: number | null
           id: string
+          is_priority: boolean | null
           notes: string | null
           order_number: string | null
           order_type: string | null
           payment_status: string
+          pickup_time: string | null
           refund_amount: number | null
           remaining_amount: number | null
           reservation_id: string | null
@@ -359,6 +362,7 @@ export type Database = {
         }
         Insert: {
           archived?: boolean
+          asap_charge?: number | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
@@ -368,10 +372,12 @@ export type Database = {
           customer_phone?: string | null
           deposit_paid?: number | null
           id?: string
+          is_priority?: boolean | null
           notes?: string | null
           order_number?: string | null
           order_type?: string | null
           payment_status?: string
+          pickup_time?: string | null
           refund_amount?: number | null
           remaining_amount?: number | null
           reservation_id?: string | null
@@ -382,6 +388,7 @@ export type Database = {
         }
         Update: {
           archived?: boolean
+          asap_charge?: number | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
@@ -391,10 +398,12 @@ export type Database = {
           customer_phone?: string | null
           deposit_paid?: number | null
           id?: string
+          is_priority?: boolean | null
           notes?: string | null
           order_number?: string | null
           order_type?: string | null
           payment_status?: string
+          pickup_time?: string | null
           refund_amount?: number | null
           remaining_amount?: number | null
           reservation_id?: string | null

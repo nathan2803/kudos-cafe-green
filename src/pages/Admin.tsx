@@ -38,6 +38,9 @@ interface Order {
   customer_phone?: string
   customer_email?: string
   notes?: string
+  pickup_time?: string
+  asap_charge?: number
+  is_priority?: boolean
   deposit_paid?: number
   remaining_amount?: number
   reservation_id?: string
@@ -308,6 +311,7 @@ export const Admin = () => {
             )
           `)
           .eq('archived', showArchivedOrders)
+          .order('is_priority', { ascending: false })
           .order('created_at', { ascending: false });
         
         console.log('Orders fetch result:', { ordersData, ordersError, ordersLength: ordersData?.length });
@@ -1293,12 +1297,17 @@ export const Admin = () => {
                           </p>
                           <div className="text-sm space-y-1">
                             <div className="flex flex-col">
-                              <p>
-                                <strong>Customer:</strong>{' '}
-                                <span className={order.customer_name ? "text-foreground" : "text-muted-foreground italic"}>
-                                  {order.customer_name || 'Guest Order'}
-                                </span>
-                              </p>
+                              <div className="flex items-center gap-2">
+                                <p>
+                                  <strong>Customer:</strong>{' '}
+                                  <span className={order.customer_name ? "text-foreground" : "text-muted-foreground italic"}>
+                                    {order.customer_name || 'Guest Order'}
+                                  </span>
+                                </p>
+                                {order.is_priority && (
+                                  <Badge className="bg-orange-500 text-white text-xs">PRIORITY</Badge>
+                                )}
+                              </div>
                             </div>
                             <p>
                               <strong>Phone:</strong>{' '}
@@ -1306,6 +1315,16 @@ export const Admin = () => {
                                 {order.customer_phone || 'Not provided'}
                               </span>
                             </p>
+                            {order.pickup_time && (
+                              <p>
+                                <strong>Pickup Time:</strong> {order.pickup_time}
+                              </p>
+                            )}
+                            {order.asap_charge && order.asap_charge > 0 && (
+                              <p className="text-orange-600">
+                                <strong>ASAP Charge:</strong> ₱{order.asap_charge.toFixed(2)}
+                              </p>
+                            )}
                             <p>
                               <strong>Email:</strong>{' '}
                               <span className={order.customer_email ? "text-foreground" : "text-muted-foreground italic"}>
@@ -1502,12 +1521,22 @@ export const Admin = () => {
                                         <p>Phone: {order.customer_phone || 'N/A'}</p>
                                         <p>Email: {order.customer_email || 'N/A'}</p>
                                       </div>
-                                      <div>
-                                        <h4 className="font-semibold">Order Information</h4>
-                                        <p>Type: {order.order_type.replace('_', ' ')}</p>
-                                        <p>Status: {order.status}</p>
-                                        <p>Total: ₱{order.total_amount.toFixed(2)}</p>
-                                      </div>
+                                       <div>
+                                         <h4 className="font-semibold">Order Information</h4>
+                                         <p>Type: {order.order_type.replace('_', ' ')}</p>
+                                         <p>Status: {order.status}</p>
+                                         <p>Total: ₱{order.total_amount.toFixed(2)}</p>
+                                         {order.pickup_time && (
+                                           <p>Pickup Time: {order.pickup_time}</p>
+                                         )}
+                                         {order.asap_charge && order.asap_charge > 0 && (
+                                           <p className="text-orange-600">ASAP Charge: ₱{order.asap_charge.toFixed(2)}</p>
+                                         )}
+                                         {order.is_priority && (
+                                           <p className="text-orange-600 font-medium">⚡ Priority Order</p>
+                                         )}
+                                         <p>Order Date: {formatDate(order.created_at)}</p>
+                                       </div>
                                     </div>
                                     
                                     {/* Reservation Details for Dine-in */}

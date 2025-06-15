@@ -68,7 +68,7 @@ export default function Booking() {
     try {
       const { data: user } = await supabase.auth.getUser();
       
-      const totalAmount = getTotalAmount();
+      const totalAmount = getTotalAmount() + (orderData.asap_charge || 0);
       
       // Create order
       const { data: order, error: orderError } = await supabase
@@ -81,6 +81,9 @@ export default function Booking() {
           customer_phone: orderData.customer_phone,
           customer_email: orderData.customer_email,
           notes: orderData.notes,
+          pickup_time: orderData.pickup_time,
+          asap_charge: orderData.asap_charge || 0,
+          is_priority: orderData.is_priority || false,
           deposit_paid: orderData.deposit_amount || 0,
           remaining_amount: orderData.remaining_amount || 0,
         })

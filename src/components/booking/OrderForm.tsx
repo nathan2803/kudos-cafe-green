@@ -21,6 +21,10 @@ export function OrderForm({ orderType, onOrderCreate, totalAmount }: OrderFormPr
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const isASAP = pickupTime === 'ASAP (15-20 mins)';
+  const asapCharge = isASAP ? 25 : 0;
+  const finalTotal = totalAmount + asapCharge;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerName || !customerPhone) {
@@ -36,6 +40,8 @@ export function OrderForm({ orderType, onOrderCreate, totalAmount }: OrderFormPr
       pickup_time: pickupTime,
       notes: notes,
       order_type: orderType,
+      asap_charge: asapCharge,
+      is_priority: isASAP,
     };
 
     onOrderCreate(orderData);
@@ -137,8 +143,17 @@ export function OrderForm({ orderType, onOrderCreate, totalAmount }: OrderFormPr
             <h4 className="font-semibold mb-2">Order Summary</h4>
             <div className="space-y-1 text-sm">
               <p><strong>Order Type:</strong> {orderType === 'pickup' ? 'Pickup' : 'Takeout'}</p>
-              <p><strong>Total Amount:</strong> ${totalAmount.toFixed(2)}</p>
+              <p><strong>Subtotal:</strong> ${totalAmount.toFixed(2)}</p>
+              {isASAP && (
+                <p className="text-orange-600"><strong>ASAP Charge:</strong> ${asapCharge.toFixed(2)}</p>
+              )}
+              <div className="border-t pt-2 mt-2">
+                <p className="font-semibold"><strong>Total Amount:</strong> ${finalTotal.toFixed(2)}</p>
+              </div>
               <p><strong>Ready Time:</strong> {pickupTime || 'Not selected'}</p>
+              {isASAP && (
+                <p className="text-orange-600 font-medium">⚡ Priority Order</p>
+              )}
             </div>
           </div>
 
