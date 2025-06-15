@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/integrations/supabase/client'
+import { ReviewsDisplay } from '@/components/reviews/ReviewsDisplay'
 
 interface MenuItem {
   id: string
@@ -344,75 +345,11 @@ export const Landing = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {reviews.length > 0 ? (
-              reviews.map((review) => (
-                <Card key={review.id} className="border-primary/20 p-6">
-                  <div className="flex items-center space-x-1 mb-4">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star 
-                        key={star}
-                        className={`w-4 h-4 ${
-                          star <= review.rating ? 'text-primary fill-primary' : 'text-muted'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <p className="text-muted-foreground mb-4">"{review.comment}"</p>
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="w-10 h-10 border-2 border-primary/20">
-                      <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                        {review.user?.full_name?.charAt(0) || 'A'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-semibold text-foreground">{review.user?.full_name || 'Anonymous'}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(review.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              ))
-            ) : (
-              // Default reviews when no data
-              [
-                { id: 1, name: 'Sarah Johnson', rating: 5, comment: 'Amazing food and great commitment to sustainability!', date: '2024-01-15' },
-                { id: 2, name: 'Mike Chen', rating: 5, comment: 'Best eco-friendly restaurant in town. Fresh ingredients, delicious meals!', date: '2024-01-12' },
-                { id: 3, name: 'Emma Davis', rating: 4, comment: 'Love the green initiative and the food is absolutely delicious.', date: '2024-01-10' },
-                { id: 4, name: 'James Wilson', rating: 5, comment: 'Outstanding service and incredible flavors. Highly recommended!', date: '2024-01-08' },
-                { id: 5, name: 'Lisa Thompson', rating: 5, comment: 'Finally, a restaurant that cares about both taste and environment!', date: '2024-01-05' },
-                { id: 6, name: 'David Brown', rating: 4, comment: 'Great atmosphere, friendly staff, and the green theme is beautiful.', date: '2024-01-03' }
-              ].map((review) => (
-                <Card key={review.id} className="border-primary/20 p-6">
-                  <div className="flex items-center space-x-1 mb-4">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star 
-                        key={star}
-                        className={`w-4 h-4 ${
-                          star <= review.rating ? 'text-primary fill-primary' : 'text-muted'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <p className="text-muted-foreground mb-4">"{review.comment}"</p>
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="w-10 h-10 border-2 border-primary/20">
-                      <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                        {review.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-semibold text-foreground">{review.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(review.date).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              ))
-            )}
-          </div>
+          <ReviewsDisplay 
+            featured={true} 
+            limit={6} 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          />
 
           {user && (
             <div className="text-center mt-12">
