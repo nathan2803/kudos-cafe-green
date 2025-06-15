@@ -63,10 +63,10 @@ export const GalleryHeroManagement = () => {
 
       const { error } = await supabase
         .from('site_settings')
-        .upsert({
-          setting_key: 'gallery_hero_background',
+        .update({
           setting_value: settings as any
         })
+        .eq('setting_key', 'gallery_hero_background')
 
       if (error) throw error
 
