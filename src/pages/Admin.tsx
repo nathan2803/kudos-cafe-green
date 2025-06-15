@@ -45,6 +45,7 @@ interface Order {
   updated_at: string
   order_items?: OrderItem[]
   reservations?: Reservation
+  reservations_via_order?: Reservation
   assigned_table?: Table
   profiles?: {
     full_name: string
@@ -300,6 +301,10 @@ export const Admin = () => {
             reservations!orders_reservation_id_fkey (
               *,
               tables (table_number, location)
+            ),
+            reservations_via_order:reservations!reservations_order_id_fkey (
+              *,
+              tables (table_number, location)
             )
           `)
           .eq('archived', showArchivedOrders)
@@ -507,6 +512,10 @@ export const Admin = () => {
             menu_items (name, price)
           ),
           reservations!orders_reservation_id_fkey (
+            *,
+            tables (table_number, location)
+          ),
+          reservations_via_order:reservations!reservations_order_id_fkey (
             *,
             tables (table_number, location)
           )
@@ -1309,9 +1318,10 @@ export const Admin = () => {
                               <div className="space-y-2">
                                 <div className="flex items-center gap-2">
                                   <strong>Table:</strong>
-                                  {order.reservations?.tables ? (
+                                  {order.reservations?.tables || order.reservations_via_order?.tables ? (
                                     <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                                      Table {order.reservations.tables.table_number} ({order.reservations.tables.location})
+                                      Table {(order.reservations?.tables || order.reservations_via_order?.tables)?.table_number} 
+                                      ({(order.reservations?.tables || order.reservations_via_order?.tables)?.location})
                                     </Badge>
                                   ) : order.assigned_table ? (
                                     <Badge variant="secondary" className="bg-blue-100 text-blue-800">
@@ -1363,6 +1373,39 @@ export const Admin = () => {
                                       <div className="flex items-center gap-2">
                                         <strong>Deposit Paid:</strong>
                                         <span>₱{order.reservations.deposit_amount.toFixed(2)}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                {!order.reservations && order.reservations_via_order && (
+                                  <div className="text-sm space-y-1 bg-blue-50 p-2 rounded-md">
+                                    <div className="flex items-center gap-2">
+                                      <strong>Reservation Date:</strong>
+                                      <span>{new Date(order.reservations_via_order.reservation_date).toLocaleDateString('en-US', { 
+                                        weekday: 'short', 
+                                        month: 'short', 
+                                        day: 'numeric', 
+                                        year: 'numeric' 
+                                      })}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <strong>Reservation Time:</strong>
+                                      <span>{order.reservations_via_order.reservation_time}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <strong>Party Size:</strong>
+                                      <span>{order.reservations_via_order.party_size} guests</span>
+                                    </div>
+                                    {order.reservations_via_order.special_requests && (
+                                      <div className="flex items-start gap-2">
+                                        <strong>Special Requests:</strong>
+                                        <span className="text-muted-foreground">{order.reservations_via_order.special_requests}</span>
+                                      </div>
+                                    )}
+                                    {order.reservations_via_order.deposit_amount && (
+                                      <div className="flex items-center gap-2">
+                                        <strong>Deposit Paid:</strong>
+                                        <span>₱{order.reservations_via_order.deposit_amount.toFixed(2)}</span>
                                       </div>
                                     )}
                                   </div>
@@ -1451,36 +1494,44 @@ export const Admin = () => {
                                     </div>
                                     
                                     {/* Reservation Details for Dine-in */}
-                                    {order.order_type === 'dine_in' && order.reservations && (
+                                    {order.order_type === 'dine_in' && (order.reservations || order.reservations_via_order) && (
                                       <div className="bg-blue-50 p-4 rounded-lg">
                                         <h4 className="font-semibold mb-3">Reservation Details</h4>
-                                        <div className="grid grid-cols-2 gap-4 text-sm">
-                                          <div>
-                                            <p><strong>Date:</strong> {new Date(order.reservations.reservation_date).toLocaleDateString('en-US', { 
-                                              weekday: 'long', 
-                                              month: 'long', 
-                                              day: 'numeric', 
-                                              year: 'numeric' 
-                                            })}</p>
-                                            <p><strong>Time:</strong> {order.reservations.reservation_time}</p>
-                                            <p><strong>Party Size:</strong> {order.reservations.party_size} guests</p>
-                                          </div>
-                                          <div>
-                                            {order.reservations.tables && (
-                                              <p><strong>Table:</strong> Table {order.reservations.tables.table_number} ({order.reservations.tables.location})</p>
-                                            )}
-                                            {order.reservations.deposit_amount && (
-                                              <p><strong>Deposit:</strong> ₱{order.reservations.deposit_amount.toFixed(2)}</p>
-                                            )}
-                                            <p><strong>Status:</strong> {order.reservations.status}</p>
-                                          </div>
-                                        </div>
-                                        {order.reservations.special_requests && (
-                                          <div className="mt-3">
-                                            <p><strong>Special Requests:</strong></p>
-                                            <p className="text-muted-foreground italic">{order.reservations.special_requests}</p>
-                                          </div>
-                                        )}
+                                        {(() => {
+                                          const reservation = order.reservations || order.reservations_via_order;
+                                          return (
+                                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                              <div>
+                                                <p><strong>Date:</strong> {new Date(reservation.reservation_date).toLocaleDateString('en-US', { 
+                                                  weekday: 'long', 
+                                                  month: 'long', 
+                                                  day: 'numeric', 
+                                                  year: 'numeric' 
+                                                })}</p>
+                                                <p><strong>Time:</strong> {reservation.reservation_time}</p>
+                                                <p><strong>Party Size:</strong> {reservation.party_size} guests</p>
+                                              </div>
+                                              <div>
+                                                {reservation.tables && (
+                                                  <p><strong>Table:</strong> Table {reservation.tables.table_number} ({reservation.tables.location})</p>
+                                                )}
+                                                {reservation.deposit_amount && (
+                                                  <p><strong>Deposit:</strong> ₱{reservation.deposit_amount.toFixed(2)}</p>
+                                                )}
+                                                <p><strong>Status:</strong> {reservation.status}</p>
+                                              </div>
+                                            </div>
+                                          );
+                                        })()}
+                                        {(() => {
+                                          const reservation = order.reservations || order.reservations_via_order;
+                                          return reservation.special_requests && (
+                                            <div className="mt-3">
+                                              <p><strong>Special Requests:</strong></p>
+                                              <p className="text-muted-foreground italic">{reservation.special_requests}</p>
+                                            </div>
+                                          );
+                                        })()}
                                       </div>
                                     )}
                                     
