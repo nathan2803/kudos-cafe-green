@@ -48,6 +48,14 @@ export const Menu = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null)
   const [loading, setLoading] = useState(true)
+  const [heroSettings, setHeroSettings] = useState({
+    title: 'Our Green Menu',
+    subtitle: 'Discover our carefully curated selection of sustainable, locally-sourced dishes that nourish both you and the planet.',
+    button_text: 'Book Table & Order Now',
+    background_image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&h=600&fit=crop',
+    overlay_opacity: 0.6,
+    overlay_color: '#000000'
+  })
 
   const categories = [
     { id: 'all', name: 'All Items', icon: Award },
@@ -406,7 +414,26 @@ export const Menu = () => {
       }
     };
 
+    const fetchHeroSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('site_settings')
+          .select('setting_value')
+          .eq('setting_key', 'menu_hero')
+          .maybeSingle();
+
+        if (error) throw error;
+        if (data) {
+          const settings = data.setting_value as unknown as typeof heroSettings;
+          setHeroSettings(settings);
+        }
+      } catch (error) {
+        console.error('Error fetching hero settings:', error);
+      }
+    };
+
     fetchMenuItems();
+    fetchHeroSettings();
   }, [])
 
   useEffect(() => {
@@ -487,46 +514,62 @@ export const Menu = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="relative py-20 bg-gradient-to-br from-forest via-primary to-medium-green text-cream">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <section 
+        className="relative py-20 text-white min-h-[500px] flex items-center"
+        style={{
+          backgroundImage: `url(${heroSettings.background_image})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        {/* Overlay */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundColor: heroSettings.overlay_color,
+            opacity: heroSettings.overlay_opacity
+          }}
+        />
+        
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <div className="flex items-center justify-center mb-6">
-            <div className="w-16 h-16 bg-light-green/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-              <Leaf className="w-8 h-8 text-light-green" />
+            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+              <Leaf className="w-8 h-8 text-white" />
             </div>
           </div>
           
           <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-            Our <span className="text-light-green">Green</span> Menu
+            {heroSettings.title}
           </h1>
           
-          <p className="text-xl md:text-2xl mb-8 text-cream/90 max-w-2xl mx-auto">
-            Discover our carefully curated selection of sustainable, locally-sourced dishes 
-            that nourish both you and the planet.
+          <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto">
+            {heroSettings.subtitle}
           </p>
 
           {/* Book Table Button */}
           <div className="mb-6">
             <Button 
               size="lg" 
-              className="bg-light-green text-forest hover:bg-light-green/90"
+              className="bg-white text-black hover:bg-white/90 font-semibold"
               onClick={() => navigate('/booking')}
             >
-              Book Table & Order Now
+              {heroSettings.button_text}
             </Button>
           </div>
 
           {/* Cart Summary */}
           {getTotalCartItems() > 0 && (
-            <div className="inline-flex items-center space-x-4 bg-light-green/20 backdrop-blur-sm rounded-full px-6 py-3">
+            <div className="inline-flex items-center space-x-4 bg-white/20 backdrop-blur-sm rounded-full px-6 py-3">
               <div className="flex items-center space-x-2">
-                <ShoppingCart className="w-5 h-5 text-light-green" />
-                <span className="text-light-green font-semibold">
+                <ShoppingCart className="w-5 h-5 text-white" />
+                <span className="text-white font-semibold">
                   {getTotalCartItems()} item{getTotalCartItems() !== 1 ? 's' : ''} in cart
                 </span>
               </div>
               <Button 
                 size="sm" 
-                className="bg-light-green text-forest hover:bg-light-green/90"
+                className="bg-white text-black hover:bg-white/90"
                 onClick={() => navigate('/booking')}
               >
                 Proceed to Booking

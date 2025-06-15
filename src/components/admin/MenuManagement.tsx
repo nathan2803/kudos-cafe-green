@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { Plus, Edit, Trash2, ImageIcon } from 'lucide-react'
 import { TagManagement } from './TagManagement'
+import { MenuHeroManagement } from './MenuHeroManagement'
 
 interface MenuItem {
   id: string
@@ -393,8 +394,9 @@ export const MenuManagement = () => {
         className="w-full"
         onValueChange={setActiveTab}
       >
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="menu-items">Menu Items</TabsTrigger>
+          <TabsTrigger value="hero-section">Hero Section</TabsTrigger>
           <TabsTrigger value="tags">Tags</TabsTrigger>
         </TabsList>
 
@@ -495,6 +497,10 @@ export const MenuManagement = () => {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="hero-section">
+          <MenuHeroManagement />
         </TabsContent>
 
         <TabsContent value="tags">
