@@ -176,6 +176,7 @@ export const ReviewForm = ({ onReviewSubmitted, orders, menuItems = [] }: Review
               onImagesChange={setImages}
               maxImages={5}
               disabled={loading}
+              bucketName="review-images"
             />
           </div>
 

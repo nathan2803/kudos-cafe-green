@@ -6,13 +6,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Star, MessageSquare, Eye, EyeOff, Award, TrendingUp, Users, Images } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { ImageGallery } from '@/components/ui/image-gallery'
 
-interface Review {
+interface ReviewWithDetails {
   id: string
   user_id: string
   order_id?: string
@@ -24,16 +23,10 @@ interface Review {
   admin_response?: string
   images?: string[]
   created_at: string
-  profiles?: {
-    full_name: string
-    email: string
-  }
-  orders?: {
-    order_number: string
-  }
-  menu_items?: {
-    name: string
-  }
+  customer_name?: string
+  customer_email?: string
+  order_number?: string
+  menu_item_name?: string
 }
 
 interface ReviewStats {
@@ -45,7 +38,7 @@ interface ReviewStats {
 
 export const ReviewsManagement = () => {
   const { toast } = useToast()
-  const [reviews, setReviews] = useState<Review[]>([])
+  const [reviews, setReviews] = useState<ReviewWithDetails[]>([])
   const [stats, setStats] = useState<ReviewStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState<string>('all')
@@ -62,20 +55,63 @@ export const ReviewsManagement = () => {
   const fetchReviews = async () => {
     try {
       console.log('Fetching reviews...')
-      const { data, error } = await supabase
+      
+      // First, get all reviews
+      const { data: reviewsData, error: reviewsError } = await supabase
         .from('reviews')
-        .select(`
-          *,
-          profiles:user_id (full_name, email),
-          orders:order_id (order_number),
-          menu_items:menu_item_id (name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
 
-      console.log('Reviews query result:', { data, error })
-      if (error) throw error
-      console.log('Reviews fetched successfully:', data?.length || 0, 'reviews')
-      setReviews(data as any || [])
+      if (reviewsError) throw reviewsError
+
+      console.log('Reviews fetched:', reviewsData?.length || 0)
+
+      if (!reviewsData || reviewsData.length === 0) {
+        setReviews([])
+        setLoading(false)
+        return
+      }
+
+      // Get unique user IDs, order IDs, and menu item IDs
+      const userIds = [...new Set(reviewsData.map(r => r.user_id))]
+      const orderIds = [...new Set(reviewsData.map(r => r.order_id).filter(Boolean))]
+      const menuItemIds = [...new Set(reviewsData.map(r => r.menu_item_id).filter(Boolean))]
+
+      // Fetch user profiles
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, email')
+        .in('user_id', userIds)
+
+      // Fetch orders
+      const { data: ordersData } = await supabase
+        .from('orders')
+        .select('id, order_number')
+        .in('id', orderIds)
+
+      // Fetch menu items
+      const { data: menuItemsData } = await supabase
+        .from('menu_items')
+        .select('id, name')
+        .in('id', menuItemIds)
+
+      // Combine the data
+      const reviewsWithDetails: ReviewWithDetails[] = reviewsData.map(review => {
+        const profile = profilesData?.find(p => p.user_id === review.user_id)
+        const order = ordersData?.find(o => o.id === review.order_id)
+        const menuItem = menuItemsData?.find(m => m.id === review.menu_item_id)
+
+        return {
+          ...review,
+          customer_name: profile?.full_name,
+          customer_email: profile?.email,
+          order_number: order?.order_number,
+          menu_item_name: menuItem?.name
+        }
+      })
+
+      console.log('Reviews with details:', reviewsWithDetails.length)
+      setReviews(reviewsWithDetails)
     } catch (error) {
       console.error('Error fetching reviews:', error)
       toast({
@@ -212,8 +248,8 @@ export const ReviewsManagement = () => {
     
     const matchesSearch = searchTerm === '' ||
       review.comment.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      review.profiles?.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      review.menu_items?.name.toLowerCase().includes(searchTerm.toLowerCase())
+      review.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      review.menu_item_name?.toLowerCase().includes(searchTerm.toLowerCase())
 
     return matchesStatus && matchesRating && matchesSearch
   })
@@ -380,13 +416,13 @@ export const ReviewsManagement = () => {
                     </div>
                     
                     <div className="text-sm text-muted-foreground">
-                      <p><strong>Customer:</strong> {review.profiles?.full_name} ({review.profiles?.email})</p>
+                      <p><strong>Customer:</strong> {review.customer_name || 'Unknown'} ({review.customer_email || 'No email'})</p>
                       <p><strong>Date:</strong> {formatDate(review.created_at)}</p>
-                      {review.orders?.order_number && (
-                        <p><strong>Order:</strong> #{review.orders.order_number}</p>
+                      {review.order_number && (
+                        <p><strong>Order:</strong> #{review.order_number}</p>
                       )}
-                      {review.menu_items?.name && (
-                        <p><strong>Item:</strong> {review.menu_items.name}</p>
+                      {review.menu_item_name && (
+                        <p><strong>Item:</strong> {review.menu_item_name}</p>
                       )}
                     </div>
                   </div>
