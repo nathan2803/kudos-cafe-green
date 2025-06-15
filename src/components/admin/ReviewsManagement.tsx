@@ -66,9 +66,9 @@ export const ReviewsManagement = () => {
         .from('reviews')
         .select(`
           *,
-          profiles!user_id (full_name, email),
-          orders!order_id (order_number),
-          menu_items!menu_item_id (name)
+          profiles:user_id (full_name, email),
+          orders:order_id (order_number),
+          menu_items:menu_item_id (name)
         `)
         .order('created_at', { ascending: false })
 
