@@ -107,7 +107,7 @@ export default function Booking() {
 
       // If it's a dine-in order, create reservation
       if (orderType === 'dine_in' && orderData.table_id) {
-        const { error: reservationError } = await supabase
+        const { data: reservation, error: reservationError } = await supabase
           .from('reservations')
           .insert({
             user_id: user.user?.id,
@@ -118,9 +118,19 @@ export default function Booking() {
             reservation_time: orderData.reservation_time,
             special_requests: orderData.special_requests,
             deposit_amount: orderData.deposit_amount,
-          });
+          })
+          .select()
+          .single();
 
         if (reservationError) throw reservationError;
+
+        // Update the order with the reservation_id to maintain bidirectional relationship
+        const { error: orderUpdateError } = await supabase
+          .from('orders')
+          .update({ reservation_id: reservation.id })
+          .eq('id', order.id);
+
+        if (orderUpdateError) throw orderUpdateError;
       }
 
       toast({
