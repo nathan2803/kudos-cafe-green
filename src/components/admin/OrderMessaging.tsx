@@ -81,37 +81,29 @@ export const OrderMessaging = ({ order, onMessageSent }: OrderMessagingProps) =>
     try {
       const { data, error } = await supabase
         .from('order_messages')
-        .select(`
-          *,
-          profiles (
-            full_name,
-            email,
-            is_admin
-          )
-        `)
+        .select('*')
         .eq('order_id', order.id)
         .order('created_at', { ascending: true })
 
       if (error) throw error
+
+      // Fetch profile information separately for each message
+      const messagesWithProfiles = await Promise.all(
+        (data || []).map(async (msg: any) => {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('full_name, email, is_admin')
+            .eq('user_id', msg.sender_id)
+            .single()
+          
+          return {
+            ...msg,
+            profiles: profileData
+          }
+        })
+      )
       
-      const formattedMessages: OrderMessage[] = (data || []).map((msg: any) => ({
-        id: msg.id,
-        order_id: msg.order_id,
-        sender_id: msg.sender_id,
-        recipient_id: msg.recipient_id,
-        subject: msg.subject,
-        message: msg.message,
-        message_type: msg.message_type,
-        is_read: msg.is_read,
-        is_urgent: msg.is_urgent,
-        created_at: msg.created_at,
-        updated_at: msg.updated_at,
-        cancellation_reason: msg.cancellation_reason,
-        parent_message_id: msg.parent_message_id,
-        profiles: msg.profiles
-      }))
-      
-      setMessages(formattedMessages)
+      setMessages(messagesWithProfiles as OrderMessage[])
     } catch (error: any) {
       console.error('Error fetching messages:', error)
       toast({
