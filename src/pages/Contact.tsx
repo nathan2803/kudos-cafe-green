@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
+import { supabase } from '@/integrations/supabase/client'
 import { 
   MapPin, 
   Phone, 
@@ -15,8 +16,23 @@ import {
   MessageCircle
 } from 'lucide-react'
 
+interface ContactHeroSettings {
+  title: string
+  subtitle: string
+  background_image: string
+  overlay_opacity: number
+  overlay_color: string
+}
+
 export const Contact = () => {
   const { toast } = useToast()
+  const [heroSettings, setHeroSettings] = useState<ContactHeroSettings>({
+    title: 'Contact Us',
+    subtitle: "We'd love to hear from you. Get in touch with Kudos Cafe & Restaurant.",
+    background_image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&h=600&fit=crop',
+    overlay_opacity: 0.6,
+    overlay_color: '#2D5016'
+  })
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -25,6 +41,28 @@ export const Contact = () => {
     message: ''
   })
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    fetchHeroSettings()
+  }, [])
+
+  const fetchHeroSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('setting_value')
+        .eq('setting_key', 'contact_hero')
+        .maybeSingle()
+
+      if (error) throw error
+      
+      if (data?.setting_value) {
+        setHeroSettings(data.setting_value as unknown as ContactHeroSettings)
+      }
+    } catch (error) {
+      console.error('Error fetching contact hero settings:', error)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,13 +95,30 @@ export const Contact = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="relative py-20 bg-gradient-to-br from-forest via-primary to-medium-green text-cream">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <section 
+        className="relative py-20 text-white min-h-[400px] flex items-center"
+        style={{
+          backgroundImage: `url(${heroSettings.background_image})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        {/* Overlay */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundColor: heroSettings.overlay_color,
+            opacity: heroSettings.overlay_opacity
+          }}
+        />
+        
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-            Contact <span className="text-light-green">Us</span>
+            {heroSettings.title}
           </h1>
-          <p className="text-xl md:text-2xl mb-8 text-cream/90 max-w-2xl mx-auto">
-            We'd love to hear from you. Get in touch with Kudos Cafe & Restaurant.
+          <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto">
+            {heroSettings.subtitle}
           </p>
         </div>
       </section>
