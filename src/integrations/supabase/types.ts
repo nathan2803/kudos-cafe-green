@@ -335,6 +335,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          archived: boolean
           cancellation_reason: string | null
           cancelled_at: string | null
           cancelled_by: string | null
@@ -357,6 +358,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          archived?: boolean
           cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
@@ -379,6 +381,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          archived?: boolean
           cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null

@@ -168,6 +168,7 @@ export const Admin = () => {
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [stockStatusFilter, setStockStatusFilter] = useState('all')
   const [sortBy, setSortBy] = useState('name')
+  const [showArchivedOrders, setShowArchivedOrders] = useState(false)
   
   const [analytics, setAnalytics] = useState({
     totalRevenue: 12450.75,
@@ -301,6 +302,7 @@ export const Admin = () => {
               tables (table_number, location)
             )
           `)
+          .eq('archived', showArchivedOrders)
           .order('created_at', { ascending: false });
         
         console.log('Orders fetch result:', { ordersData, ordersError, ordersLength: ordersData?.length });
@@ -370,7 +372,7 @@ export const Admin = () => {
     };
 
     fetchData();
-  }, [])
+  }, [showArchivedOrders])
 
   if (!user || !isAdmin) {
     return (
@@ -441,6 +443,55 @@ export const Admin = () => {
         description: error.message || "Failed to update order status",
         variant: "destructive"
       })
+    }
+  }
+
+  const archiveOrder = async (orderId: string) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ archived: true })
+        .eq('id', orderId)
+
+      if (error) throw error
+
+      // Remove from current orders list
+      setOrders(prev => prev.filter(order => order.id !== orderId))
+
+      toast({
+        title: "Order Archived",
+        description: "Order has been moved to archive",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to archive order",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const refreshOrders = async () => {
+    try {
+      const { data: ordersData } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (
+            *,
+            menu_items (name, price)
+          ),
+          reservations!orders_reservation_id_fkey (
+            *,
+            tables (table_number, location)
+          )
+        `)
+        .eq('archived', showArchivedOrders)
+        .order('created_at', { ascending: false });
+      
+      if (ordersData) setOrders(ordersData as any);
+    } catch (error) {
+      console.error('Error refreshing orders:', error);
     }
   }
 
@@ -1149,23 +1200,35 @@ export const Admin = () => {
 
           {/* Orders Management Tab */}
           <TabsContent value="orders" className="space-y-6">
-            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input placeholder="Search orders..." className="pl-10" />
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+              <div className="flex flex-col md:flex-row gap-4 items-start md:items-center flex-1">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input placeholder="Search orders..." className="pl-10" />
+                </div>
+                <Select defaultValue="all">
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="preparing">Preparing</SelectItem>
+                    <SelectItem value="ready">Ready</SelectItem>
+                    <SelectItem value="delivered">Delivered</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <Select defaultValue="all">
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="preparing">Preparing</SelectItem>
-                  <SelectItem value="ready">Ready</SelectItem>
-                  <SelectItem value="delivered">Delivered</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  checked={showArchivedOrders}
+                  onCheckedChange={setShowArchivedOrders}
+                  id="show-archived"
+                />
+                <Label htmlFor="show-archived" className="text-sm">
+                  {showArchivedOrders ? 'Show Active Orders' : 'Show Archived Orders'}
+                </Label>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4">
@@ -1299,9 +1362,64 @@ export const Admin = () => {
                                   <SelectItem value="cancelled">Cancelled</SelectItem>
                                 </SelectContent>
                               </Select>
-                              <Button size="sm" variant="outline">
-                                <Eye className="w-4 h-4" />
-                              </Button>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button size="sm" variant="outline">
+                                    <Eye className="w-4 h-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl">
+                                  <DialogHeader>
+                                    <DialogTitle>Order Details - {order.order_number || `#${order.id.slice(0, 8)}...`}</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <h4 className="font-semibold">Customer Information</h4>
+                                        <p>Name: {order.customer_name || 'N/A'}</p>
+                                        <p>Phone: {order.customer_phone || 'N/A'}</p>
+                                        <p>Email: {order.customer_email || 'N/A'}</p>
+                                      </div>
+                                      <div>
+                                        <h4 className="font-semibold">Order Information</h4>
+                                        <p>Type: {order.order_type.replace('_', ' ')}</p>
+                                        <p>Status: {order.status}</p>
+                                        <p>Total: ₱{order.total_amount.toFixed(2)}</p>
+                                      </div>
+                                    </div>
+                                    {order.order_items && (
+                                      <div>
+                                        <h4 className="font-semibold mb-2">Order Items</h4>
+                                        <div className="space-y-2">
+                                          {order.order_items.map((item, index) => (
+                                            <div key={index} className="flex justify-between items-center p-2 bg-muted rounded">
+                                              <span>{item.quantity}x {item.menu_items?.name || `Item #${item.menu_item_id}`}</span>
+                                              <span>₱{(item.unit_price * item.quantity).toFixed(2)}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {order.notes && (
+                                      <div>
+                                        <h4 className="font-semibold">Notes</h4>
+                                        <p className="text-sm text-muted-foreground">{order.notes}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                              
+                              {!showArchivedOrders && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => archiveOrder(order.id)}
+                                  className="text-orange-600 hover:text-orange-700"
+                                >
+                                  <Archive className="w-4 h-4" />
+                                </Button>
+                              )}
                               
                               {/* Cancel Order Button for Dine-in */}
                               {order.order_type === 'dine_in' && order.status !== 'cancelled' && order.status !== 'delivered' && (
