@@ -107,12 +107,15 @@ export const MenuHeroManagement = () => {
   }
 
   const saveHeroSettings = async () => {
+    console.log('Starting save hero settings...')
+    console.log('Current hero settings:', heroSettings)
     setLoading(true)
     try {
       let backgroundImage = heroSettings.background_image
 
       // Upload new image if selected
       if (selectedImage) {
+        console.log('Uploading new image...')
         const uploadedUrl = await uploadImage(selectedImage)
         if (uploadedUrl) {
           backgroundImage = uploadedUrl
@@ -124,6 +127,8 @@ export const MenuHeroManagement = () => {
         background_image: backgroundImage
       }
 
+      console.log('Attempting to save settings:', updatedSettings)
+
       const { error } = await supabase
         .from('site_settings')
         .upsert({
@@ -131,8 +136,12 @@ export const MenuHeroManagement = () => {
           setting_value: updatedSettings
         })
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
 
+      console.log('Settings saved successfully')
       setHeroSettings(updatedSettings)
       setSelectedImage(null)
       
@@ -144,7 +153,7 @@ export const MenuHeroManagement = () => {
       console.error('Error saving hero settings:', error)
       toast({
         title: "Error",
-        description: "Failed to save hero settings",
+        description: `Failed to save hero settings: ${error.message}`,
         variant: "destructive"
       })
     } finally {
