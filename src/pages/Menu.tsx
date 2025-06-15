@@ -534,8 +534,12 @@ export const Menu = () => {
         
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <div className="flex items-center justify-center mb-6">
-            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-              <Leaf className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 bg-gradient-to-br from-white to-cream rounded-full overflow-hidden flex items-center justify-center shadow-lg border-2 border-white/30 backdrop-blur-sm">
+              <img 
+                src="/lovable-uploads/10da77c8-bfac-41e7-8ab4-672648c51cc4.png" 
+                alt="Kudos Cafe Professional Logo" 
+                className="w-14 h-14 object-cover rounded-full filter drop-shadow-sm"
+              />
             </div>
           </div>
           
