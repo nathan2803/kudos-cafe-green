@@ -11,13 +11,15 @@ interface ImageUploadProps {
   onImagesChange: (images: string[]) => void
   maxImages?: number
   disabled?: boolean
+  bucketName?: string
 }
 
 export const ImageUpload = ({ 
   images, 
   onImagesChange, 
   maxImages = 5, 
-  disabled = false 
+  disabled = false,
+  bucketName = "profile-images"
 }: ImageUploadProps) => {
   const { user } = useAuth()
   const { toast } = useToast()
@@ -43,14 +45,14 @@ export const ImageUpload = ({
 
       // Upload to Supabase storage
       const { data, error } = await supabase.storage
-        .from('review-images')
+        .from(bucketName)
         .upload(filePath, file)
 
       if (error) throw error
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('review-images')
+        .from(bucketName)
         .getPublicUrl(data.path)
 
       return publicUrl

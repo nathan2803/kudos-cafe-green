@@ -89,6 +89,7 @@ export const ReviewsDisplay = ({
 
         return {
           ...review,
+          images: Array.isArray(review.images) ? review.images as string[] : [],
           customer_name: profile?.full_name,
           menu_item_name: menuItem?.name
         }
