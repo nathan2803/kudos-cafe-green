@@ -19,7 +19,7 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
-  Trash2,
+  Archive,
   SortAsc,
   SortDesc,
   Calendar,
@@ -104,6 +104,7 @@ export const MessagesInbox = () => {
             created_at
           )
         `)
+        .eq('archived', false)
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -255,42 +256,27 @@ export const MessagesInbox = () => {
     }
   }
 
-  const deleteMessage = async (messageId: string) => {
+  const archiveConversation = async (orderId: string) => {
     try {
-      // Check if this message has replies (child messages)
-      const { data: childMessages } = await supabase
-        .from('order_messages')
-        .select('id')
-        .eq('parent_message_id', messageId)
-      
-      if (childMessages && childMessages.length > 0) {
-        toast({
-          title: "Cannot delete message",
-          description: "This message has replies and cannot be deleted.",
-          variant: "destructive"
-        })
-        return
-      }
-      
       const { error } = await supabase
         .from('order_messages')
-        .delete()
-        .eq('id', messageId)
+        .update({ archived: true })
+        .eq('order_id', orderId)
         .eq('sender_id', user?.id)
       
       if (error) throw error
       
       toast({
-        title: "Message deleted",
-        description: "Your message has been deleted."
+        title: "Conversation archived",
+        description: "This conversation has been archived and will no longer appear in your inbox."
       })
       
       fetchMessages()
     } catch (error) {
-      console.error('Error deleting message:', error)
+      console.error('Error archiving conversation:', error)
       toast({
         title: "Error",
-        description: "Failed to delete message",
+        description: "Failed to archive conversation",
         variant: "destructive"
       })
     }
@@ -438,37 +424,6 @@ export const MessagesInbox = () => {
                               <span className="text-xs text-muted-foreground">
                                 {formatDistanceToNow(new Date(message.created_at))} ago
                               </span>
-                              {/* Only show delete button for user's own messages */}
-                              {message.sender_id === user?.id && (
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-auto p-1 text-destructive hover:text-destructive"
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Delete Message</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Are you sure you want to delete this message? This action cannot be undone.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction
-                                        onClick={() => deleteMessage(message.id)}
-                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                      >
-                                        Delete
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              )}
                             </div>
                           </div>
                         
@@ -499,24 +454,55 @@ export const MessagesInbox = () => {
                     </div>
                   )}
 
-                  {/* Reply button - always visible */}
-                  <div className="flex items-center justify-between">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedConversation(conversation.order_id)}
-                      className="flex items-center gap-1"
-                    >
-                      <MessageSquare className="w-3 h-3" />
-                      Reply
-                    </Button>
-                    
-                    {!isExpanded && (
-                      <span className="text-xs text-muted-foreground">
-                        Click to expand {conversation.messages.length} message{conversation.messages.length !== 1 ? 's' : ''}
-                      </span>
-                    )}
-                  </div>
+                   {/* Reply and Archive buttons - always visible */}
+                   <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-2">
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         onClick={() => setSelectedConversation(conversation.order_id)}
+                         className="flex items-center gap-1"
+                       >
+                         <MessageSquare className="w-3 h-3" />
+                         Reply
+                       </Button>
+                       
+                       <AlertDialog>
+                         <AlertDialogTrigger asChild>
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                           >
+                             <Archive className="w-3 h-3" />
+                             Archive
+                           </Button>
+                         </AlertDialogTrigger>
+                         <AlertDialogContent>
+                           <AlertDialogHeader>
+                             <AlertDialogTitle>Archive Conversation</AlertDialogTitle>
+                             <AlertDialogDescription>
+                               Are you sure you want to archive this entire conversation? It will no longer appear in your inbox.
+                             </AlertDialogDescription>
+                           </AlertDialogHeader>
+                           <AlertDialogFooter>
+                             <AlertDialogCancel>Cancel</AlertDialogCancel>
+                             <AlertDialogAction
+                               onClick={() => archiveConversation(conversation.order_id)}
+                             >
+                               Archive Conversation
+                             </AlertDialogAction>
+                           </AlertDialogFooter>
+                         </AlertDialogContent>
+                       </AlertDialog>
+                     </div>
+                     
+                     {!isExpanded && (
+                       <span className="text-xs text-muted-foreground">
+                         Click to expand {conversation.messages.length} message{conversation.messages.length !== 1 ? 's' : ''}
+                       </span>
+                     )}
+                   </div>
                 </div>
               )
             })}

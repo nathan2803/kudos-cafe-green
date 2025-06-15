@@ -390,6 +390,7 @@ export type Database = {
       }
       order_messages: {
         Row: {
+          archived: boolean
           cancellation_reason: string | null
           created_at: string
           id: string
@@ -405,6 +406,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived?: boolean
           cancellation_reason?: string | null
           created_at?: string
           id?: string
@@ -420,6 +422,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived?: boolean
           cancellation_reason?: string | null
           created_at?: string
           id?: string
