@@ -151,7 +151,7 @@ export const Contact = () => {
                         <p className="text-muted-foreground">
                           SM Mall of Asia<br />
                           Seaside Blvd, Pasay<br />
-                          Metro Manila, Philippines
+                          Quezon, Philippines
                         </p>
                       </div>
                     </div>
@@ -341,7 +341,7 @@ export const Contact = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-foreground mb-4">Find Us</h2>
-            <p className="text-muted-foreground">Located at SM Mall of Asia, Pasay City</p>
+            <p className="text-muted-foreground">Located at SM Mall of Asia, Quezon</p>
           </div>
           
           <Card className="border-primary/20 overflow-hidden">
