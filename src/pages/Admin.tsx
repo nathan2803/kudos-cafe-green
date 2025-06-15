@@ -480,6 +480,38 @@ export const Admin = () => {
     }
   }
 
+  const toggleOrderPriority = async (orderId: string, isPriority: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          is_priority: isPriority,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId)
+
+      if (error) throw error
+
+      // Update local state
+      setOrders(prev => prev.map(order => 
+        order.id === orderId 
+          ? { ...order, is_priority: isPriority, updated_at: new Date().toISOString() }
+          : order
+      ))
+
+      toast({
+        title: isPriority ? "Priority Set" : "Priority Removed",
+        description: isPriority ? "Order marked as priority" : "Order priority cleared",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to update order priority",
+        variant: "destructive"
+      })
+    }
+  }
+
   const unarchiveOrder = async (orderId: string) => {
     try {
       const { error } = await supabase
@@ -1502,7 +1534,15 @@ export const Admin = () => {
                                   <SelectItem value="delivered">Delivered</SelectItem>
                                   <SelectItem value="cancelled">Cancelled</SelectItem>
                                 </SelectContent>
-                              </Select>
+                               </Select>
+                               <Button
+                                 size="sm"
+                                 variant={order.is_priority ? "default" : "outline"}
+                                 onClick={() => toggleOrderPriority(order.id, !order.is_priority)}
+                                 className={order.is_priority ? "bg-orange-500 hover:bg-orange-600" : ""}
+                               >
+                                 {order.is_priority ? "Remove Priority" : "Set Priority"}
+                               </Button>
                               <Dialog>
                                 <DialogTrigger asChild>
                                   <Button size="sm" variant="outline">
