@@ -64,7 +64,8 @@ export const MessagesInbox = () => {
   useEffect(() => {
     if (user) {
       fetchMessages()
-      setupRealtimeSubscription()
+      const cleanup = setupRealtimeSubscription()
+      return cleanup // Return the cleanup function
     }
   }, [user])
 
