@@ -53,14 +53,38 @@ export function OrderForm({ orderType, onOrderCreate, totalAmount }: OrderFormPr
     setLoading(false);
   };
 
-  const timeSlots = [
-    'ASAP (15-20 mins)',
-    '30 minutes',
-    '45 minutes',
-    '1 hour',
-    '1.5 hours',
-    '2 hours'
-  ];
+  const getOperatingHours = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const dayOfWeek = now.getDay(); // 0 = Sunday, 6 = Saturday
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const closeHour = isWeekend ? 24 : 22; // 12 AM on weekends, 10 PM on weekdays
+    
+    // Store opens at 3 PM (15:00)
+    const openHour = 15;
+    
+    // Check if currently within operating hours
+    const isOpen = currentHour >= openHour && currentHour < closeHour;
+    
+    return { isOpen, openHour, closeHour, isWeekend };
+  };
+
+  const timeSlots = (() => {
+    const { isOpen } = getOperatingHours();
+    
+    if (!isOpen) {
+      return ['Store is currently closed - Opens at 3:00 PM'];
+    }
+    
+    return [
+      'ASAP (15-20 mins)',
+      '30 minutes',
+      '45 minutes',
+      '1 hour',
+      '1.5 hours',
+      '2 hours'
+    ];
+  })();
 
   const Icon = orderType === 'pickup' ? Car : Clock;
 
