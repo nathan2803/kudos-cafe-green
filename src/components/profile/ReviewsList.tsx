@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Star, Edit2, Trash2, Clock, Package, MessageSquare } from 'lucide-react'
+import { Star, Edit2, Trash2, Clock, Package, MessageSquare, Images } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/hooks/useAuth'
+import { ImageGallery } from '@/components/ui/image-gallery'
 
 interface Review {
   id: string
@@ -17,6 +18,7 @@ interface Review {
   comment: string
   is_approved: boolean
   admin_response?: string
+  images?: string[]
   created_at: string
   updated_at: string
   orders?: {
@@ -117,25 +119,32 @@ export const ReviewsList = ({ reviews, loading, onRefresh }: ReviewsListProps) =
                   </Badge>
                 </div>
                 
-                <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                  <div className="flex items-center space-x-1">
-                    <Clock className="w-3 h-3" />
-                    <span>{formatDate(review.created_at)}</span>
-                  </div>
-                  
-                  {review.orders?.order_number && (
-                    <div className="flex items-center space-x-1">
-                      <Package className="w-3 h-3" />
-                      <span>Order #{review.orders.order_number}</span>
-                    </div>
-                  )}
-                  
-                  {review.menu_items?.name && (
-                    <Badge variant="outline" className="text-xs">
-                      {review.menu_items.name}
-                    </Badge>
-                  )}
-                </div>
+                 <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                   <div className="flex items-center space-x-1">
+                     <Clock className="w-3 h-3" />
+                     <span>{formatDate(review.created_at)}</span>
+                   </div>
+                   
+                   {review.orders?.order_number && (
+                     <div className="flex items-center space-x-1">
+                       <Package className="w-3 h-3" />
+                       <span>Order #{review.orders.order_number}</span>
+                     </div>
+                   )}
+                   
+                   {review.menu_items?.name && (
+                     <Badge variant="outline" className="text-xs">
+                       {review.menu_items.name}
+                     </Badge>
+                   )}
+
+                   {review.images && review.images.length > 0 && (
+                     <div className="flex items-center space-x-1">
+                       <Images className="w-3 h-3" />
+                       <span>{review.images.length} photo{review.images.length > 1 ? 's' : ''}</span>
+                     </div>
+                   )}
+                 </div>
               </div>
               
               <div className="flex space-x-2">
@@ -171,19 +180,30 @@ export const ReviewsList = ({ reviews, loading, onRefresh }: ReviewsListProps) =
             </div>
           </CardHeader>
           
-          <CardContent className="space-y-3">
-            <p className="text-foreground leading-relaxed">{review.comment}</p>
-            
-            {review.admin_response && (
-              <div className="bg-muted/50 rounded-lg p-3 border-l-4 border-primary">
-                <div className="flex items-center space-x-2 mb-2">
-                  <MessageSquare className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium text-primary">Restaurant Response</span>
-                </div>
-                <p className="text-sm text-muted-foreground">{review.admin_response}</p>
-              </div>
-            )}
-          </CardContent>
+           <CardContent className="space-y-3">
+             <p className="text-foreground leading-relaxed">{review.comment}</p>
+             
+             {/* Review Images */}
+             {review.images && review.images.length > 0 && (
+               <div className="mt-4">
+                 <ImageGallery 
+                   images={review.images} 
+                   alt="Review images"
+                   className="grid-cols-3 max-w-md"
+                 />
+               </div>
+             )}
+             
+             {review.admin_response && (
+               <div className="bg-muted/50 rounded-lg p-3 border-l-4 border-primary">
+                 <div className="flex items-center space-x-2 mb-2">
+                   <MessageSquare className="w-4 h-4 text-primary" />
+                   <span className="text-sm font-medium text-primary">Restaurant Response</span>
+                 </div>
+                 <p className="text-sm text-muted-foreground">{review.admin_response}</p>
+               </div>
+             )}
+           </CardContent>
         </Card>
       ))}
     </div>

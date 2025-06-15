@@ -654,6 +654,7 @@ export type Database = {
           comment: string
           created_at: string
           id: string
+          images: Json | null
           is_approved: boolean
           is_featured: boolean
           menu_item_id: string | null
@@ -667,6 +668,7 @@ export type Database = {
           comment: string
           created_at?: string
           id?: string
+          images?: Json | null
           is_approved?: boolean
           is_featured?: boolean
           menu_item_id?: string | null
@@ -680,6 +682,7 @@ export type Database = {
           comment?: string
           created_at?: string
           id?: string
+          images?: Json | null
           is_approved?: boolean
           is_featured?: boolean
           menu_item_id?: string | null

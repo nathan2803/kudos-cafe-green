@@ -8,6 +8,7 @@ import { Star, Plus } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/hooks/useAuth'
+import { ImageUpload } from './ImageUpload'
 
 interface ReviewFormProps {
   onReviewSubmitted: () => void
@@ -26,6 +27,7 @@ export const ReviewForm = ({ onReviewSubmitted, orders, menuItems = [] }: Review
     order_id: '',
     menu_item_id: ''
   })
+  const [images, setImages] = useState<string[]>([])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,7 +47,8 @@ export const ReviewForm = ({ onReviewSubmitted, orders, menuItems = [] }: Review
         rating: formData.rating,
         comment: formData.comment.trim(),
         order_id: formData.order_id || null,
-        menu_item_id: formData.menu_item_id || null
+        menu_item_id: formData.menu_item_id || null,
+        images: images
       }
 
       const { error } = await supabase
@@ -60,6 +63,7 @@ export const ReviewForm = ({ onReviewSubmitted, orders, menuItems = [] }: Review
       })
 
       setFormData({ rating: 0, comment: '', order_id: '', menu_item_id: '' })
+      setImages([])
       setIsOpen(false)
       onReviewSubmitted()
     } catch (error) {
@@ -162,6 +166,16 @@ export const ReviewForm = ({ onReviewSubmitted, orders, menuItems = [] }: Review
               placeholder="Share your dining experience..."
               rows={4}
               required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Photos (Optional)</Label>
+            <ImageUpload
+              images={images}
+              onImagesChange={setImages}
+              maxImages={5}
+              disabled={loading}
             />
           </div>
 

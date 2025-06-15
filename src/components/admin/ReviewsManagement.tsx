@@ -7,9 +7,10 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Star, MessageSquare, Eye, EyeOff, Award, TrendingUp, Users } from 'lucide-react'
+import { Star, MessageSquare, Eye, EyeOff, Award, TrendingUp, Users, Images } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
+import { ImageGallery } from '@/components/ui/image-gallery'
 
 interface Review {
   id: string
@@ -21,6 +22,7 @@ interface Review {
   is_approved: boolean
   is_featured: boolean
   admin_response?: string
+  images?: string[]
   created_at: string
   profiles?: {
     full_name: string
@@ -439,19 +441,34 @@ export const ReviewsManagement = () => {
                 </div>
               </CardHeader>
               
-              <CardContent>
-                <p className="text-foreground mb-3">{review.comment}</p>
-                
-                {review.admin_response && (
-                  <div className="bg-primary/10 rounded-lg p-3 border-l-4 border-primary">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <MessageSquare className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-medium text-primary">Your Response</span>
-                    </div>
-                    <p className="text-sm">{review.admin_response}</p>
-                  </div>
-                )}
-              </CardContent>
+               <CardContent>
+                 <p className="text-foreground mb-3">{review.comment}</p>
+                 
+                 {/* Review Images */}
+                 {review.images && review.images.length > 0 && (
+                   <div className="mb-4">
+                     <div className="flex items-center space-x-2 mb-2">
+                       <Images className="w-4 h-4 text-muted-foreground" />
+                       <span className="text-sm text-muted-foreground">{review.images.length} photo{review.images.length > 1 ? 's' : ''}</span>
+                     </div>
+                     <ImageGallery 
+                       images={review.images} 
+                       alt="Review images"
+                       className="grid-cols-4 max-w-lg"
+                     />
+                   </div>
+                 )}
+                 
+                 {review.admin_response && (
+                   <div className="bg-primary/10 rounded-lg p-3 border-l-4 border-primary">
+                     <div className="flex items-center space-x-2 mb-2">
+                       <MessageSquare className="w-4 h-4 text-primary" />
+                       <span className="text-sm font-medium text-primary">Your Response</span>
+                     </div>
+                     <p className="text-sm">{review.admin_response}</p>
+                   </div>
+                 )}
+               </CardContent>
             </Card>
           ))
         )}
