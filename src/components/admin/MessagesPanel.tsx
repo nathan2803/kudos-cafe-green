@@ -20,11 +20,13 @@ import {
   XCircle,
   ChevronDown,
   ChevronUp,
-  Trash2,
+  Archive,
+  ArchiveRestore,
   SortAsc,
   SortDesc,
   Calendar,
-  Hash
+  Hash,
+  Inbox
 } from 'lucide-react'
 
 interface OrderMessage {
@@ -82,10 +84,11 @@ export const MessagesPanel = () => {
   const [sortBy, setSortBy] = useState<'date' | 'order'>('date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [expandedConversations, setExpandedConversations] = useState<Set<string>>(new Set())
+  const [showArchived, setShowArchived] = useState(false)
 
   useEffect(() => {
     fetchMessages()
-  }, [])
+  }, [showArchived])
 
   const fetchMessages = async () => {
     setLoading(true)
@@ -105,6 +108,7 @@ export const MessagesPanel = () => {
             created_at
           )
         `)
+        .eq('archived', showArchived)
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -138,51 +142,51 @@ export const MessagesPanel = () => {
     }
   }
 
-  const deleteMessage = async (messageId: string) => {
+  const archiveConversation = async (orderId: string) => {
     try {
       const { error } = await supabase
         .from('order_messages')
-        .delete()
-        .eq('id', messageId)
-      
-      if (error) throw error
-      
-      toast({
-        title: "Message deleted",
-        description: "The message has been deleted."
-      })
-      
-      fetchMessages()
-    } catch (error) {
-      console.error('Error deleting message:', error)
-      toast({
-        title: "Error",
-        description: "Failed to delete message",
-        variant: "destructive"
-      })
-    }
-  }
-
-  const deleteConversation = async (orderId: string) => {
-    try {
-      const { error } = await supabase
-        .from('order_messages')
-        .delete()
+        .update({ archived: true })
         .eq('order_id', orderId)
       
       if (error) throw error
       
       toast({
-        title: "Conversation deleted",
-        description: "All messages in this conversation have been deleted."
+        title: "Conversation archived",
+        description: "This conversation has been archived."
       })
       
       fetchMessages()
     } catch (error) {
-      console.error('Error deleting conversation:', error)
+      console.error('Error archiving conversation:', error)
       toast({
         title: "Error",
-        description: "Failed to delete conversation",
+        description: "Failed to archive conversation",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const unarchiveConversation = async (orderId: string) => {
+    try {
+      const { error } = await supabase
+        .from('order_messages')
+        .update({ archived: false })
+        .eq('order_id', orderId)
+      
+      if (error) throw error
+      
+      toast({
+        title: "Conversation unarchived",
+        description: "This conversation has been moved back to the inbox."
+      })
+      
+      fetchMessages()
+    } catch (error) {
+      console.error('Error unarchiving conversation:', error)
+      toast({
+        title: "Error",
+        description: "Failed to unarchive conversation",
         variant: "destructive"
       })
     }
@@ -469,8 +473,17 @@ export const MessagesPanel = () => {
             <span>Customer Messages</span>
           </CardTitle>
           
-          {/* Sorting Controls */}
+          {/* View Toggle and Sorting Controls */}
           <div className="flex items-center gap-2">
+            <Button
+              variant={showArchived ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowArchived(!showArchived)}
+              className="flex items-center gap-2"
+            >
+              {showArchived ? <Archive className="w-4 h-4" /> : <Inbox className="w-4 h-4" />}
+              {showArchived ? "Archived" : "Inbox"}
+            </Button>
             <Select value={sortBy} onValueChange={(value: 'date' | 'order') => setSortBy(value)}>
               <SelectTrigger className="w-32">
                 <SelectValue />
@@ -555,38 +568,68 @@ export const MessagesPanel = () => {
                          <MessageSquare className="w-3 h-3" />
                          {conversation.messages.length} message{conversation.messages.length !== 1 ? 's' : ''}
                        </span>
-                       <span className="flex items-center gap-1">
-                         <Clock className="w-3 h-3" />
-                         {formatDistanceToNow(new Date(conversation.latest_message_date))} ago
-                       </span>
-                       <AlertDialog>
-                         <AlertDialogTrigger asChild>
-                           <Button
-                             variant="ghost"
-                             size="sm"
-                             className="h-auto p-1 text-destructive hover:text-destructive"
-                           >
-                             <Trash2 className="w-4 h-4" />
-                           </Button>
-                         </AlertDialogTrigger>
-                         <AlertDialogContent>
-                           <AlertDialogHeader>
-                             <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
-                             <AlertDialogDescription>
-                               Are you sure you want to delete this entire conversation? This will permanently delete all {conversation.messages.length} message{conversation.messages.length !== 1 ? 's' : ''} in this conversation. This action cannot be undone.
-                             </AlertDialogDescription>
-                           </AlertDialogHeader>
-                           <AlertDialogFooter>
-                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                             <AlertDialogAction
-                               onClick={() => deleteConversation(conversation.order_id)}
-                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                             >
-                               Delete Conversation
-                             </AlertDialogAction>
-                           </AlertDialogFooter>
-                         </AlertDialogContent>
-                       </AlertDialog>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {formatDistanceToNow(new Date(conversation.latest_message_date))} ago
+                        </span>
+                        
+                        {showArchived ? (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-auto p-1 text-muted-foreground hover:text-foreground"
+                              >
+                                <ArchiveRestore className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Unarchive Conversation</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to unarchive this conversation? It will be moved back to your inbox.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => unarchiveConversation(conversation.order_id)}
+                                >
+                                  Unarchive Conversation
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        ) : (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-auto p-1 text-muted-foreground hover:text-foreground"
+                              >
+                                <Archive className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Archive Conversation</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to archive this entire conversation? It will no longer appear in your inbox.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => archiveConversation(conversation.order_id)}
+                                >
+                                  Archive Conversation
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                      </div>
                    </div>
                  </div>
@@ -657,39 +700,9 @@ export const MessagesPanel = () => {
                                  <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded">New</span>
                                )}
                              </div>
-                             <div className="flex items-center gap-2">
-                               <span className="text-xs text-muted-foreground">
-                                 {formatDistanceToNow(new Date(message.created_at))} ago
-                               </span>
-                               <AlertDialog>
-                                 <AlertDialogTrigger asChild>
-                                   <Button
-                                     variant="ghost"
-                                     size="sm"
-                                     className="h-auto p-1 text-destructive hover:text-destructive"
-                                   >
-                                     <Trash2 className="w-3 h-3" />
-                                   </Button>
-                                 </AlertDialogTrigger>
-                                 <AlertDialogContent>
-                                   <AlertDialogHeader>
-                                     <AlertDialogTitle>Delete Message</AlertDialogTitle>
-                                     <AlertDialogDescription>
-                                       Are you sure you want to delete this message? This action cannot be undone.
-                                     </AlertDialogDescription>
-                                   </AlertDialogHeader>
-                                   <AlertDialogFooter>
-                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                     <AlertDialogAction
-                                       onClick={() => deleteMessage(message.id)}
-                                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                     >
-                                       Delete
-                                     </AlertDialogAction>
-                                   </AlertDialogFooter>
-                                 </AlertDialogContent>
-                               </AlertDialog>
-                             </div>
+                              <span className="text-xs text-muted-foreground">
+                                {formatDistanceToNow(new Date(message.created_at))} ago
+                              </span>
                            </div>
                            
                            {message.subject && (
