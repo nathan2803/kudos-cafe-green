@@ -50,6 +50,7 @@ import {
 export const Landing = () => {
   const { user } = useAuth()
   const [featuredDishes, setFeaturedDishes] = useState<MenuItem[]>([])
+  const [aboutSections, setAboutSections] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -66,7 +67,15 @@ export const Landing = () => {
         .or('is_popular.eq.true,is_new.eq.true')
         .limit(6)
 
+      // Fetch about us sections
+      const { data: sections } = await supabase
+        .from('about_us_sections')
+        .select('*')
+        .eq('is_active', true)
+        .order('order_index')
+
       setFeaturedDishes(dishes || [])
+      setAboutSections(sections || [])
     } catch (error) {
       console.error('Error fetching featured content:', error)
     } finally {
@@ -185,71 +194,139 @@ export const Landing = () => {
       {/* About Section */}
       <section className="py-20 bg-background">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <div className="flex items-center space-x-2 text-primary">
-                <Leaf className="w-6 h-6" />
-                <span className="text-sm font-semibold uppercase tracking-wide">About Kudos Cafe</span>
-              </div>
-              
-              <h2 className="text-4xl md:text-5xl font-bold text-foreground leading-tight">
-                Where <span className="text-primary">Sustainability</span> Meets <span className="text-primary">Flavor</span>
-              </h2>
-              
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                At Kudos Cafe & Restaurant, we believe that great food and environmental responsibility 
-                go hand in hand. Our commitment to sustainability extends from our locally sourced, 
-                organic ingredients to our zero-waste kitchen practices.
-              </p>
+          {aboutSections.length > 0 ? (
+            <div className="space-y-16">
+              {aboutSections.map((section, index) => (
+                <div key={section.id} className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${
+                  index % 2 === 1 ? 'lg:flex-row-reverse' : ''
+                }`}>
+                  <div className={`space-y-6 ${index % 2 === 1 ? 'lg:order-2' : ''}`}>
+                    {index === 0 && (
+                      <div className="flex items-center space-x-2 text-primary">
+                        <Leaf className="w-6 h-6" />
+                        <span className="text-sm font-semibold uppercase tracking-wide">About Kudos Cafe</span>
+                      </div>
+                    )}
+                    
+                    <h2 className="text-4xl md:text-5xl font-bold text-foreground leading-tight">
+                      {section.title}
+                    </h2>
+                    
+                    <p className="text-lg text-muted-foreground leading-relaxed">
+                      {section.content}
+                    </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center mt-1">
-                    <Leaf className="w-4 h-4 text-primary" />
+                    {index === 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center mt-1">
+                            <Leaf className="w-4 h-4 text-primary" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-foreground">Locally Sourced</h4>
+                            <p className="text-sm text-muted-foreground">Fresh ingredients from local farms</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start space-x-3">
+                          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center mt-1">
+                            <Recycle className="w-4 h-4 text-primary" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-foreground">Zero Waste</h4>
+                            <p className="text-sm text-muted-foreground">Eco-friendly kitchen practices</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {index === aboutSections.length - 1 && (
+                      <Button asChild className="bg-primary hover:bg-primary/90">
+                        <Link to="/contact">
+                          Contact Us
+                          <ArrowRight className="ml-2 w-4 h-4" />
+                        </Link>
+                      </Button>
+                    )}
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-foreground">Locally Sourced</h4>
-                    <p className="text-sm text-muted-foreground">Fresh ingredients from local farms</p>
+
+                  <div className={`relative ${index % 2 === 1 ? 'lg:order-1' : ''}`}>
+                    {section.image_url ? (
+                      <div className="relative">
+                        <img 
+                          src={section.image_url} 
+                          alt={section.title}
+                          className="w-full h-80 object-cover rounded-lg shadow-2xl"
+                        />
+                        {index === 0 && (
+                          <div className="absolute -bottom-4 -left-4 w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
+                            <Award className="w-12 h-12 text-primary" />
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-4">
+                        <img 
+                          src="https://images.unsplash.com/photo-1571197200840-ca4a3e07e1f8?w=400&h=300&fit=crop" 
+                          alt="Fresh ingredients"
+                          className="rounded-lg shadow-lg"
+                        />
+                        <img 
+                          src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop" 
+                          alt="Sustainable cooking"
+                          className="rounded-lg shadow-lg mt-8"
+                        />
+                      </div>
+                    )}
                   </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <div className="space-y-6">
+                <div className="flex items-center space-x-2 text-primary">
+                  <Leaf className="w-6 h-6" />
+                  <span className="text-sm font-semibold uppercase tracking-wide">About Kudos Cafe</span>
                 </div>
                 
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center mt-1">
-                    <Recycle className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-foreground">Zero Waste</h4>
-                    <p className="text-sm text-muted-foreground">Eco-friendly kitchen practices</p>
-                  </div>
+                <h2 className="text-4xl md:text-5xl font-bold text-foreground leading-tight">
+                  Where <span className="text-primary">Sustainability</span> Meets <span className="text-primary">Flavor</span>
+                </h2>
+                
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  At Kudos Cafe & Restaurant, we believe that great food and environmental responsibility 
+                  go hand in hand. Our commitment to sustainability extends from our locally sourced, 
+                  organic ingredients to our zero-waste kitchen practices.
+                </p>
+
+                <Button asChild className="bg-primary hover:bg-primary/90">
+                  <Link to="/contact">
+                    Contact Us
+                    <ArrowRight className="ml-2 w-4 h-4" />
+                  </Link>
+                </Button>
+              </div>
+
+              <div className="relative">
+                <div className="grid grid-cols-2 gap-4">
+                  <img 
+                    src="https://images.unsplash.com/photo-1571197200840-ca4a3e07e1f8?w=400&h=300&fit=crop" 
+                    alt="Fresh ingredients"
+                    className="rounded-lg shadow-lg"
+                  />
+                  <img 
+                    src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop" 
+                    alt="Sustainable cooking"
+                    className="rounded-lg shadow-lg mt-8"
+                  />
+                </div>
+                <div className="absolute -bottom-4 -left-4 w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Award className="w-12 h-12 text-primary" />
                 </div>
               </div>
-
-              <Button asChild className="bg-primary hover:bg-primary/90">
-                <Link to="/about">
-                  Learn More About Us
-                  <ArrowRight className="ml-2 w-4 h-4" />
-                </Link>
-              </Button>
             </div>
-
-            <div className="relative">
-              <div className="grid grid-cols-2 gap-4">
-                <img 
-                  src="https://images.unsplash.com/photo-1571197200840-ca4a3e07e1f8?w=400&h=300&fit=crop" 
-                  alt="Fresh ingredients"
-                  className="rounded-lg shadow-lg"
-                />
-                <img 
-                  src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop" 
-                  alt="Sustainable cooking"
-                  className="rounded-lg shadow-lg mt-8"
-                />
-              </div>
-              <div className="absolute -bottom-4 -left-4 w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
-                <Award className="w-12 h-12 text-primary" />
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       </section>
 

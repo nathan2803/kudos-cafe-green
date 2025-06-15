@@ -18,6 +18,7 @@ import { MenuManagement } from '@/components/admin/MenuManagement'
 import { ReviewsManagement } from '@/components/admin/ReviewsManagement'
 import { UserManagement } from '@/components/admin/UserManagement'
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard'
+import { AboutUsManagement } from '@/components/admin/AboutUsManagement'
 
 interface MenuItem {
   id: string
@@ -158,7 +159,8 @@ import {
   Activity,
   Download,
   WalletCards,
-  MessageSquare
+  MessageSquare,
+  FileText
 } from 'lucide-react'
 
 export const Admin = () => {
@@ -1234,7 +1236,7 @@ export const Admin = () => {
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8 bg-muted/30">
+          <TabsList className="grid w-full grid-cols-9 bg-muted/30">
             <TabsTrigger value="dashboard" className="flex items-center space-x-2">
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Dashboard</span>
@@ -1266,6 +1268,10 @@ export const Admin = () => {
             <TabsTrigger value="analytics" className="flex items-center space-x-2">
               <TrendingUp className="w-4 h-4" />
               <span className="hidden sm:inline">Analytics</span>
+            </TabsTrigger>
+            <TabsTrigger value="about" className="flex items-center space-x-2">
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">About Us</span>
             </TabsTrigger>
           </TabsList>
 
@@ -2853,6 +2859,11 @@ export const Admin = () => {
           {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-6">
             <AnalyticsDashboard />
+          </TabsContent>
+
+          {/* About Us Management Tab */}
+          <TabsContent value="about" className="space-y-6">
+            <AboutUsManagement />
           </TabsContent>
         </Tabs>
       </div>
