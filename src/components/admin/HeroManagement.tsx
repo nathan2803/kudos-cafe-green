@@ -6,11 +6,9 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
+import { HeroImageUpload } from './HeroImageUpload'
 import { 
   Save, 
-  Plus, 
-  Trash2,
-  Image as ImageIcon,
   Eye
 } from 'lucide-react'
 
@@ -89,26 +87,10 @@ export const HeroManagement = () => {
     }
   }
 
-  const addBackgroundImage = () => {
+  const handleImagesChange = (images: string[]) => {
     setContent(prev => ({
       ...prev,
-      background_images: [...prev.background_images, '']
-    }))
-  }
-
-  const updateBackgroundImage = (index: number, url: string) => {
-    setContent(prev => ({
-      ...prev,
-      background_images: prev.background_images.map((img, i) => 
-        i === index ? url : img
-      )
-    }))
-  }
-
-  const removeBackgroundImage = (index: number) => {
-    setContent(prev => ({
-      ...prev,
-      background_images: prev.background_images.filter((_, i) => i !== index)
+      background_images: images
     }))
   }
 
@@ -173,56 +155,15 @@ export const HeroManagement = () => {
         {/* Background Images */}
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Background Images</CardTitle>
-              <Button onClick={addBackgroundImage} size="sm">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Image
-              </Button>
-            </div>
+            <CardTitle>Background Images</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {content.background_images.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <ImageIcon className="w-12 h-12 mx-auto mb-2" />
-                <p>No background images yet. Add your first image to get started.</p>
-              </div>
-            ) : (
-              content.background_images.map((image, index) => (
-                <div key={index} className="flex gap-4 items-start p-4 border rounded-lg">
-                  <div className="flex-1">
-                    <Label htmlFor={`image-${index}`}>Image URL {index + 1}</Label>
-                    <Input
-                      id={`image-${index}`}
-                      value={image}
-                      onChange={(e) => updateBackgroundImage(index, e.target.value)}
-                      placeholder="https://..."
-                    />
-                  </div>
-                  
-                  {image && (
-                    <div className="w-20 h-12 rounded overflow-hidden border">
-                      <img 
-                        src={image} 
-                        alt={`Background ${index + 1}`}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none'
-                        }}
-                      />
-                    </div>
-                  )}
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeBackgroundImage(index)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))
-            )}
+          <CardContent>
+            <HeroImageUpload
+              images={content.background_images}
+              onImagesChange={handleImagesChange}
+              maxImages={10}
+              disabled={saving}
+            />
           </CardContent>
         </Card>
 
