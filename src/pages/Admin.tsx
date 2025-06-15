@@ -1344,70 +1344,74 @@ export const Admin = () => {
                                 </div>
                                 
                                 {/* Reservation Details */}
-                                {order.reservations && (
+                                {(order.reservations || order.reservations_via_order) && (
                                   <div className="text-sm space-y-1 bg-blue-50 p-2 rounded-md">
-                                    <div className="flex items-center gap-2">
-                                      <strong>Reservation Date:</strong>
-                                      <span>{new Date(order.reservations.reservation_date).toLocaleDateString('en-US', { 
-                                        weekday: 'short', 
-                                        month: 'short', 
-                                        day: 'numeric', 
-                                        year: 'numeric' 
-                                      })}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <strong>Reservation Time:</strong>
-                                      <span>{order.reservations.reservation_time}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <strong>Party Size:</strong>
-                                      <span>{order.reservations.party_size} guests</span>
-                                    </div>
-                                    {order.reservations.special_requests && (
-                                      <div className="flex items-start gap-2">
-                                        <strong>Special Requests:</strong>
-                                        <span className="text-muted-foreground">{order.reservations.special_requests}</span>
-                                      </div>
-                                    )}
-                                    {order.reservations.deposit_amount && (
-                                      <div className="flex items-center gap-2">
-                                        <strong>Deposit Paid:</strong>
-                                        <span>₱{order.reservations.deposit_amount.toFixed(2)}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                                {!order.reservations && order.reservations_via_order && (
-                                  <div className="text-sm space-y-1 bg-blue-50 p-2 rounded-md">
-                                    <div className="flex items-center gap-2">
-                                      <strong>Reservation Date:</strong>
-                                      <span>{new Date(order.reservations_via_order.reservation_date).toLocaleDateString('en-US', { 
-                                        weekday: 'short', 
-                                        month: 'short', 
-                                        day: 'numeric', 
-                                        year: 'numeric' 
-                                      })}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <strong>Reservation Time:</strong>
-                                      <span>{order.reservations_via_order.reservation_time}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <strong>Party Size:</strong>
-                                      <span>{order.reservations_via_order.party_size} guests</span>
-                                    </div>
-                                    {order.reservations_via_order.special_requests && (
-                                      <div className="flex items-start gap-2">
-                                        <strong>Special Requests:</strong>
-                                        <span className="text-muted-foreground">{order.reservations_via_order.special_requests}</span>
-                                      </div>
-                                    )}
-                                    {order.reservations_via_order.deposit_amount && (
-                                      <div className="flex items-center gap-2">
-                                        <strong>Deposit Paid:</strong>
-                                        <span>₱{order.reservations_via_order.deposit_amount.toFixed(2)}</span>
-                                      </div>
-                                    )}
+                                    {(() => {
+                                      const reservation = order.reservations || order.reservations_via_order;
+                                      if (!reservation) return null;
+
+                                      // Format date safely
+                                      const formatDate = (dateString: string) => {
+                                        try {
+                                          const date = new Date(dateString);
+                                          if (isNaN(date.getTime())) return 'Invalid Date';
+                                          return date.toLocaleDateString('en-US', { 
+                                            weekday: 'short', 
+                                            month: 'short', 
+                                            day: 'numeric', 
+                                            year: 'numeric' 
+                                          });
+                                        } catch (error) {
+                                          return 'Invalid Date';
+                                        }
+                                      };
+
+                                      // Format time safely
+                                      const formatTime = (timeString: string) => {
+                                        if (!timeString) return 'No time specified';
+                                        try {
+                                          if (timeString.includes(':')) {
+                                            const [hours, minutes] = timeString.split(':');
+                                            const hour24 = parseInt(hours);
+                                            const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
+                                            const period = hour24 >= 12 ? 'PM' : 'AM';
+                                            return `${hour12}:${minutes.padStart(2, '0')} ${period}`;
+                                          }
+                                          return timeString;
+                                        } catch (error) {
+                                          return timeString;
+                                        }
+                                      };
+
+                                      return (
+                                        <>
+                                          <div className="flex items-center gap-2">
+                                            <strong>Reservation Date:</strong>
+                                            <span>{formatDate(reservation.reservation_date)}</span>
+                                          </div>
+                                          <div className="flex items-center gap-2">
+                                            <strong>Reservation Time:</strong>
+                                            <span>{formatTime(reservation.reservation_time)}</span>
+                                          </div>
+                                          <div className="flex items-center gap-2">
+                                            <strong>Party Size:</strong>
+                                            <span>{reservation.party_size || 'N/A'} {reservation.party_size ? 'guests' : ''}</span>
+                                          </div>
+                                          {reservation.special_requests && (
+                                            <div className="flex items-start gap-2">
+                                              <strong>Special Requests:</strong>
+                                              <span className="text-muted-foreground">{reservation.special_requests}</span>
+                                            </div>
+                                          )}
+                                          {reservation.deposit_amount && (
+                                            <div className="flex items-center gap-2">
+                                              <strong>Deposit Paid:</strong>
+                                              <span>₱{reservation.deposit_amount.toFixed(2)}</span>
+                                            </div>
+                                          )}
+                                        </>
+                                      );
+                                    })()}
                                   </div>
                                 )}
                               </div>
@@ -1499,17 +1503,48 @@ export const Admin = () => {
                                         <h4 className="font-semibold mb-3">Reservation Details</h4>
                                         {(() => {
                                           const reservation = order.reservations || order.reservations_via_order;
+                                          if (!reservation) return null;
+                                          
+                                          // Format date safely
+                                          const formatReservationDate = (dateString: string) => {
+                                            try {
+                                              const date = new Date(dateString);
+                                              if (isNaN(date.getTime())) return 'Invalid Date';
+                                              return date.toLocaleDateString('en-US', { 
+                                                weekday: 'long', 
+                                                month: 'long', 
+                                                day: 'numeric', 
+                                                year: 'numeric' 
+                                              });
+                                            } catch (error) {
+                                              return 'Invalid Date';
+                                            }
+                                          };
+
+                                          // Format time safely  
+                                          const formatReservationTime = (timeString: string) => {
+                                            if (!timeString) return 'No time specified';
+                                            try {
+                                              // Handle different time formats
+                                              if (timeString.includes(':')) {
+                                                const [hours, minutes] = timeString.split(':');
+                                                const hour24 = parseInt(hours);
+                                                const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
+                                                const period = hour24 >= 12 ? 'PM' : 'AM';
+                                                return `${hour12}:${minutes.padStart(2, '0')} ${period}`;
+                                              }
+                                              return timeString;
+                                            } catch (error) {
+                                              return timeString;
+                                            }
+                                          };
+                                          
                                           return (
                                             <div className="grid grid-cols-2 gap-4 text-sm">
                                               <div>
-                                                <p><strong>Date:</strong> {new Date(reservation.reservation_date).toLocaleDateString('en-US', { 
-                                                  weekday: 'long', 
-                                                  month: 'long', 
-                                                  day: 'numeric', 
-                                                  year: 'numeric' 
-                                                })}</p>
-                                                <p><strong>Time:</strong> {reservation.reservation_time}</p>
-                                                <p><strong>Party Size:</strong> {reservation.party_size} guests</p>
+                                                <p><strong>Date:</strong> {formatReservationDate(reservation.reservation_date)}</p>
+                                                <p><strong>Time:</strong> {formatReservationTime(reservation.reservation_time)}</p>
+                                                <p><strong>Party Size:</strong> {reservation.party_size || 'N/A'} {reservation.party_size ? 'guests' : ''}</p>
                                               </div>
                                               <div>
                                                 {reservation.tables && (
@@ -1525,7 +1560,7 @@ export const Admin = () => {
                                         })()}
                                         {(() => {
                                           const reservation = order.reservations || order.reservations_via_order;
-                                          return reservation.special_requests && (
+                                          return reservation?.special_requests && (
                                             <div className="mt-3">
                                               <p><strong>Special Requests:</strong></p>
                                               <p className="text-muted-foreground italic">{reservation.special_requests}</p>
