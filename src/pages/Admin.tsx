@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/integrations/supabase/client'
 import { MessagesPanel } from '@/components/admin/MessagesPanel'
+import { OrderMessaging } from '@/components/admin/OrderMessaging'
 
 interface MenuItem {
   id: string
@@ -1927,6 +1928,17 @@ export const Admin = () => {
                             )}
                           </div>
                         </div>
+                      </div>
+                      
+                      {/* Order Messaging */}
+                      <div className="mt-6 pt-4 border-t">
+                        <OrderMessaging order={order} onMessageSent={() => {
+                          // Optional: refresh orders or show notification
+                          toast({
+                            title: "Message sent",
+                            description: "Customer will be notified",
+                          })
+                        }} />
                       </div>
                     </CardContent>
                   </Card>
