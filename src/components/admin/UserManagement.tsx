@@ -511,3 +511,5 @@ export const UserManagement = ({ users, onUserUpdate, onUserDelete }: UserManage
     </div>
   )
 }
+
+export default UserManagement

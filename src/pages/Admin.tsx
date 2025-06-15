@@ -123,6 +123,7 @@ interface Review {
   rating: number
   comment: string
   created_at: string
+  is_featured: boolean
   user?: {
     full_name: string
   }
