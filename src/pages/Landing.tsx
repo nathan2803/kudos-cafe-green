@@ -152,7 +152,7 @@ export const Landing = () => {
           <div className="flex items-center justify-center mb-6">
             <div className="w-24 h-24 bg-gradient-to-br from-white to-cream rounded-full flex items-center justify-center mb-4 shadow-2xl border-4 border-light-green/40 backdrop-blur-sm">
               <img 
-                src="/lovable-uploads/0fb532fd-64ad-4f84-9330-470f382bc7db.png" 
+                src="/lovable-uploads/da016ef6-2b42-47b0-9d80-859ae28b3bb6.png" 
                 alt="Kudos Cafe Professional Logo" 
                 className="w-16 h-16 object-contain filter drop-shadow-lg"
               />

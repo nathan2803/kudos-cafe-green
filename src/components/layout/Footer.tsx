@@ -26,7 +26,7 @@ export const Footer = () => {
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 bg-gradient-to-br from-white to-cream rounded-full flex items-center justify-center p-2 shadow-lg border-2 border-primary/30">
                 <img 
-                  src="/lovable-uploads/0fb532fd-64ad-4f84-9330-470f382bc7db.png" 
+                  src="/lovable-uploads/da016ef6-2b42-47b0-9d80-859ae28b3bb6.png" 
                   alt="Kudos Cafe Professional Logo" 
                   className="w-full h-full object-contain filter drop-shadow-sm"
                 />
