@@ -129,6 +129,8 @@ export const MessagesInbox = () => {
       
       messagesWithSenders.forEach(message => {
         const orderId = message.order_id
+        if (!orderId) return // Skip messages without order_id (like contact inquiries)
+        
         if (!conversationMap.has(orderId)) {
           conversationMap.set(orderId, {
             order_id: orderId,
