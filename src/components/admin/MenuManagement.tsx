@@ -547,7 +547,8 @@ export const MenuManagement = () => {
       </Card>
 
       {/* Menu Item Edit Dialog */}
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
@@ -701,7 +702,8 @@ export const MenuManagement = () => {
             </Button>
           </div>
         </div>
-      </DialogContent>
+        </DialogContent>
+      </Dialog>
 
       {/* Category Edit Dialog */}
       <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
