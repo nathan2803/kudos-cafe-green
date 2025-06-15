@@ -185,6 +185,36 @@ export type Database = {
           },
         ]
       }
+      legal_documents: {
+        Row: {
+          content: string
+          created_at: string
+          document_type: string
+          id: string
+          last_updated: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          document_type: string
+          id?: string
+          last_updated?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          document_type?: string
+          id?: string
+          last_updated?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       low_stock_alerts: {
         Row: {
           acknowledged_at: string | null

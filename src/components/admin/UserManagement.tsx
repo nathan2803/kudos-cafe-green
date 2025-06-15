@@ -10,8 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
+import { LegalDocumentsEditor } from '@/components/admin/LegalDocumentsEditor'
 import { 
   Search, 
   Filter, 
@@ -25,7 +27,9 @@ import {
   Phone,
   Calendar,
   Activity,
-  MoreHorizontal
+  MoreHorizontal,
+  Users,
+  FileText
 } from 'lucide-react'
 
 interface User {
@@ -203,7 +207,19 @@ export const UserManagement = ({ users, onUserUpdate, onUserDelete }: UserManage
   }
 
   return (
-    <div className="space-y-6">
+    <Tabs defaultValue="users" className="space-y-6">
+      <TabsList>
+        <TabsTrigger value="users" className="flex items-center gap-2">
+          <Users className="w-4 h-4" />
+          User Management
+        </TabsTrigger>
+        <TabsTrigger value="legal" className="flex items-center gap-2">
+          <FileText className="w-4 h-4" />
+          Legal Documents
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="users" className="space-y-6">
       {/* Header with Search and Filters */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex-1 flex flex-col sm:flex-row gap-4">
@@ -508,7 +524,12 @@ export const UserManagement = ({ users, onUserUpdate, onUserDelete }: UserManage
           </p>
         </div>
       )}
-    </div>
+      </TabsContent>
+
+      <TabsContent value="legal">
+        <LegalDocumentsEditor />
+      </TabsContent>
+    </Tabs>
   )
 }
 
