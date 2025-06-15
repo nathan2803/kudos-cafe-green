@@ -28,14 +28,26 @@ interface MenuItem {
   dietary_tags: string[] | null
 }
 
+interface MenuTag {
+  id: string
+  name: string
+  category: string
+  color: string
+  description: string | null
+  is_active: boolean
+}
+
 export const MenuManagement = () => {
   const { user, userProfile } = useAuth()
   const { toast } = useToast()
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
+  const [menuTags, setMenuTags] = useState<MenuTag[]>([])
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
+  const [activeTab, setActiveTab] = useState('menu-items')
 
   // Predefined food categories
   const foodCategories = [
@@ -66,7 +78,15 @@ export const MenuManagement = () => {
 
   useEffect(() => {
     fetchMenuItems()
+    fetchMenuTags()
   }, [])
+
+  // Refetch tags when returning from tags tab
+  useEffect(() => {
+    if (activeTab === 'menu-items') {
+      fetchMenuTags()
+    }
+  }, [activeTab])
 
   const fetchMenuItems = async () => {
     try {
@@ -84,6 +104,75 @@ export const MenuManagement = () => {
         description: "Failed to load menu items",
         variant: "destructive"
       })
+    }
+  }
+
+  const fetchMenuTags = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('menu_tags')
+        .select('*')
+        .eq('is_active', true)
+        .order('category, name')
+
+      if (error) throw error
+      setMenuTags(data || [])
+    } catch (error: any) {
+      console.error('Error fetching menu tags:', error)
+      toast({
+        title: "Error",
+        description: "Failed to load menu tags",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const fetchMenuItemTags = async (menuItemId: string): Promise<string[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('menu_item_tags')
+        .select('tag_id, menu_tags(name)')
+        .eq('menu_item_id', menuItemId)
+
+      if (error) throw error
+      return data?.map(item => (item.menu_tags as any)?.name).filter(Boolean) || []
+    } catch (error: any) {
+      console.error('Error fetching menu item tags:', error)
+      return []
+    }
+  }
+
+  const saveMenuItemTags = async (menuItemId: string, tagNames: string[]) => {
+    try {
+      // First, get tag IDs from names
+      const tagIds: string[] = []
+      for (const tagName of tagNames) {
+        const tag = menuTags.find(t => t.name === tagName)
+        if (tag) {
+          tagIds.push(tag.id)
+        }
+      }
+
+      // Delete existing tags
+      await supabase
+        .from('menu_item_tags')
+        .delete()
+        .eq('menu_item_id', menuItemId)
+
+      // Insert new tags
+      if (tagIds.length > 0) {
+        const { error } = await supabase
+          .from('menu_item_tags')
+          .insert(tagIds.map(tagId => ({
+            menu_item_id: menuItemId,
+            tag_id: tagId
+          })))
+
+        if (error) throw error
+      }
+    } catch (error: any) {
+      console.error('Error saving menu item tags:', error)
+      throw error
     }
   }
 
@@ -299,7 +388,11 @@ export const MenuManagement = () => {
     <div className="p-6 space-y-6">
       <h2 className="text-2xl font-bold">Menu Management</h2>
 
-      <Tabs defaultValue="menu-items" className="w-full">
+      <Tabs 
+        defaultValue="menu-items" 
+        className="w-full"
+        onValueChange={setActiveTab}
+      >
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="menu-items">Menu Items</TabsTrigger>
           <TabsTrigger value="tags">Tags</TabsTrigger>
@@ -533,19 +626,47 @@ export const MenuManagement = () => {
           </div>
 
           <div className="space-y-2">
-            <Label>Dietary Tags</Label>
-            <div className="flex flex-wrap gap-2">
-              {dietaryOptions.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant={formData.dietary_tags.includes(tag) ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => toggleDietaryTag(tag)}
-                >
-                  {tag}
-                </Badge>
-              ))}
-            </div>
+            <Label>Tags</Label>
+            {menuTags.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No tags available. Create tags in the Tags tab first.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {Object.entries(
+                  menuTags.reduce((acc, tag) => {
+                    if (!acc[tag.category]) acc[tag.category] = []
+                    acc[tag.category].push(tag)
+                    return acc
+                  }, {} as { [key: string]: MenuTag[] })
+                ).map(([category, tags]) => (
+                  <div key={category} className="space-y-2">
+                    <h4 className="text-sm font-medium capitalize">{category}</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {tags.map((tag) => (
+                        <Badge
+                          key={tag.id}
+                          variant={formData.dietary_tags.includes(tag.name) ? "default" : "outline"}
+                          className="cursor-pointer flex items-center gap-1"
+                          onClick={() => toggleDietaryTag(tag.name)}
+                          style={{ 
+                            backgroundColor: formData.dietary_tags.includes(tag.name) ? tag.color : 'transparent',
+                            borderColor: tag.color,
+                            color: formData.dietary_tags.includes(tag.name) ? 'white' : tag.color
+                          }}
+                        >
+                          <div 
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: tag.color }}
+                          />
+                          {tag.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2 pt-4">
