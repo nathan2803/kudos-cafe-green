@@ -34,7 +34,7 @@ interface Order {
   total_amount: number
   status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled'
   payment_status: 'pending' | 'partial' | 'paid' | 'refunded'
-  order_type: 'pickup' | 'takeout' | 'dine_in'
+  order_type: 'pickup' | 'delivery' | 'dine_in'
   customer_name?: string
   customer_phone?: string
   customer_email?: string
@@ -237,7 +237,7 @@ export const Admin = () => {
       total_amount: 24.90,
       status: 'delivered',
       payment_status: 'paid',
-      order_type: 'takeout',
+      order_type: 'delivery',
       customer_name: 'Jane Smith',
       customer_phone: '+1234567891',
       created_at: '2024-01-20T13:15:00Z',
