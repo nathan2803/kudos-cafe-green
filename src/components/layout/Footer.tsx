@@ -42,14 +42,15 @@ export const Footer = () => {
               sourced ingredients and eco-friendly practices.
             </p>
             <div className="flex space-x-3">
-              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-primary">
-                <Facebook className="h-4 w-4" />
+              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-primary" asChild>
+                <a href="https://www.facebook.com/KudosCafeAndResto" target="_blank" rel="noopener noreferrer">
+                  <Facebook className="h-4 w-4" />
+                </a>
               </Button>
-              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-primary">
-                <Instagram className="h-4 w-4" />
-              </Button>
-              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-primary">
-                <Twitter className="h-4 w-4" />
+              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-primary" asChild>
+                <a href="https://www.instagram.com/kudoscafeandresto/" target="_blank" rel="noopener noreferrer">
+                  <Instagram className="h-4 w-4" />
+                </a>
               </Button>
             </div>
           </div>

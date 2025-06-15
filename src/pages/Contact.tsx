@@ -288,14 +288,15 @@ ${formData.message}
               <div>
                 <h3 className="font-semibold text-foreground mb-4">Follow Us</h3>
                 <div className="flex space-x-4">
-                  <Button variant="outline" size="icon" className="border-primary/20 hover:bg-primary hover:text-primary-foreground">
-                    <Facebook className="w-4 h-4" />
+                  <Button variant="outline" size="icon" className="border-primary/20 hover:bg-primary hover:text-primary-foreground" asChild>
+                    <a href="https://www.facebook.com/KudosCafeAndResto" target="_blank" rel="noopener noreferrer">
+                      <Facebook className="w-4 h-4" />
+                    </a>
                   </Button>
-                  <Button variant="outline" size="icon" className="border-primary/20 hover:bg-primary hover:text-primary-foreground">
-                    <Instagram className="w-4 h-4" />
-                  </Button>
-                  <Button variant="outline" size="icon" className="border-primary/20 hover:bg-primary hover:text-primary-foreground">
-                    <MessageCircle className="w-4 h-4" />
+                  <Button variant="outline" size="icon" className="border-primary/20 hover:bg-primary hover:text-primary-foreground" asChild>
+                    <a href="https://www.instagram.com/kudoscafeandresto/" target="_blank" rel="noopener noreferrer">
+                      <Instagram className="w-4 h-4" />
+                    </a>
                   </Button>
                 </div>
               </div>
