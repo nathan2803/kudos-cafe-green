@@ -287,6 +287,121 @@ export const MessagesPanel = () => {
     }
   }
 
+  const approveCancellation = async (message: OrderMessage) => {
+    try {
+      const { data: currentUser } = await supabase.auth.getUser()
+      if (!currentUser.user) throw new Error('Not authenticated')
+
+      // Get order details for refund calculation
+      const { data: orderData } = await supabase
+        .from('orders')
+        .select('user_id, deposit_paid, total_amount')
+        .eq('id', message.order_id)
+        .single()
+
+      if (!orderData) throw new Error('Order not found')
+
+      // Update order status to cancelled
+      const { error: orderError } = await supabase
+        .from('orders')
+        .update({
+          status: 'cancelled',
+          cancelled_at: new Date().toISOString(),
+          cancelled_by: currentUser.user.id,
+          refund_amount: orderData.deposit_paid || 0
+        })
+        .eq('id', message.order_id)
+
+      if (orderError) throw orderError
+
+      // Send approval message to customer
+      const { error: messageError } = await supabase
+        .from('order_messages')
+        .insert({
+          order_id: message.order_id,
+          sender_id: currentUser.user.id,
+          recipient_id: orderData.user_id,
+          parent_message_id: message.id,
+          message_type: 'admin_response',
+          subject: 'Cancellation Approved',
+          message: `Your cancellation request has been approved. Your order has been cancelled and a refund of ₱${(orderData.deposit_paid || 0).toFixed(2)} will be processed.`
+        })
+
+      if (messageError) throw messageError
+
+      // Mark original message as read
+      await supabase
+        .from('order_messages')
+        .update({ is_read: true })
+        .eq('id', message.id)
+
+      toast({
+        title: "Cancellation approved",
+        description: "The order has been cancelled and the customer has been notified."
+      })
+
+      fetchMessages()
+    } catch (error) {
+      console.error('Error approving cancellation:', error)
+      toast({
+        title: "Error",
+        description: "Failed to approve cancellation",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const denyCancellation = async (message: OrderMessage) => {
+    try {
+      const { data: currentUser } = await supabase.auth.getUser()
+      if (!currentUser.user) throw new Error('Not authenticated')
+
+      // Get customer's user_id from the order
+      const { data: orderData } = await supabase
+        .from('orders')
+        .select('user_id')
+        .eq('id', message.order_id)
+        .single()
+
+      if (!orderData) throw new Error('Order not found')
+
+      // Send denial message to customer
+      const { error: messageError } = await supabase
+        .from('order_messages')
+        .insert({
+          order_id: message.order_id,
+          sender_id: currentUser.user.id,
+          recipient_id: orderData.user_id,
+          parent_message_id: message.id,
+          message_type: 'admin_response',
+          subject: 'Cancellation Request Denied',
+          message: 'Your cancellation request has been reviewed and cannot be approved at this time. Please contact us directly if you have any questions.'
+        })
+
+      if (messageError) throw messageError
+
+      // Mark original message as read
+      await supabase
+        .from('order_messages')
+        .update({ is_read: true })
+        .eq('id', message.id)
+
+      toast({
+        title: "Cancellation denied",
+        description: "The cancellation request has been denied and the customer has been notified."
+      })
+
+      fetchMessages()
+    } catch (error) {
+      console.error('Error denying cancellation:', error)
+      toast({
+        title: "Error",
+        description: "Failed to deny cancellation",
+        variant: "destructive"
+      })
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -508,26 +623,69 @@ export const MessagesPanel = () => {
                                Reply
                              </Button>
                              
-                             {message.message_type === 'cancellation_request' && (
-                               <>
-                                 <Button
-                                   variant="outline"
-                                   size="sm"
-                                   className="text-green-600 border-green-600 hover:bg-green-50"
-                                 >
-                                   <CheckCircle className="w-3 h-3 mr-1" />
-                                   Approve
-                                 </Button>
-                                 <Button
-                                   variant="outline"
-                                   size="sm"
-                                   className="text-red-600 border-red-600 hover:bg-red-50"
-                                 >
-                                   <XCircle className="w-3 h-3 mr-1" />
-                                   Deny
-                                 </Button>
-                               </>
-                             )}
+                              {message.message_type === 'cancellation_request' && (
+                                <>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-green-600 border-green-600 hover:bg-green-50"
+                                      >
+                                        <CheckCircle className="w-3 h-3 mr-1" />
+                                        Approve
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Approve Cancellation</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to approve this cancellation request? The order will be cancelled and a refund of ₱{(conversation.order.deposit_paid || 0).toFixed(2)} will be processed.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => approveCancellation(message)}
+                                          className="bg-green-600 text-white hover:bg-green-700"
+                                        >
+                                          Approve Cancellation
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                  
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-red-600 border-red-600 hover:bg-red-50"
+                                      >
+                                        <XCircle className="w-3 h-3 mr-1" />
+                                        Deny
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Deny Cancellation</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to deny this cancellation request? The customer will be notified that their request cannot be approved.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => denyCancellation(message)}
+                                          className="bg-red-600 text-white hover:bg-red-700"
+                                        >
+                                          Deny Request
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </>
+                              )}
                            </div>
                          </div>
                        ))}
