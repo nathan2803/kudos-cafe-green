@@ -1248,25 +1248,21 @@ export const Admin = () => {
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Dashboard</span>
             </TabsTrigger>
-            <TabsTrigger value="hero" className="flex items-center space-x-2">
-              <Home className="w-4 h-4" />
-              <span className="hidden sm:inline">Hero</span>
+            <TabsTrigger value="analytics" className="flex items-center space-x-2">
+              <TrendingUp className="w-4 h-4" />
+              <span className="hidden sm:inline">Analytics</span>
             </TabsTrigger>
-            <TabsTrigger value="orders" className="flex items-center space-x-2">
-              <Package className="w-4 h-4" />
-              <span className="hidden sm:inline">Orders</span>
+            <TabsTrigger value="users" className="flex items-center space-x-2">
+              <Users className="w-4 h-4" />
+              <span className="hidden sm:inline">User Management</span>
             </TabsTrigger>
             <TabsTrigger value="menu" className="flex items-center space-x-2">
               <ChefHat className="w-4 h-4" />
               <span className="hidden sm:inline">Menu</span>
             </TabsTrigger>
-            <TabsTrigger value="inventory" className="flex items-center space-x-2">
-              <Warehouse className="w-4 h-4" />
-              <span className="hidden sm:inline">Inventory</span>
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center space-x-2">
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Users</span>
+            <TabsTrigger value="orders" className="flex items-center space-x-2">
+              <Package className="w-4 h-4" />
+              <span className="hidden sm:inline">Orders</span>
             </TabsTrigger>
             <TabsTrigger value="messages" className="flex items-center space-x-2">
               <MessageSquare className="w-4 h-4" />
@@ -1276,9 +1272,13 @@ export const Admin = () => {
               <Star className="w-4 h-4" />
               <span className="hidden sm:inline">Reviews</span>
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center space-x-2">
-              <TrendingUp className="w-4 h-4" />
-              <span className="hidden sm:inline">Analytics</span>
+            <TabsTrigger value="inventory" className="flex items-center space-x-2">
+              <Warehouse className="w-4 h-4" />
+              <span className="hidden sm:inline">Inventory</span>
+            </TabsTrigger>
+            <TabsTrigger value="hero" className="flex items-center space-x-2">
+              <Home className="w-4 h-4" />
+              <span className="hidden sm:inline">Hero</span>
             </TabsTrigger>
             <TabsTrigger value="contact" className="flex items-center space-x-2">
               <MapPin className="w-4 h-4" />
