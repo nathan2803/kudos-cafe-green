@@ -22,7 +22,7 @@ interface MenuItem {
 }
 
 export default function Booking() {
-  const [orderType, setOrderType] = useState<'pickup' | 'takeout' | 'dine_in'>();
+  const [orderType, setOrderType] = useState<'pickup' | 'delivery' | 'dine_in'>();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -186,7 +186,7 @@ export default function Booking() {
                 <h2 className="text-2xl font-semibold">Menu</h2>
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary">
-                    {orderType === 'pickup' ? 'Pickup' : orderType === 'takeout' ? 'Takeout' : 'Dine In'}
+                    {orderType === 'pickup' ? 'Pickup' : orderType === 'delivery' ? 'Delivery' : 'Dine In'}
                   </Badge>
                   <Button variant="outline" size="sm" onClick={() => setOrderType(undefined)}>
                     Change Type

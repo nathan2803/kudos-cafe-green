@@ -21,7 +21,7 @@ interface Order {
   total_amount: number
   status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled'
   delivery_address?: string
-  order_type: 'dine_in' | 'pickup' | 'takeout'
+  order_type: 'dine_in' | 'pickup' | 'delivery'
   created_at: string
   updated_at: string
   order_number?: string
@@ -265,7 +265,7 @@ export const Profile = () => {
         })) || [],
         total_amount: order.total_amount,
         status: order.status as 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled',
-        order_type: order.order_type as 'dine_in' | 'pickup' | 'takeout',
+        order_type: order.order_type as 'dine_in' | 'pickup' | 'delivery',
         created_at: order.created_at,
         updated_at: order.updated_at,
         order_number: order.order_number,

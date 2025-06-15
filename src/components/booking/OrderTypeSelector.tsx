@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, Calendar } from "lucide-react";
 
-export type OrderType = 'pickup' | 'takeout' | 'dine_in';
+export type OrderType = 'pickup' | 'delivery' | 'dine_in';
 
 interface OrderTypeSelectorProps {
   selectedType: OrderType;
@@ -22,8 +22,8 @@ export const OrderTypeSelector = ({ selectedType, onTypeChange }: OrderTypeSelec
       badge: 'Quick'
     },
     {
-      type: 'takeout' as OrderType,
-      title: 'Takeout',
+      type: 'delivery' as OrderType,
+      title: 'Delivery',
       description: 'Order for delivery to your location',
       icon: <Clock className="w-6 h-6" />,
       estimatedTime: '30-45 min',

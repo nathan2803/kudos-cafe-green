@@ -26,7 +26,7 @@ interface Order {
   total_amount: number
   status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled'
   delivery_address?: string
-  order_type: 'dine_in' | 'pickup' | 'takeout'
+  order_type: 'dine_in' | 'pickup' | 'delivery'
   created_at: string
   updated_at: string
   order_number?: string

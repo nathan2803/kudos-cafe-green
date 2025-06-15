@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Clock, Car } from 'lucide-react';
 
 interface OrderFormProps {
-  orderType: 'pickup' | 'takeout';
+  orderType: 'pickup' | 'delivery';
   onOrderCreate: (orderData: any) => void;
   totalAmount: number;
 }
@@ -64,12 +64,12 @@ export function OrderForm({ orderType, onOrderCreate, totalAmount }: OrderFormPr
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Icon className="w-5 h-5" />
-          {orderType === 'pickup' ? 'Pickup' : 'Takeout'} Details
+          {orderType === 'pickup' ? 'Pickup' : 'Delivery'} Details
         </CardTitle>
         <CardDescription>
           {orderType === 'pickup' 
             ? 'Provide your details for pickup'
-            : 'Provide your details for takeout'
+            : 'Provide your details for delivery'
           }
         </CardDescription>
       </CardHeader>
@@ -142,7 +142,7 @@ export function OrderForm({ orderType, onOrderCreate, totalAmount }: OrderFormPr
           <div className="bg-gray-50 p-4 rounded-lg">
             <h4 className="font-semibold mb-2">Order Summary</h4>
             <div className="space-y-1 text-sm">
-              <p><strong>Order Type:</strong> {orderType === 'pickup' ? 'Pickup' : 'Takeout'}</p>
+              <p><strong>Order Type:</strong> {orderType === 'pickup' ? 'Pickup' : 'Delivery'}</p>
               <p><strong>Subtotal:</strong> ${totalAmount.toFixed(2)}</p>
               {isASAP && (
                 <p className="text-orange-600"><strong>ASAP Charge:</strong> ${asapCharge.toFixed(2)}</p>
