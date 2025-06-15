@@ -61,6 +61,7 @@ export const ReviewsManagement = () => {
 
   const fetchReviews = async () => {
     try {
+      console.log('Fetching reviews...')
       const { data, error } = await supabase
         .from('reviews')
         .select(`
@@ -71,7 +72,9 @@ export const ReviewsManagement = () => {
         `)
         .order('created_at', { ascending: false })
 
+      console.log('Reviews query result:', { data, error })
       if (error) throw error
+      console.log('Reviews fetched successfully:', data?.length || 0, 'reviews')
       setReviews(data as any || [])
     } catch (error) {
       console.error('Error fetching reviews:', error)
