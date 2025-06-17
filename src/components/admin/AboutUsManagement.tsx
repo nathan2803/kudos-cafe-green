@@ -7,8 +7,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/hooks/useAuth'
 import { 
   Edit3, 
   Plus, 
@@ -17,7 +19,8 @@ import {
   GripVertical, 
   Eye, 
   EyeOff,
-  Image as ImageIcon 
+  Image as ImageIcon,
+  Upload
 } from 'lucide-react'
 
 interface AboutUsSection {
@@ -114,6 +117,70 @@ export const AboutUsManagement = () => {
 
   const EditDialog = ({ section, isNew = false }: { section: AboutUsSection, isNew?: boolean }) => {
     const [formData, setFormData] = useState(section)
+    const [uploading, setUploading] = useState(false)
+    const { user } = useAuth()
+
+    const uploadImage = async (file: File): Promise<string | null> => {
+      if (!user) return null
+
+      try {
+        // Validate file
+        if (!file.type.startsWith('image/')) {
+          throw new Error('Please select an image file')
+        }
+        
+        if (file.size > 5 * 1024 * 1024) {
+          throw new Error('Image must be less than 5MB')
+        }
+
+        // Create unique filename
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+        const filePath = `about-us/${fileName}`
+
+        // Upload to Supabase storage
+        const { data, error } = await supabase.storage
+          .from('gallery-hero-images')
+          .upload(filePath, file)
+
+        if (error) throw error
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('gallery-hero-images')
+          .getPublicUrl(data.path)
+
+        return publicUrl
+      } catch (error) {
+        console.error('Error uploading image:', error)
+        throw error
+      }
+    }
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (!file || !user) return
+
+      setUploading(true)
+      try {
+        const imageUrl = await uploadImage(file)
+        if (imageUrl) {
+          setFormData({ ...formData, image_url: imageUrl })
+          toast({
+            title: "Success",
+            description: "Image uploaded successfully"
+          })
+        }
+      } catch (error) {
+        toast({
+          title: "Upload failed",
+          description: error instanceof Error ? error.message : "Failed to upload image",
+          variant: "destructive"
+        })
+      } finally {
+        setUploading(false)
+      }
+    }
 
     return (
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -144,13 +211,53 @@ export const AboutUsManagement = () => {
           </div>
 
           <div>
-            <Label htmlFor="image_url">Image URL</Label>
-            <Input
-              id="image_url"
-              value={formData.image_url || ''}
-              onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-              placeholder="https://..."
-            />
+            <Label>Image</Label>
+            <Tabs defaultValue="url" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="url">Image URL</TabsTrigger>
+                <TabsTrigger value="upload">Upload Image</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="url" className="space-y-2">
+                <Input
+                  value={formData.image_url || ''}
+                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                  placeholder="https://..."
+                />
+              </TabsContent>
+              
+              <TabsContent value="upload" className="space-y-2">
+                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    disabled={uploading}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <label htmlFor="file-upload" className="cursor-pointer block text-center">
+                    <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                      {uploading ? 'Uploading...' : 'Click to upload image'}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      PNG, JPG, WebP up to 5MB
+                    </p>
+                  </label>
+                </div>
+              </TabsContent>
+            </Tabs>
+            
+            {formData.image_url && (
+              <div className="mt-2">
+                <img 
+                  src={formData.image_url} 
+                  alt="Preview"
+                  className="w-32 h-20 object-cover rounded-lg border"
+                />
+              </div>
+            )}
           </div>
 
           <div>
@@ -176,7 +283,7 @@ export const AboutUsManagement = () => {
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => handleSave(formData)}>
+            <Button onClick={() => handleSave(formData)} disabled={uploading}>
               <Save className="w-4 h-4 mr-2" />
               Save
             </Button>
