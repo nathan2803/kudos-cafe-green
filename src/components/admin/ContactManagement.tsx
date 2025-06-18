@@ -23,9 +23,8 @@ interface ContactInfo {
   phone: string
   phone_description: string
   opening_hours: {
-    monday_thursday: string
-    friday_saturday: string
-    sunday: string
+    weekdays: string
+    weekends: string
   }
   restaurant_image: string
   rating: string
@@ -40,9 +39,8 @@ export const ContactManagement = () => {
     phone: '',
     phone_description: '',
     opening_hours: {
-      monday_thursday: '',
-      friday_saturday: '',
-      sunday: ''
+      weekdays: '',
+      weekends: ''
     },
     restaurant_image: '',
     rating: ''
@@ -236,41 +234,28 @@ export const ContactManagement = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="monday_thursday">Monday - Thursday</Label>
+              <Label htmlFor="weekdays">Weekdays (Monday - Friday)</Label>
               <Input
-                id="monday_thursday"
-                value={content.opening_hours.monday_thursday}
+                id="weekdays"
+                value={content.opening_hours.weekdays}
                 onChange={(e) => setContent(prev => ({ 
                   ...prev, 
-                  opening_hours: { ...prev.opening_hours, monday_thursday: e.target.value }
+                  opening_hours: { ...prev.opening_hours, weekdays: e.target.value }
                 }))}
-                placeholder="e.g., 7AM - 10PM"
+                placeholder="e.g., 3PM - 11PM"
               />
             </div>
 
             <div>
-              <Label htmlFor="friday_saturday">Friday - Saturday</Label>
+              <Label htmlFor="weekends">Weekends (Saturday - Sunday)</Label>
               <Input
-                id="friday_saturday"
-                value={content.opening_hours.friday_saturday}
+                id="weekends"
+                value={content.opening_hours.weekends}
                 onChange={(e) => setContent(prev => ({ 
                   ...prev, 
-                  opening_hours: { ...prev.opening_hours, friday_saturday: e.target.value }
+                  opening_hours: { ...prev.opening_hours, weekends: e.target.value }
                 }))}
-                placeholder="e.g., 7AM - 11PM"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="sunday">Sunday</Label>
-              <Input
-                id="sunday"
-                value={content.opening_hours.sunday}
-                onChange={(e) => setContent(prev => ({ 
-                  ...prev, 
-                  opening_hours: { ...prev.opening_hours, sunday: e.target.value }
-                }))}
-                placeholder="e.g., 8AM - 9PM"
+                placeholder="e.g., 3PM - 12PM"
               />
             </div>
           </CardContent>
@@ -342,10 +327,9 @@ export const ContactManagement = () => {
                         <Clock className="w-4 h-4 text-light-green" />
                       </div>
                       <div>
-                        <p className="font-semibold text-sm">Mon-Thu: {content.opening_hours.monday_thursday || 'Hours'}</p>
+                        <p className="font-semibold text-sm">Weekdays: {content.opening_hours.weekdays || 'Hours'}</p>
                         <p className="text-cream/80 text-xs">
-                          Fri-Sat: {content.opening_hours.friday_saturday || 'Hours'}, 
-                          Sun: {content.opening_hours.sunday || 'Hours'}
+                          Weekends: {content.opening_hours.weekends || 'Hours'}
                         </p>
                       </div>
                     </div>
