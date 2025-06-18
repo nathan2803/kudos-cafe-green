@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/integrations/supabase/client'
 import { 
   Leaf, 
   MapPin, 
@@ -16,6 +18,46 @@ import {
 
 export const Footer = () => {
   const { isAdmin } = useAuth()
+  const [contactInfo, setContactInfo] = useState({
+    address_line1: '123 Green Street',
+    address_line2: 'Eco District, EC1 2AB',
+    phone: '+44 (0) 20 7123 4567',
+    opening_hours: {
+      weekdays: 'Mon-Thu: 7:00 AM - 10:00 PM',
+      weekends: 'Fri-Sat: 7:00 AM - 11:00 PM, Sun: 8:00 AM - 9:00 PM'
+    }
+  })
+
+  useEffect(() => {
+    fetchContactInfo()
+  }, [])
+
+  const fetchContactInfo = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('setting_value')
+        .eq('setting_key', 'contact_info')
+        .maybeSingle()
+
+      if (error) throw error
+      
+      if (data?.setting_value) {
+        const info = data.setting_value as any
+        setContactInfo({
+          address_line1: info.address_line1 || '123 Green Street',
+          address_line2: info.address_line2 || 'Eco District, EC1 2AB',
+          phone: info.phone || '+44 (0) 20 7123 4567',
+          opening_hours: {
+            weekdays: `Mon-Fri: ${info.opening_hours?.weekdays || '7:00 AM - 10:00 PM'}`,
+            weekends: `Weekends: ${info.opening_hours?.weekends || '7:00 AM - 11:00 PM'}`
+          }
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching contact info:', error)
+    }
+  }
 
   return (
     <footer className="border-t border-border" style={{ backgroundColor: '#D1D8BE' }}>
@@ -84,13 +126,13 @@ export const Footer = () => {
               <div className="flex items-start space-x-2">
                 <MapPin className="w-4 h-4 mt-0.5 text-gray-700" />
                 <div className="text-sm text-gray-700">
-                  <p>123 Green Street</p>
-                  <p>Eco District, EC1 2AB</p>
+                  <p>{contactInfo.address_line1}</p>
+                  <p>{contactInfo.address_line2}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
                 <Phone className="w-4 h-4 text-gray-700" />
-                <span className="text-sm text-gray-700">+44 (0) 20 7123 4567</span>
+                <span className="text-sm text-gray-700">{contactInfo.phone}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="w-4 h-4 text-gray-700" />
@@ -99,9 +141,8 @@ export const Footer = () => {
               <div className="flex items-start space-x-2">
                 <Clock className="w-4 h-4 mt-0.5 text-gray-700" />
                 <div className="text-sm text-gray-700">
-                  <p>Mon-Thu: 7:00 AM - 10:00 PM</p>
-                  <p>Fri-Sat: 7:00 AM - 11:00 PM</p>
-                  <p>Sunday: 8:00 AM - 9:00 PM</p>
+                  <p>{contactInfo.opening_hours.weekdays}</p>
+                  <p>{contactInfo.opening_hours.weekends}</p>
                 </div>
               </div>
             </div>

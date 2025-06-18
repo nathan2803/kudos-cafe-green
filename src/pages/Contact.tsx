@@ -33,6 +33,21 @@ interface ContactMapSettings {
   static_image_url: string
 }
 
+interface ContactInfo {
+  title: string
+  subtitle: string
+  address_line1: string
+  address_line2: string
+  phone: string
+  phone_description: string
+  opening_hours: {
+    weekdays: string
+    weekends: string
+  }
+  restaurant_image: string
+  rating: string
+}
+
 export const Contact = () => {
   const { toast } = useToast()
   const [heroSettings, setHeroSettings] = useState<ContactHeroSettings>({
@@ -50,6 +65,20 @@ export const Contact = () => {
     use_static_image: false,
     static_image_url: ''
   })
+  const [contactInfo, setContactInfo] = useState<ContactInfo>({
+    title: '',
+    subtitle: '',
+    address_line1: 'SM Mall of Asia',
+    address_line2: 'Seaside Blvd, Pasay, Quezon, Philippines',
+    phone: '+63 2 8123 4567',
+    phone_description: 'Call us for reservations',
+    opening_hours: {
+      weekdays: '7:00 AM - 10:00 PM',
+      weekends: '7:00 AM - 11:00 PM'
+    },
+    restaurant_image: '',
+    rating: ''
+  })
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -62,6 +91,7 @@ export const Contact = () => {
   useEffect(() => {
     fetchHeroSettings()
     fetchMapSettings()
+    fetchContactInfo()
   }, [])
 
   const fetchHeroSettings = async () => {
@@ -97,6 +127,24 @@ export const Contact = () => {
       }
     } catch (error) {
       console.error('Error fetching contact map settings:', error)
+    }
+  }
+
+  const fetchContactInfo = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('setting_value')
+        .eq('setting_key', 'contact_info')
+        .maybeSingle()
+
+      if (error) throw error
+      
+      if (data?.setting_value) {
+        setContactInfo(data.setting_value as unknown as ContactInfo)
+      }
+    } catch (error) {
+      console.error('Error fetching contact info:', error)
     }
   }
 
@@ -219,9 +267,8 @@ ${formData.message}
                       <div>
                         <h3 className="font-semibold text-foreground mb-2">Visit Our Restaurant</h3>
                         <p className="text-muted-foreground">
-                          SM Mall of Asia<br />
-                          Seaside Blvd, Pasay<br />
-                          Quezon, Philippines
+                          {contactInfo.address_line1}<br />
+                          {contactInfo.address_line2}
                         </p>
                       </div>
                     </div>
@@ -238,8 +285,8 @@ ${formData.message}
                       <div>
                         <h3 className="font-semibold text-foreground mb-2">Call Us</h3>
                         <p className="text-muted-foreground">
-                          Main: +63 2 8123 4567<br />
-                          Reservations: +63 2 8123 4568
+                          {contactInfo.phone}<br />
+                          {contactInfo.phone_description}
                         </p>
                       </div>
                     </div>
@@ -274,9 +321,8 @@ ${formData.message}
                       <div>
                         <h3 className="font-semibold text-foreground mb-2">Opening Hours</h3>
                         <div className="text-muted-foreground space-y-1">
-                          <p>Monday - Thursday: 7:00 AM - 10:00 PM</p>
-                          <p>Friday - Saturday: 7:00 AM - 11:00 PM</p>
-                          <p>Sunday: 8:00 AM - 9:00 PM</p>
+                          <p>Weekdays: {contactInfo.opening_hours.weekdays}</p>
+                          <p>Weekends: {contactInfo.opening_hours.weekends}</p>
                         </div>
                       </div>
                     </div>
