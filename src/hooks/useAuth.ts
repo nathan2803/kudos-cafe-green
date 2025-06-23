@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 import { supabase } from '@/integrations/supabase/client'
@@ -18,6 +19,7 @@ export interface AuthState {
   userProfile: User | null
   loading: boolean
   isAdmin: boolean
+  isAuthenticated: boolean
 }
 
 export const useAuth = () => {
@@ -25,7 +27,8 @@ export const useAuth = () => {
     user: null,
     userProfile: null,
     loading: true,
-    isAdmin: false
+    isAdmin: false,
+    isAuthenticated: false
   })
 
   useEffect(() => {
@@ -95,7 +98,8 @@ export const useAuth = () => {
           user: user,
           userProfile: null,
           loading: false,
-          isAdmin: false
+          isAdmin: false,
+          isAuthenticated: !!user
         })
         return
       }
@@ -120,7 +124,8 @@ export const useAuth = () => {
             user: user,
             userProfile: null,
             loading: false,
-            isAdmin: false
+            isAdmin: false,
+            isAuthenticated: !!user
           })
         } else {
           console.log('Profile created successfully:', newProfile)
@@ -128,7 +133,8 @@ export const useAuth = () => {
             user: user,
             userProfile: newProfile,
             loading: false,
-            isAdmin: newProfile?.is_admin || false
+            isAdmin: newProfile?.is_admin || false,
+            isAuthenticated: !!user
           })
         }
         return
@@ -139,7 +145,8 @@ export const useAuth = () => {
         user: user,
         userProfile: profile,
         loading: false,
-        isAdmin: profile?.is_admin || false
+        isAdmin: profile?.is_admin || false,
+        isAuthenticated: !!user
       })
       
       console.log('Auth state updated successfully')
