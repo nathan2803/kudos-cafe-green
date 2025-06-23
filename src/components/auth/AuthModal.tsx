@@ -55,8 +55,6 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
     }
   })
 
-  const currentForm = mode === 'signin' ? signInForm : signUpForm
-
   const handleSubmit = async (data: SignInFormData | SignUpFormData) => {
     setLoading(true)
 
@@ -145,28 +143,157 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
           )}
         </DialogHeader>
 
-        <form onSubmit={currentForm.handleSubmit(handleSubmit)} className="space-y-4">
-          {/* Email Field */}
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                {...currentForm.register('email')}
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                className="pl-10"
-                disabled={loading}
-              />
+        {mode === 'signin' ? (
+          <form onSubmit={signInForm.handleSubmit(handleSubmit)} className="space-y-4">
+            {/* Email Field */}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  {...signInForm.register('email')}
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  className="pl-10"
+                  disabled={loading}
+                />
+              </div>
+              {signInForm.formState.errors.email && (
+                <p className="text-sm text-destructive">{signInForm.formState.errors.email.message}</p>
+              )}
             </div>
-            {currentForm.formState.errors.email && (
-              <p className="text-sm text-destructive">{currentForm.formState.errors.email.message}</p>
-            )}
-          </div>
 
-          {/* Full Name Field (Sign Up Only) */}
-          {mode === 'signup' && !resetMode && (
+            {/* Password Field */}
+            {!resetMode && (
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    {...signInForm.register('password')}
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter your password"
+                    className="pl-10 pr-10"
+                    disabled={loading}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={loading}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
+                {signInForm.formState.errors.password && (
+                  <p className="text-sm text-destructive">{signInForm.formState.errors.password.message}</p>
+                )}
+              </div>
+            )}
+
+            {/* Remember Me */}
+            {!resetMode && (
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="remember" 
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                  disabled={loading}
+                />
+                <Label htmlFor="remember" className="text-sm">Remember me</Label>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <Button 
+              type="submit" 
+              className="w-full bg-primary hover:bg-primary/90" 
+              disabled={loading}
+            >
+              {loading ? (
+                <LoadingSpinner size="sm" className="mr-2" />
+              ) : null}
+              {loading ? 'Loading...' : resetMode ? 'Send Reset Link' : 'Sign In'}
+            </Button>
+
+            {/* Forgot Password Link */}
+            {!resetMode && (
+              <div className="text-center">
+                <Button
+                  type="button"
+                  variant="link"
+                  className="text-sm text-primary"
+                  onClick={() => setResetMode(true)}
+                  disabled={loading}
+                >
+                  Forgot your password?
+                </Button>
+              </div>
+            )}
+
+            {/* Mode Switch */}
+            {!resetMode && (
+              <div className="text-center space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Don't have an account?
+                </p>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="text-primary"
+                  onClick={() => switchMode('signup')}
+                  disabled={loading}
+                >
+                  Sign up here
+                </Button>
+              </div>
+            )}
+
+            {/* Back to Sign In (Reset Mode) */}
+            {resetMode && (
+              <div className="text-center">
+                <Button
+                  type="button"
+                  variant="link"
+                  className="text-primary"
+                  onClick={() => setResetMode(false)}
+                  disabled={loading}
+                >
+                  Back to sign in
+                </Button>
+              </div>
+            )}
+          </form>
+        ) : (
+          <form onSubmit={signUpForm.handleSubmit(handleSubmit)} className="space-y-4">
+            {/* Email Field */}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  {...signUpForm.register('email')}
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  className="pl-10"
+                  disabled={loading}
+                />
+              </div>
+              {signUpForm.formState.errors.email && (
+                <p className="text-sm text-destructive">{signUpForm.formState.errors.email.message}</p>
+              )}
+            </div>
+
+            {/* Full Name Field */}
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name</Label>
               <div className="relative">
@@ -184,10 +311,8 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
                 <p className="text-sm text-destructive">{signUpForm.formState.errors.fullName.message}</p>
               )}
             </div>
-          )}
 
-          {/* Phone Field (Sign Up Only) */}
-          {mode === 'signup' && !resetMode && (
+            {/* Phone Field */}
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
               <div className="relative">
@@ -205,16 +330,14 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
                 <p className="text-sm text-destructive">{signUpForm.formState.errors.phone.message}</p>
               )}
             </div>
-          )}
 
-          {/* Password Field */}
-          {!resetMode && (
+            {/* Password Field */}
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
-                  {...currentForm.register('password')}
+                  {...signUpForm.register('password')}
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Enter your password"
@@ -236,14 +359,12 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
                   )}
                 </Button>
               </div>
-              {currentForm.formState.errors.password && (
-                <p className="text-sm text-destructive">{currentForm.formState.errors.password.message}</p>
+              {signUpForm.formState.errors.password && (
+                <p className="text-sm text-destructive">{signUpForm.formState.errors.password.message}</p>
               )}
             </div>
-          )}
 
-          {/* Confirm Password Field (Sign Up Only) */}
-          {mode === 'signup' && !resetMode && (
+            {/* Confirm Password Field */}
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
               <div className="relative">
@@ -261,81 +382,36 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
                 <p className="text-sm text-destructive">{signUpForm.formState.errors.confirmPassword.message}</p>
               )}
             </div>
-          )}
 
-          {/* Remember Me (Sign In Only) */}
-          {mode === 'signin' && !resetMode && (
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="remember" 
-                checked={rememberMe}
-                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                disabled={loading}
-              />
-              <Label htmlFor="remember" className="text-sm">Remember me</Label>
-            </div>
-          )}
+            {/* Submit Button */}
+            <Button 
+              type="submit" 
+              className="w-full bg-primary hover:bg-primary/90" 
+              disabled={loading}
+            >
+              {loading ? (
+                <LoadingSpinner size="sm" className="mr-2" />
+              ) : null}
+              {loading ? 'Loading...' : 'Create Account'}
+            </Button>
 
-          {/* Submit Button */}
-          <Button 
-            type="submit" 
-            className="w-full bg-primary hover:bg-primary/90" 
-            disabled={loading}
-          >
-            {loading ? (
-              <LoadingSpinner size="sm" className="mr-2" />
-            ) : null}
-            {loading ? 'Loading...' : resetMode ? 'Send Reset Link' : mode === 'signin' ? 'Sign In' : 'Create Account'}
-          </Button>
-
-          {/* Forgot Password Link */}
-          {mode === 'signin' && !resetMode && (
-            <div className="text-center">
-              <Button
-                type="button"
-                variant="link"
-                className="text-sm text-primary"
-                onClick={() => setResetMode(true)}
-                disabled={loading}
-              >
-                Forgot your password?
-              </Button>
-            </div>
-          )}
-
-          {/* Mode Switch */}
-          {!resetMode && (
+            {/* Mode Switch */}
             <div className="text-center space-y-2">
               <p className="text-sm text-muted-foreground">
-                {mode === 'signin' ? "Don't have an account?" : "Already have an account?"}
+                Already have an account?
               </p>
               <Button
                 type="button"
                 variant="link"
                 className="text-primary"
-                onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')}
+                onClick={() => switchMode('signin')}
                 disabled={loading}
               >
-                {mode === 'signin' ? 'Sign up here' : 'Sign in here'}
+                Sign in here
               </Button>
             </div>
-          )}
-
-          {/* Back to Sign In (Reset Mode) */}
-          {resetMode && (
-            <div className="text-center">
-              <Button
-                type="button"
-                variant="link"
-                className="text-primary"
-                onClick={() => setResetMode(false)}
-                disabled={loading}
-              >
-                Back to sign in
-              </Button>
-            </div>
-          )}
-        </form>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   )
