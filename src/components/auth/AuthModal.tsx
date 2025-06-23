@@ -3,14 +3,12 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { Eye, EyeOff, Leaf, Mail, Lock, User, Phone } from 'lucide-react'
+import { Leaf, Mail, Lock, User, Phone } from 'lucide-react'
 import { 
   signInSchema, 
   signUpSchema, 
@@ -18,7 +16,9 @@ import {
   type SignInFormData,
   type SignUpFormData 
 } from '@/utils/validation'
-import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { EnhancedInput } from '@/components/ui/enhanced-input'
+import { EnhancedButton } from '@/components/ui/enhanced-button'
+import { ProgressIndicator } from '@/components/ui/progress-indicator'
 
 interface AuthModalProps {
   open: boolean
@@ -32,7 +32,6 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
   const { toast } = useToast()
   
   const [loading, setLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
   const [resetMode, setResetMode] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
 
@@ -54,6 +53,9 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
       phone: ''
     }
   })
+
+  const signUpSteps = ['Account Info', 'Personal Details', 'Security']
+  const currentStep = mode === 'signup' ? 1 : 0
 
   const handleSubmit = async (data: SignInFormData | SignUpFormData) => {
     setLoading(true)
@@ -103,7 +105,6 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
     signInForm.reset()
     signUpForm.reset()
     setResetMode(false)
-    setShowPassword(false)
   }
 
   const handleClose = () => {
@@ -143,63 +144,39 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
           )}
         </DialogHeader>
 
+        {mode === 'signup' && !resetMode && (
+          <ProgressIndicator 
+            steps={signUpSteps} 
+            currentStep={currentStep} 
+            className="mb-4" 
+          />
+        )}
+
         {mode === 'signin' ? (
           <form onSubmit={signInForm.handleSubmit(handleSubmit)} className="space-y-4">
-            {/* Email Field */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  {...signInForm.register('email')}
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  className="pl-10"
-                  disabled={loading}
-                />
-              </div>
-              {signInForm.formState.errors.email && (
-                <p className="text-sm text-destructive">{signInForm.formState.errors.email.message}</p>
-              )}
-            </div>
+            <EnhancedInput
+              {...signInForm.register('email')}
+              label="Email"
+              type="email"
+              placeholder="Enter your email"
+              icon={<Mail className="h-4 w-4" />}
+              error={signInForm.formState.errors.email?.message}
+              disabled={loading}
+            />
 
-            {/* Password Field */}
             {!resetMode && (
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    {...signInForm.register('password')}
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
-                    className="pl-10 pr-10"
-                    disabled={loading}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={loading}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
-                </div>
-                {signInForm.formState.errors.password && (
-                  <p className="text-sm text-destructive">{signInForm.formState.errors.password.message}</p>
-                )}
-              </div>
+              <EnhancedInput
+                {...signInForm.register('password')}
+                label="Password"
+                type="password"
+                placeholder="Enter your password"
+                icon={<Lock className="h-4 w-4" />}
+                showPasswordToggle
+                error={signInForm.formState.errors.password?.message}
+                disabled={loading}
+              />
             )}
 
-            {/* Remember Me */}
             {!resetMode && (
               <div className="flex items-center space-x-2">
                 <Checkbox 
@@ -212,19 +189,16 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
               </div>
             )}
 
-            {/* Submit Button */}
-            <Button 
+            <EnhancedButton 
               type="submit" 
               className="w-full bg-primary hover:bg-primary/90" 
-              disabled={loading}
+              loading={loading}
+              loadingText={resetMode ? 'Sending...' : 'Signing in...'}
+              tooltip={resetMode ? 'Send password reset email' : 'Sign in to your account'}
             >
-              {loading ? (
-                <LoadingSpinner size="sm" className="mr-2" />
-              ) : null}
-              {loading ? 'Loading...' : resetMode ? 'Send Reset Link' : 'Sign In'}
-            </Button>
+              {resetMode ? 'Send Reset Link' : 'Sign In'}
+            </EnhancedButton>
 
-            {/* Forgot Password Link */}
             {!resetMode && (
               <div className="text-center">
                 <Button
@@ -239,7 +213,6 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
               </div>
             )}
 
-            {/* Mode Switch */}
             {!resetMode && (
               <div className="text-center space-y-2">
                 <p className="text-sm text-muted-foreground">
@@ -257,7 +230,6 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
               </div>
             )}
 
-            {/* Back to Sign In (Reset Mode) */}
             {resetMode && (
               <div className="text-center">
                 <Button
@@ -274,128 +246,68 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
           </form>
         ) : (
           <form onSubmit={signUpForm.handleSubmit(handleSubmit)} className="space-y-4">
-            {/* Email Field */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  {...signUpForm.register('email')}
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  className="pl-10"
-                  disabled={loading}
-                />
-              </div>
-              {signUpForm.formState.errors.email && (
-                <p className="text-sm text-destructive">{signUpForm.formState.errors.email.message}</p>
-              )}
-            </div>
+            <EnhancedInput
+              {...signUpForm.register('email')}
+              label="Email"
+              type="email"
+              placeholder="Enter your email"
+              icon={<Mail className="h-4 w-4" />}
+              error={signUpForm.formState.errors.email?.message}
+              disabled={loading}
+            />
 
-            {/* Full Name Field */}
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  {...signUpForm.register('fullName')}
-                  id="fullName"
-                  type="text"
-                  placeholder="Enter your full name"
-                  className="pl-10"
-                  disabled={loading}
-                />
-              </div>
-              {signUpForm.formState.errors.fullName && (
-                <p className="text-sm text-destructive">{signUpForm.formState.errors.fullName.message}</p>
-              )}
-            </div>
+            <EnhancedInput
+              {...signUpForm.register('fullName')}
+              label="Full Name"
+              type="text"
+              placeholder="Enter your full name"
+              icon={<User className="h-4 w-4" />}
+              error={signUpForm.formState.errors.fullName?.message}
+              disabled={loading}
+            />
 
-            {/* Phone Field */}
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  {...signUpForm.register('phone')}
-                  id="phone"
-                  type="tel"
-                  placeholder="Enter your phone number"
-                  className="pl-10"
-                  disabled={loading}
-                />
-              </div>
-              {signUpForm.formState.errors.phone && (
-                <p className="text-sm text-destructive">{signUpForm.formState.errors.phone.message}</p>
-              )}
-            </div>
+            <EnhancedInput
+              {...signUpForm.register('phone')}
+              label="Phone Number"
+              type="tel"
+              placeholder="Enter your phone number"
+              icon={<Phone className="h-4 w-4" />}
+              error={signUpForm.formState.errors.phone?.message}
+              disabled={loading}
+            />
 
-            {/* Password Field */}
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  {...signUpForm.register('password')}
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
-                  className="pl-10 pr-10"
-                  disabled={loading}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={loading}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </Button>
-              </div>
-              {signUpForm.formState.errors.password && (
-                <p className="text-sm text-destructive">{signUpForm.formState.errors.password.message}</p>
-              )}
-            </div>
+            <EnhancedInput
+              {...signUpForm.register('password')}
+              label="Password"
+              type="password"
+              placeholder="Enter your password"
+              icon={<Lock className="h-4 w-4" />}
+              showPasswordToggle
+              error={signUpForm.formState.errors.password?.message}
+              hint="Password must be at least 8 characters with uppercase, lowercase, number, and special character"
+              disabled={loading}
+            />
 
-            {/* Confirm Password Field */}
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  {...signUpForm.register('confirmPassword')}
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="Confirm your password"
-                  className="pl-10"
-                  disabled={loading}
-                />
-              </div>
-              {signUpForm.formState.errors.confirmPassword && (
-                <p className="text-sm text-destructive">{signUpForm.formState.errors.confirmPassword.message}</p>
-              )}
-            </div>
+            <EnhancedInput
+              {...signUpForm.register('confirmPassword')}
+              label="Confirm Password"
+              type="password"
+              placeholder="Confirm your password"
+              icon={<Lock className="h-4 w-4" />}
+              error={signUpForm.formState.errors.confirmPassword?.message}
+              disabled={loading}
+            />
 
-            {/* Submit Button */}
-            <Button 
+            <EnhancedButton 
               type="submit" 
               className="w-full bg-primary hover:bg-primary/90" 
-              disabled={loading}
+              loading={loading}
+              loadingText="Creating account..."
+              tooltip="Create your Kudos Cafe account"
             >
-              {loading ? (
-                <LoadingSpinner size="sm" className="mr-2" />
-              ) : null}
-              {loading ? 'Loading...' : 'Create Account'}
-            </Button>
+              Create Account
+            </EnhancedButton>
 
-            {/* Mode Switch */}
             <div className="text-center space-y-2">
               <p className="text-sm text-muted-foreground">
                 Already have an account?
