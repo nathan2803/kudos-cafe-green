@@ -13,9 +13,10 @@ import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/hooks/useAuth'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { Menu, X, User, Settings, History, Shield, LogOut, Leaf } from 'lucide-react'
+import { ThemeToggle } from '@/components/theme/theme-toggle'
 
 export const Header = () => {
-  const { user, userProfile, signOut, isAdmin } = useAuth()
+  const { user, userProfile, signOut, isAdmin, isAuthenticated } = useAuth()
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -83,7 +84,8 @@ export const Header = () => {
 
             {/* User Actions */}
             <div className="flex items-center space-x-5">
-              {user && userProfile ? (
+              <ThemeToggle />
+              {isAuthenticated ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full">
