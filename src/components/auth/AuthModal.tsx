@@ -1,4 +1,7 @@
+
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -8,6 +11,14 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
 import { Eye, EyeOff, Leaf, Mail, Lock, User, Phone } from 'lucide-react'
+import { 
+  signInSchema, 
+  signUpSchema, 
+  sanitizeInput,
+  type SignInFormData,
+  type SignUpFormData 
+} from '@/utils/validation'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 
 interface AuthModalProps {
   open: boolean
@@ -22,84 +33,57 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
   
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
   const [resetMode, setResetMode] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
-  
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    fullName: '',
-    phone: ''
+
+  const signInForm = useForm<SignInFormData>({
+    resolver: zodResolver(signInSchema),
+    defaultValues: {
+      email: '',
+      password: ''
+    }
   })
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    setError('')
-  }
-
-  const validateForm = () => {
-    if (!formData.email) {
-      setError('Email is required')
-      return false
+  const signUpForm = useForm<SignUpFormData>({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+      confirmPassword: '',
+      fullName: '',
+      phone: ''
     }
-    
-    if (!formData.password && !resetMode) {
-      setError('Password is required')
-      return false
-    }
+  })
 
-    if (mode === 'signup') {
-      if (!formData.fullName) {
-        setError('Full name is required')
-        return false
-      }
-      
-      if (!formData.phone) {
-        setError('Phone number is required')
-        return false
-      }
-      
-      if (formData.password !== formData.confirmPassword) {
-        setError('Passwords do not match')
-        return false
-      }
-      
-      if (formData.password.length < 6) {
-        setError('Password must be at least 6 characters')
-        return false
-      }
-    }
+  const currentForm = mode === 'signin' ? signInForm : signUpForm
 
-    return true
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!validateForm()) return
-
+  const handleSubmit = async (data: SignInFormData | SignUpFormData) => {
     setLoading(true)
-    setError('')
 
     try {
       if (resetMode) {
-        await resetPassword(formData.email)
+        await resetPassword(sanitizeInput(data.email))
         toast({
           title: "Reset link sent",
           description: "Check your email for password reset instructions.",
         })
         setResetMode(false)
       } else if (mode === 'signin') {
-        await signIn(formData.email, formData.password)
+        const signInData = data as SignInFormData
+        await signIn(sanitizeInput(signInData.email), signInData.password)
         toast({
           title: "Welcome back!",
           description: "You have successfully signed in.",
         })
         onClose()
       } else {
-        await signUp(formData.email, formData.password, formData.fullName, formData.phone)
+        const signUpData = data as SignUpFormData
+        await signUp(
+          sanitizeInput(signUpData.email), 
+          signUpData.password, 
+          sanitizeInput(signUpData.fullName), 
+          sanitizeInput(signUpData.phone || '')
+        )
         toast({
           title: "Account created!",
           description: "Please check your email to verify your account.",
@@ -107,21 +91,19 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
         onClose()
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred')
+      toast({
+        title: "Error",
+        description: err.message || 'An error occurred',
+        variant: "destructive"
+      })
     } finally {
       setLoading(false)
     }
   }
 
   const resetForm = () => {
-    setFormData({
-      email: '',
-      password: '',
-      confirmPassword: '',
-      fullName: '',
-      phone: ''
-    })
-    setError('')
+    signInForm.reset()
+    signUpForm.reset()
     setResetMode(false)
     setShowPassword(false)
   }
@@ -163,28 +145,24 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
           )}
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
+        <form onSubmit={currentForm.handleSubmit(handleSubmit)} className="space-y-4">
           {/* Email Field */}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
+                {...currentForm.register('email')}
                 id="email"
                 type="email"
                 placeholder="Enter your email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
                 className="pl-10"
-                required
+                disabled={loading}
               />
             </div>
+            {currentForm.formState.errors.email && (
+              <p className="text-sm text-destructive">{currentForm.formState.errors.email.message}</p>
+            )}
           </div>
 
           {/* Full Name Field (Sign Up Only) */}
@@ -194,15 +172,17 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
+                  {...signUpForm.register('fullName')}
                   id="fullName"
                   type="text"
                   placeholder="Enter your full name"
-                  value={formData.fullName}
-                  onChange={(e) => handleInputChange('fullName', e.target.value)}
                   className="pl-10"
-                  required
+                  disabled={loading}
                 />
               </div>
+              {signUpForm.formState.errors.fullName && (
+                <p className="text-sm text-destructive">{signUpForm.formState.errors.fullName.message}</p>
+              )}
             </div>
           )}
 
@@ -213,15 +193,17 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
+                  {...signUpForm.register('phone')}
                   id="phone"
                   type="tel"
                   placeholder="Enter your phone number"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
                   className="pl-10"
-                  required
+                  disabled={loading}
                 />
               </div>
+              {signUpForm.formState.errors.phone && (
+                <p className="text-sm text-destructive">{signUpForm.formState.errors.phone.message}</p>
+              )}
             </div>
           )}
 
@@ -232,13 +214,12 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
+                  {...currentForm.register('password')}
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={(e) => handleInputChange('password', e.target.value)}
                   className="pl-10 pr-10"
-                  required
+                  disabled={loading}
                 />
                 <Button
                   type="button"
@@ -246,6 +227,7 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={loading}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -254,6 +236,9 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
                   )}
                 </Button>
               </div>
+              {currentForm.formState.errors.password && (
+                <p className="text-sm text-destructive">{currentForm.formState.errors.password.message}</p>
+              )}
             </div>
           )}
 
@@ -264,15 +249,17 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
+                  {...signUpForm.register('confirmPassword')}
                   id="confirmPassword"
                   type="password"
                   placeholder="Confirm your password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                   className="pl-10"
-                  required
+                  disabled={loading}
                 />
               </div>
+              {signUpForm.formState.errors.confirmPassword && (
+                <p className="text-sm text-destructive">{signUpForm.formState.errors.confirmPassword.message}</p>
+              )}
             </div>
           )}
 
@@ -283,6 +270,7 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
                 id="remember" 
                 checked={rememberMe}
                 onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                disabled={loading}
               />
               <Label htmlFor="remember" className="text-sm">Remember me</Label>
             </div>
@@ -294,6 +282,9 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
             className="w-full bg-primary hover:bg-primary/90" 
             disabled={loading}
           >
+            {loading ? (
+              <LoadingSpinner size="sm" className="mr-2" />
+            ) : null}
             {loading ? 'Loading...' : resetMode ? 'Send Reset Link' : mode === 'signin' ? 'Sign In' : 'Create Account'}
           </Button>
 
@@ -305,6 +296,7 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
                 variant="link"
                 className="text-sm text-primary"
                 onClick={() => setResetMode(true)}
+                disabled={loading}
               >
                 Forgot your password?
               </Button>
@@ -322,6 +314,7 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
                 variant="link"
                 className="text-primary"
                 onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')}
+                disabled={loading}
               >
                 {mode === 'signin' ? 'Sign up here' : 'Sign in here'}
               </Button>
@@ -336,6 +329,7 @@ export const AuthModal = ({ open, onClose, mode, onModeChange }: AuthModalProps)
                 variant="link"
                 className="text-primary"
                 onClick={() => setResetMode(false)}
+                disabled={loading}
               >
                 Back to sign in
               </Button>

@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -12,9 +14,14 @@ import {
   Clock, 
   Send,
   Facebook,
-  Instagram,
-  MessageCircle
+  Instagram
 } from 'lucide-react'
+import { 
+  contactFormSchema, 
+  sanitizeInput,
+  type ContactFormData 
+} from '@/utils/validation'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 
 interface ContactHeroSettings {
   title: string
@@ -50,6 +57,19 @@ interface ContactInfo {
 
 export const Contact = () => {
   const { toast } = useToast()
+  const [loading, setLoading] = useState(false)
+  
+  const form = useForm<ContactFormData>({
+    resolver: zodResolver(contactFormSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: '',
+      subject: '',
+      message: ''
+    }
+  })
+
   const [heroSettings, setHeroSettings] = useState<ContactHeroSettings>({
     title: 'Contact Us',
     subtitle: "We'd love to hear from you. Get in touch with Kudos Cafe & Restaurant.",
@@ -86,7 +106,6 @@ export const Contact = () => {
     subject: '',
     message: ''
   })
-  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     fetchHeroSettings()
@@ -148,31 +167,39 @@ export const Contact = () => {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (data: ContactFormData) => {
     setLoading(true)
 
     try {
+      // Sanitize all input data
+      const sanitizedData = {
+        name: sanitizeInput(data.name),
+        email: sanitizeInput(data.email),
+        phone: data.phone ? sanitizeInput(data.phone) : '',
+        subject: sanitizeInput(data.subject),
+        message: sanitizeInput(data.message)
+      }
+
       // Format the message with sender information
       const messageWithContactInfo = `
-Contact Inquiry from: ${formData.name}
-Email: ${formData.email}
-Phone: ${formData.phone || 'Not provided'}
+Contact Inquiry from: ${sanitizedData.name}
+Email: ${sanitizedData.email}
+Phone: ${sanitizedData.phone || 'Not provided'}
 
-Subject: ${formData.subject}
+Subject: ${sanitizedData.subject}
 
 Message:
-${formData.message}
+${sanitizedData.message}
       `.trim()
 
       const { error } = await supabase
         .from('order_messages')
         .insert({
           message_type: 'contact_inquiry',
-          subject: formData.subject,
+          subject: sanitizedData.subject,
           message: messageWithContactInfo,
-          sender_id: null, // No authenticated user
-          order_id: null, // Not tied to an order
+          sender_id: null,
+          order_id: null,
           is_urgent: false,
           is_read: false
         })
@@ -184,13 +211,7 @@ ${formData.message}
         description: "We'll get back to you within 24 hours.",
       })
       
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        subject: '',
-        message: ''
-      })
+      form.reset()
     } catch (error) {
       console.error('Error sending message:', error)
       toast({
@@ -201,13 +222,6 @@ ${formData.message}
     } finally {
       setLoading(false)
     }
-  }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }))
   }
 
   return (
@@ -355,35 +369,37 @@ ${formData.message}
                   <CardTitle className="text-2xl text-foreground">Send us a Message</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleSubmit} className="space-y-6">
+                  <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
                           Name *
                         </label>
                         <Input
+                          {...form.register('name')}
                           id="name"
-                          name="name"
                           type="text"
-                          required
-                          value={formData.name}
-                          onChange={handleChange}
                           className="border-primary/20 focus:ring-primary"
+                          disabled={loading}
                         />
+                        {form.formState.errors.name && (
+                          <p className="text-sm text-destructive mt-1">{form.formState.errors.name.message}</p>
+                        )}
                       </div>
                       <div>
                         <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
                           Email *
                         </label>
                         <Input
+                          {...form.register('email')}
                           id="email"
-                          name="email"
                           type="email"
-                          required
-                          value={formData.email}
-                          onChange={handleChange}
                           className="border-primary/20 focus:ring-primary"
+                          disabled={loading}
                         />
+                        {form.formState.errors.email && (
+                          <p className="text-sm text-destructive mt-1">{form.formState.errors.email.message}</p>
+                        )}
                       </div>
                     </div>
 
@@ -392,13 +408,15 @@ ${formData.message}
                         Phone Number
                       </label>
                       <Input
+                        {...form.register('phone')}
                         id="phone"
-                        name="phone"
                         type="tel"
-                        value={formData.phone}
-                        onChange={handleChange}
                         className="border-primary/20 focus:ring-primary"
+                        disabled={loading}
                       />
+                      {form.formState.errors.phone && (
+                        <p className="text-sm text-destructive mt-1">{form.formState.errors.phone.message}</p>
+                      )}
                     </div>
 
                     <div>
@@ -406,15 +424,16 @@ ${formData.message}
                         Subject *
                       </label>
                       <Input
+                        {...form.register('subject')}
                         id="subject"
-                        name="subject"
                         type="text"
-                        required
-                        value={formData.subject}
-                        onChange={handleChange}
                         className="border-primary/20 focus:ring-primary"
                         placeholder="What's this about?"
+                        disabled={loading}
                       />
+                      {form.formState.errors.subject && (
+                        <p className="text-sm text-destructive mt-1">{form.formState.errors.subject.message}</p>
+                      )}
                     </div>
 
                     <div>
@@ -422,15 +441,16 @@ ${formData.message}
                         Message *
                       </label>
                       <Textarea
+                        {...form.register('message')}
                         id="message"
-                        name="message"
-                        required
                         rows={5}
-                        value={formData.message}
-                        onChange={handleChange}
                         className="border-primary/20 focus:ring-primary resize-none"
                         placeholder="Tell us more about your inquiry..."
+                        disabled={loading}
                       />
+                      {form.formState.errors.message && (
+                        <p className="text-sm text-destructive mt-1">{form.formState.errors.message.message}</p>
+                      )}
                     </div>
 
                     <Button 
@@ -438,12 +458,12 @@ ${formData.message}
                       disabled={loading}
                       className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
-                      {loading ? 'Sending...' : (
-                        <>
-                          Send Message
-                          <Send className="ml-2 w-4 h-4" />
-                        </>
+                      {loading ? (
+                        <LoadingSpinner size="sm" className="mr-2" />
+                      ) : (
+                        <Send className="ml-2 w-4 h-4" />
                       )}
+                      {loading ? 'Sending...' : 'Send Message'}
                     </Button>
                   </form>
                 </CardContent>
