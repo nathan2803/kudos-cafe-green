@@ -50,7 +50,8 @@ export const useAuth = () => {
           user: null,
           userProfile: null,
           loading: false,
-          isAdmin: false
+          isAdmin: false,
+          isAuthenticated: false
         })
       }
     })
